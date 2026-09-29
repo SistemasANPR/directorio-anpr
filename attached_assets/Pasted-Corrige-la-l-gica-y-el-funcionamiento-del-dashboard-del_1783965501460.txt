@@ -1,0 +1,23 @@
+Corrige la lógica y el funcionamiento del dashboard del representante relacionados con la gestión de planes y la visualización de su empresa en el directorio.
+
+Actualmente, cuando el representante modifica su plan, los cambios no se reflejan correctamente en el dashboard. Necesito implementar y corregir lo siguiente:
+
+Cancelación y reanudación del plan
+Cuando el representante cancele su plan, el estado debe actualizarse inmediatamente en el dashboard.
+Después de cancelar el plan, debe mostrarse una opción o botón para “Reanudar plan”.
+Al reanudarlo, el estado y las opciones disponibles deben actualizarse correctamente.
+Opción “Cambiar plan”
+Si el representante ya tiene el plan Premium, que es el plan más caro y de mayor nivel, la opción “Cambiar plan” debe estar desactivada u ocultarse, ya que no existe un plan superior.
+Si el representante tiene el plan Básico, que es el plan más económico, tampoco debe mostrarse la opción genérica “Cambiar plan”. En su lugar, debe mostrarse una opción clara para mejorar o actualizar al plan Premium.
+La interfaz debe mostrar únicamente las acciones válidas según el plan actual del representante.
+Sincronización del dashboard
+Cualquier cambio de plan, cancelación o reanudación debe reflejarse inmediatamente en el dashboard.
+La información mostrada debe coincidir con el estado real almacenado en la base de datos.
+Evita mostrar botones o estados incorrectos después de actualizar el plan.
+Botón “Ver en directorio”
+Actualmente, el botón “Ver en directorio” no funciona.
+Al hacer clic, debe redirigir al directorio público.
+La redirección debe abrir directamente la ficha o perfil de la empresa asociada al representante que inició sesión.
+Utiliza el identificador, slug o ruta correspondiente de la empresa para generar correctamente el enlace.
+
+Revisa tanto la lógica del frontend como la del backend, las consultas a la base de datos y la actualización del estado de la interfaz. Mantén el diseño actual y modifica únicamente lo necesario para corregir estos comportamientos.

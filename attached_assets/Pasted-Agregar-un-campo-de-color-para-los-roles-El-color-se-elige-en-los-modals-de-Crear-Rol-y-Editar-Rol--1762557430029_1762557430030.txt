@@ -1,0 +1,96 @@
+Agregar un campo de color para los roles. El color se elige en los modals de Crear Rol y Editar Rol y se usa para pintar la etiqueta (chip/badge) del rol en:
+
+Las tarjetas/listado de Roles (página de Roles).
+
+La lista de usuarios (donde aparece el chip con el nombre del rol).
+
+Requisitos: sin romper estilos existentes, soporte de fallback si no hay color, y previsualización en el modal.
+
+Cambios funcionales (obligatorios)
+
+Nuevo campo del rol
+
+Nombre del campo: tagColor
+
+Tipo: string con formato HEX #RRGGBB (ej. #2563eb).
+
+Persistir en la API igual que los demás campos del rol (crear/editar).
+
+Si la API ya tiene un campo similar, reutilizar; si no, usar tagColor.
+
+UI en los Modals (Crear y Editar)
+
+En client/src/pages/Roles.tsx:
+
+Crear Rol (alrededor de :243:10) y Editar Rol (alrededor de :452:8):
+Añadir un control de selector de color (color picker) con:
+
+Etiqueta: Color de la etiqueta
+
+Campo texto para HEX (permite pegar/editar manualmente).
+
+Previsualización inmediata con un chip del rol usando el color elegido (nombre del rol dentro del chip).
+
+Validación suave: sólo aceptar #RRGGBB; si no pasa, mostrar aviso y no bloquear mientras se edita.
+
+Valor por defecto: si no hay color, usar un color base del sistema (ej. el que usa hoy el chip “apagado”).
+
+Al guardar, incluir tagColor en el payload; al editar, precargar el valor existente.
+
+Aplicar color en las vistas
+
+Reutilizar un componente compartido RoleBadge (si no existe, créalo) que reciba:
+
+label (nombre del rol)
+
+color (hex opcional)
+
+y aplique estilos del chip actuales, sólo cambiando el fondo y borde con color.
+
+Accesibilidad: ajustar el color del texto (claro/oscuro) según contraste con el fondo (umbral de luminancia está bien).
+
+Usar RoleBadge en:
+
+Tarjetas/lista de Roles (donde hoy aparece el chip “activo”/nombre del rol).
+
+Lista de usuarios (el chip junto al nombre que dice “Representante”, “Rol dios”, etc.).
+
+Compatibilidad / Fallback
+
+Si tagColor es null, '' o inválido, usar el color por defecto actual para que nada se rompa.
+
+No cambiar colores de otros chips (ej. estado activo/inactivo) que no sean el del nombre del rol.
+
+No afectar fuera de Roles
+
+Este cambio sólo debe impactar chips de rol.
+
+No tocar chips de permisos, estados, o etiquetas de otras secciones.
+
+Checklist de QA (aceptación)
+
+Crear un rol ⇒ elegir color ⇒ el chip del rol se ve con ese color en la tarjeta y en la lista de usuarios.
+
+Editar un rol existente ⇒ cambiar color ⇒ se actualizan ambos lugares tras guardar.
+
+Si el campo se deja vacío o el valor es inválido ⇒ se usa el color por defecto sin romper nada.
+
+El texto del chip siempre es legible (ajuste automático de color de texto).
+
+El valor HEX se persistió y vuelve precargado al reabrir el modal de edición.
+
+En pantallas pequeñas, el selector de color y la previsualización no rompen el layout.
+
+No se alteraron chips/etiquetas que no son del nombre del rol.
+
+Entrega esperada
+
+Archivos y líneas modificadas en client/src/pages/Roles.tsx (crear/editar).
+
+Componente RoleBadge creado/reutilizado y su ubicación.
+
+Puntos donde se reemplazó el render del chip por RoleBadge (roles list, users list).
+
+Confirmación de que el payload incluye tagColor y que se precarga en edición.
+
+Breve nota de cómo se resuelve el contraste de texto.

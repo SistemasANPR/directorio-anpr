@@ -1,0 +1,14 @@
+Necesito una nueva funcionalidad de gestión de etiquetas para nuestro sistema de directorio de empresas. Esta funcionalidad debe permitir a los administradores dar de alta, editar y eliminar etiquetas que servirán como palabras clave para describir las empresas.
+Por otro lado, los usuarios representantes de empresas deben poder seleccionar estas etiquetas predefinidas al configurar o editar el perfil de su empresa. Queremos que la selección sea sencilla e intuitiva, posiblemente a través de una lista de selección múltiple o un sistema de autocompletado con las etiquetas existentes.
+Finalmente, la parte más crucial es que estas etiquetas deben integrarse completamente con la funcionalidad de búsqueda del directorio. Cuando un usuario realice una búsqueda, el sistema debe poder encontrar empresas que contengan las etiquetas seleccionadas, funcionando como palabras clave adicionales para refinar los resultados de búsqueda.
+Considera los siguientes puntos al desarrollar la funcionalidad:
+•	Interfaz de Administración de Etiquetas:
+o	Un panel dedicado donde los administradores puedan ver una lista de todas las etiquetas existentes.
+o	Opciones para crear nuevas etiquetas, editar etiquetas existentes (nombre) y eliminar etiquetas.
+o	Manejo de casos en los que una etiqueta se está utilizando actualmente por empresas al intentar eliminarla (ej. advertencia, opción para reasignar).
+•	Interfaz de Selección de Etiquetas para Usuarios Representantes:
+o	Un campo claro en el formulario de configuración de la empresa donde los representantes puedan seleccionar una o varias etiquetas de la lista predefinida por el administrador.
+o	Sugiere un mecanismo que facilite la búsqueda y selección si la lista de etiquetas llega a ser muy extensa (ej. búsqueda por nombre, categorías de etiquetas si es aplicable).
+•	Integración con el Buscador:
+o	Asegúrate de que la lógica de búsqueda del directorio incluya las etiquetas asociadas a las empresas como un criterio relevante.
+o	Explora cómo se pueden ponderar estas etiquetas en los resultados de búsqueda para que las coincidencias con etiquetas sean significativas.

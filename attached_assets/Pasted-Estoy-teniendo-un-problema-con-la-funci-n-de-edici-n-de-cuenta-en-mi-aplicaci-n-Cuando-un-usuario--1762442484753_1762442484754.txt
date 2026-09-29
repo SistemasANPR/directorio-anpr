@@ -1,0 +1,21 @@
+Estoy teniendo un problema con la función de edición de cuenta en mi aplicación.
+
+Cuando un usuario actualiza su información (por ejemplo: nombre, foto, correo electrónico, etc.) y guarda los cambios, la API sí actualiza correctamente la información en la base de datos —esto se confirma al revisar en la sección de gestión de usuarios—, pero los cambios no se reflejan de inmediato en la interfaz del usuario actual (por ejemplo, en el encabezado, menú o sección “Mi cuenta”).
+
+Necesito que implementes una lógica de sincronización global del perfil del usuario que cumpla con lo siguiente:
+
+Después de guardar los cambios, la información actualizada del usuario debe reflejarse automáticamente en toda la aplicación (perfil, menú, dashboard, encabezado, etc.) sin necesidad de recargar la página.
+
+Esta lógica debe funcionar para cualquier campo editable, no solo nombre o foto. Es decir, si en el futuro agrego más campos (teléfono, dirección, redes sociales, idioma, preferencias, contraseña, etc.), la sincronización debe seguir funcionando sin cambios adicionales.
+
+Si la API de actualización del perfil devuelve los datos actualizados del usuario, se deben usar para reemplazar el estado global o local del usuario inmediatamente.
+
+Si la aplicación utiliza almacenamiento local (localStorage, sessionStorage) o un manejador de estado global (por ejemplo, React Context, Redux, Zustand, Pinia, Vuex, etc.), los datos del usuario deben actualizarse también ahí.
+
+Si la API no devuelve los datos actualizados, la aplicación debe realizar automáticamente un fetch del usuario desde el backend después de guardar, para mantener la información sincronizada.
+
+Implementar una función o hook centralizado (por ejemplo, refreshUserData() o updateUserContext()) que se pueda reutilizar en cualquier parte de la app cuando el usuario cambie sus datos.
+
+Evitar el uso de datos cacheados o copias obsoletas del usuario que impidan ver los cambios.
+
+En resumen: quiero que la información del usuario logueado esté siempre actualizada en toda la interfaz sin necesidad de recargar la página, y que el sistema esté preparado para futuros campos o configuraciones adicionales en el perfil.

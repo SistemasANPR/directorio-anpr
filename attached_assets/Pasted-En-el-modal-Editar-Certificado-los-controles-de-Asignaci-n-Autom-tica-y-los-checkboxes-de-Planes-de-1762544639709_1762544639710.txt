@@ -1,0 +1,72 @@
+En el modal Editar Certificado, los controles de Asignación Automática y los checkboxes de Planes de Membresía aparecen vacíos al abrir. Solo después de hacer clic, se “hidratan” y muestran lo guardado. Funciona al guardar, pero no se refleja visualmente al abrir.
+
+Objetivo
+Al abrir Editar Certificado, los controles deben mostrarse ya con el estado correcto según los valores guardados del certificado, sin interacción del usuario.
+
+Alcance (solo estos modals, no tocar nada fuera):
+
+client/src/components/EditCertificateModal.tsx
+
+client/src/components/AddCertificateModal.tsx (solo para mantener el mismo esquema y no desincronizar)
+
+Nombres de campos (usar exactamente estos, sin inventar otros):
+
+nombreCertificado (string)
+
+descripcion (string | '')
+
+fechaEmision (string, ISO yyyy-mm-dd)
+
+fechaVencimiento (string, ISO yyyy-mm-dd | '')
+
+entidadEmisora (string | '')
+
+planesMembresia (string[] con IDs de planes)
+
+asignacionAutomatica (boolean)
+
+estado ('Activo' | 'Inactivo' o el enum real de la API)
+
+Lo que hay que corregir
+
+Inicialización del formulario al abrir el modal
+
+Cuando se abre Editar Certificado, inicializa el formulario con los valores existentes del certificado (incluyendo asignacionAutomatica y planesMembresia) antes de renderizar los controles o en cuanto llegue la data (reaplica los valores al formulario).
+
+No esperes a un “primer clic” para hidratar: los controles deben renderizar controlados con esos valores desde el inicio.
+
+Controles controlados (no solo defaultChecked)
+
+El switch/checkbox de asignacionAutomatica y los checkboxes de planesMembresia deben estar vinculados al estado del formulario (controlados).
+
+Cada checkbox de plan debe marcarse si su ID está incluido en planesMembresia.
+
+Evita estados internos que desincronicen la vista (nada de defaultChecked sin control).
+
+Sincronía Crear ↔ Editar
+
+Asegura que Crear y Editar usan el mismo esquema de campos (los de arriba) para que lo guardado en Crear se muestre igual en Editar.
+
+Reapertura y cambio de certificado
+
+Al cerrar y reabrir el modal, o al editar otro certificado, el formulario debe re-inicializarse con los valores del certificado seleccionado (no arrastrar estado previo).
+
+Criterios de Aceptación (QA)
+
+Abro Editar de un certificado con asignacionAutomatica = true y planesMembresia = ['premium','basico'] ⇒ el switch aparece activado y los checkboxes de Premium y Básico aparecen marcados inmediatamente.
+
+Cambio selección, guardo, cierro; vuelvo a editar ⇒ se muestran los nuevos valores sin clics.
+
+Abro Editar de otro certificado con valores distintos ⇒ se ven sus valores correctos.
+
+Crear y Editar muestran y guardan exactamente el mismo formato de datos.
+
+No se afecta nada fuera de estos modals.
+
+Entrega
+
+Indica dónde y cómo inicializas el formulario al abrir el modal.
+
+Confirma que los checkboxes/switch son controlados por el estado del formulario.
+
+Verifica que no se modificó nada externo a estos modals.

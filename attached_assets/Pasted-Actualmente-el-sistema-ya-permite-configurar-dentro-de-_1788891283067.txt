@@ -1,0 +1,30 @@
+Actualmente el sistema ya permite configurar, dentro de cada tipo de plan, un límite máximo de proyectos que puede tener un usuario.
+
+Quiero corregir y reforzar esta lógica para que dicho límite se respete siempre.
+
+El sistema debe tomar como referencia el límite de proyectos configurado en el tipo de plan asignado al usuario. No debe haber valores fijos ni lógica independiente fuera de esa configuración.
+
+Por ejemplo, si un plan tiene configurado un límite de 3 proyectos, el usuario que tenga ese plan solo podrá tener hasta 3 proyectos activos o creados, según la lógica actual del sistema.
+
+Antes de permitir crear o cargar un nuevo proyecto, se debe validar cuántos proyectos tiene actualmente el usuario y comparar esa cantidad con el límite configurado en su plan.
+
+Si el usuario ya alcanzó el límite:
+
+No se debe permitir crear ni cargar un nuevo proyecto.
+Se debe mostrar un mensaje claro indicando que alcanzó el límite de proyectos permitido por su plan.
+La validación debe realizarse también en el backend, no únicamente en el frontend, para evitar que el límite pueda saltarse mediante llamadas directas a la API.
+Si existe un botón para crear proyectos, puede deshabilitarse o mostrar el mensaje correspondiente cuando el usuario haya alcanzado su límite.
+
+La lógica debe funcionar dinámicamente para cualquier tipo de plan.
+
+Por ejemplo:
+
+Plan con límite de 1 proyecto → máximo 1 proyecto.
+Plan con límite de 5 proyectos → máximo 5 proyectos.
+Plan con límite de 20 proyectos → máximo 20 proyectos.
+
+Si posteriormente un administrador modifica el límite desde la configuración del tipo de plan, el sistema debe comenzar a utilizar automáticamente el nuevo valor sin necesidad de modificar código.
+
+También revisar la implementación actual porque aparentemente el límite configurado en los tipos de plan no se está respetando correctamente.
+
+El objetivo es que el límite de proyectos definido en cada tipo de plan sea la única fuente de verdad y se valide obligatoriamente antes de permitir la creación de nuevos proyectos, tanto en frontend como en backend, sin romper la funcionalidad existente.

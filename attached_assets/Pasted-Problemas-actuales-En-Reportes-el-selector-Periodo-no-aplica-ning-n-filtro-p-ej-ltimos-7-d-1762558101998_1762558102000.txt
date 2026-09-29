@@ -1,0 +1,114 @@
+Problemas actuales
+
+En Reportes el selector “Periodo…” no aplica ningún filtro (p. ej., “Últimos 7 días” no cambia nada).
+
+La opción “Periodo personalizado” no despliega controles para elegir fechas.
+
+En la pestaña Empresas no se muestran resultados (posible consecuencia de que el filtro no se aplica / la consulta no se ejecuta).
+
+Vista actual: client/src/pages/Reports.tsx (encabezado con el select de períodos).
+
+Objetivo
+
+Que todas las opciones del selector de período apliquen de verdad un rango de fechas al data fetch de cada pestaña.
+
+Que al elegir “Periodo personalizado” se muestre un selector de rango de fechas (desde / hasta) y, al confirmar, se apliquen los filtros.
+
+Mostrar estados vacíos y cargando coherentes, para que se note la actualización del filtro.
+
+No romper nada fuera de la página de Reportes.
+
+Cambios obligatorios (sin alternativas)
+1) Selector de periodo (UI + estado)
+
+En el header de Reportes, el select debe manejar un estado único:
+
+preset: '7d' | '30d' | 'mes_actual' | 'mes_anterior' | 'personalizado'
+
+from y to: strings ISO yyyy-mm-dd (local time)
+
+Cuando preset !== 'personalizado', calcular from/to automáticamente:
+
+“Últimos 7 días”: from = hoy - 6, to = hoy (ambos inclusivos).
+
+“Últimos 30 días”: idem 30.
+
+“Mes actual”: primer día de mes → hoy.
+
+“Mes anterior”: 1er día mes anterior → último día mes anterior.
+
+Cuando preset === 'personalizado', mostrar UI de rango de fechas (dos campos “Desde / Hasta” + botón “Aplicar”).
+
+Validaciones: from ≤ to, no permitir fechas vacías.
+
+Al Aplicar, setear preset = 'personalizado' y guardar from/to.
+
+2) Re-fetch en todas las pestañas
+
+Cada tarjeta/gráfico/listado de Resumen General, Empresas, Usuarios e Ingresos debe recibir from/to y re-consultar al cambiar.
+
+Si ya existe un hook o contexto de Reportes, úsalo; si no, propaga from/to por props o un store global de solo lectura para Reportes.
+
+Mostrar loading mientras llegan los datos y empty states si el resultado viene vacío.
+
+3) Normalización de fechas y timezone
+
+Usar fechas locales (no UTC) ancladas a inicio/fin de día para evitar off-by-one:
+
+from → 00:00:00 local
+
+to → 23:59:59 local
+
+Enviar al backend como ISO sin hora (yyyy-mm-dd) si esa es la convención de la API; si la API requiere timestamps, enviar rango con hora local normalizada.
+
+En backend (si aplica), filtrar por createdAt/date inclusive para ambos extremos.
+
+4) Conexión con API (o filtro local)
+
+Todas las llamadas de la página de Reportes deben incluir from y to (ej.: /api/reports?from=YYYY-MM-DD&to=YYYY-MM-DD).
+
+Si el backend aún no soporta filtros, aplicar filtrado en cliente sobre el campo de fecha usado por cada dataset, como medida temporal, sin cambiar la forma de los datos.
+
+5) “Periodo personalizado” visible y usable
+
+La UI de “Periodo personalizado” debe abrirse (popover/modalcito o inline bajo el select) con dos date-pickers y botón “Aplicar”.
+
+Al abrir la página, setear preset default “Últimos 7 días” y que se vean datos acordes.
+
+Dónde tocar (archivos)
+
+client/src/pages/Reports.tsx (selector de periodo, estado global de filtros y distribución de from/to a las pestañas).
+
+Cualquier componente de pestaña o tarjeta que consume datos en Reportes (por ejemplo ResumenGeneralCards, EmpresasTab, UsuariosTab, IngresosTab), para que tomen from/to y re-fetchen.
+
+Nota: Si el selector de periodo está en un componente aparte (ej. PeriodSelector), centralizar ahí el cálculo de presets y la UI de personalizado; el estado final from/to debe vivir en el nivel que orquesta todas las consultas de la página.
+
+Checklist de QA (aceptación)
+
+ Al abrir Reportes con “Últimos 7 días”, los números cambian si elijo “Últimos 30 días” o “Mes actual”.
+
+ Al elegir “Periodo personalizado” aparecen dos fechas y el botón “Aplicar”.
+
+ Con un rango personalizado, los resultados cambian acorde; si el rango no tiene datos, se muestra estado vacío.
+
+ Cambiar de pestañas mantiene el rango activo.
+
+ Empresas muestra datos cuando existen, o vacío si no hay.
+
+ No hay errores por zona horaria (no se pierde un día al inicio/fin).
+
+ No se afecta ninguna otra página del sistema.
+
+Entrega esperada
+
+Archivos exactos modificados y breve resumen de:
+
+Cómo calculan from/to por preset.
+
+Dónde se guarda el estado de filtro.
+
+Qué endpoints usan y qué params envían.
+
+Cómo resolvieron el UI/UX de “Periodo personalizado”.
+
+Capturas antes/después con: “Últimos 7 días”, “Mes actual” y “Periodo personalizado” aplicado.

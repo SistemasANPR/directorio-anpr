@@ -1,0 +1,54 @@
+Necesito que revises y valides de extremo a extremo todo el flujo de pagos recurrentes de las membresías, especialmente la renovación mensual con Stripe.
+
+No quiero solo una revisión visual del código. Necesito que confirmes con pruebas reales o en modo test que el flujo completo funciona correctamente.
+
+Verifica lo siguiente:
+
+Cuando un usuario contrata un plan mensual, debe crearse correctamente la suscripción en Stripe.
+La suscripción debe quedar vinculada al usuario y a su empresa en la base de datos.
+La fecha de inicio, fecha de próxima facturación, periodicidad y estado de la suscripción deben guardarse correctamente.
+Cuando llegue la renovación mensual, Stripe debe generar el nuevo cobro automáticamente.
+El webhook debe recibir y procesar correctamente los eventos de renovación.
+Solo después de que el pago mensual sea confirmado como exitoso debe mantenerse o actualizarse la membresía como activa.
+Si existe un cambio de plan programado, debe aplicarse únicamente en esa renovación y solo después del pago exitoso.
+Si el pago falla, no debe activarse el nuevo plan ni marcarse la renovación como pagada.
+El sistema debe evitar cobros duplicados, suscripciones duplicadas y procesamiento repetido del mismo webhook.
+La base de datos, Stripe y el dashboard deben mostrar siempre el mismo estado.
+
+Revisa especialmente los webhooks necesarios para suscripciones recurrentes, incluyendo los eventos equivalentes a:
+
+pago de factura exitoso
+pago de factura fallido
+actualización de suscripción
+cancelación de suscripción
+finalización del checkout, si aplica
+
+Agrega idempotencia para que un mismo evento de Stripe no se procese dos veces.
+
+También necesito pruebas para estos escenarios:
+
+Alta nueva de plan mensual.
+Primera facturación.
+Renovación mensual exitosa.
+Renovación mensual fallida.
+Cambio de plan programado aplicado en la renovación.
+Cambio de plan programado que no se aplica porque el pago falló.
+Varios cambios de plan antes de renovar, conservando solo el último.
+Cancelación de suscripción.
+Reanudación, si el sistema la permite.
+Reintento de webhook sin duplicar acciones.
+Usuario con pago confirmado pero dashboard desactualizado.
+Stripe confirmado pero base de datos fallida, con manejo seguro del error.
+
+Necesito que ejecutes las pruebas con Stripe en modo test y me entregues un reporte claro con:
+
+Qué casos pasaron.
+Qué casos fallaron.
+Qué archivos o funciones fueron corregidos.
+Qué eventos de webhook se están escuchando.
+Qué campos se actualizan en la base de datos.
+Cómo se evita el doble procesamiento.
+Evidencia de que la renovación mensual sí funciona.
+Qué debo configurar manualmente en Stripe o en las variables de entorno.
+
+No marques la tarea como terminada hasta haber validado la renovación mensual completa desde Stripe hasta la base de datos y el dashboard.

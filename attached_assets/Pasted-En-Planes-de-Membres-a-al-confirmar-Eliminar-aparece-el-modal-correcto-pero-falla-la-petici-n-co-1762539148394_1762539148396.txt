@@ -1,0 +1,67 @@
+En Planes de Membresía, al confirmar “Eliminar”, aparece el modal correcto pero falla la petición con el error:
+Unexpected end of JSON input.
+El flujo actual intenta hacer response.json() incluso cuando el servidor no envía cuerpo JSON.
+
+Objetivo
+
+Que eliminar un plan funcione sin errores.
+
+Aceptar correctamente respuestas vacías (204) o respuestas no-JSON.
+
+Mantener el modal y la UI coherentes con el resto del sistema.
+
+Lo que hay que corregir
+
+Alineación contrato API ↔ Frontend
+
+Si el backend responde 204 No Content, el frontend NO debe parsear JSON.
+
+Si el backend responde 200 con JSON, garantizar que el Content-Type: application/json y un cuerpo válido lleguen siempre.
+
+Elegir una sola convención y aplicarla en ambos lados (recomendado: 204 sin cuerpo para DELETE, o 200 con { success: true }).
+
+Manejo robusto de la respuesta en el cliente
+
+Antes de intentar leer el cuerpo, verificar status y si hay contenido.
+
+En caso de respuesta vacía o texto, tratarla como éxito si el status es 2xx.
+
+Solo mostrar error si el status es 4xx/5xx o si la red/CORS/CSRF falla.
+
+Errores comunes a revisar (y corregir si aplican)
+
+CSRF/Autenticación caducada: confirmar que el token/cabeceras viajan en la petición DELETE.
+
+CORS: que el preflight no bloquee (orígenes, métodos y cabeceras permitidas).
+
+Ruta HTTP correcta (método DELETE, id correcto, sin trailing slash conflictivo).
+
+Doble envío: evitar que el botón dispare la petición dos veces (deshabilitar mientras se procesa).
+
+Intercepción global (interceptors) que transformen la respuesta y provoquen el parseo indebido.
+
+Actualización de UI tras eliminar
+
+En caso de éxito, cerrar modal, quitar la fila del plan eliminado de la tabla y (opcional) mostrar notificación de éxito consistente con el sistema.
+
+En caso de error, mantener modal cerrado (si ya se cerró, mostrar toast de error) y no modificar la lista.
+
+Criterios de aceptación (QA)
+
+Confirmo eliminación ⇒ no aparece el error de JSON.
+
+La fila del plan desaparece de la lista y se muestra el toast de éxito (igual estilo que el resto del sistema).
+
+Si el backend devuelve 204 No Content, el flujo sigue considerándose éxito.
+
+Si el backend devuelve 200 con JSON, también funciona.
+
+Reintentos/errores reales (4xx/5xx) muestran un mensaje de error claro, sin stack técnico.
+
+No hay dobles peticiones ni bloqueos del UI.
+
+Entrega
+
+Indica qué convención se dejó para DELETE (204 sin cuerpo o 200 con JSON) y cómo se ajustó el otro lado.
+
+Confirma que el cambio no rompe otras eliminaciones del sistema (Etiquetas, Categorías, etc.) y que comparten la misma estrategia de manejo de respuestas.

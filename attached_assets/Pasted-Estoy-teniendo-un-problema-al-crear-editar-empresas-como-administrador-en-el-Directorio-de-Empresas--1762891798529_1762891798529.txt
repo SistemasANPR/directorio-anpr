@@ -1,0 +1,107 @@
+Estoy teniendo un problema al crear/editar empresas como administrador en el Directorio de Empresas cuando adjunto un Catálogo Digital (PDF). Antes funcionaba; ahora falla siempre que hay un PDF adjunto. Necesito que lo soluciones sin romper nada más del sistema.
+
+Contexto y evidencias
+
+Vista/Componente: client/src/components/AddCompanyModal.tsx (el error aparece cerca de línea 966 en el flujo de submit).
+
+Pantallas adjuntas (para referencia visual):
+
+Al guardar la empresa con un PDF anexado aparece toast: “Error al actualizar la empresa / Error al crear la empresa”.
+
+El archivo es PROGRAMA BOOTCAMP (4).pdf, 0.27 MB (muy por debajo de cualquier límite).
+
+En la UI se muestra correctamente el bloque “Catálogo Digital (PDF)” y el archivo queda listado; sin embargo, el guardado/actualización falla.
+
+Observación: cuando no adjunto PDF, el guardado suele funcionar (si detectas lo contrario, repórtalo con detalle).
+
+Pasos para reproducir
+
+Ingresar como administrador al Directorio de Empresas.
+
+Crear o editar una empresa.
+
+En “Catálogo Digital (PDF)”, adjuntar un archivo PDF válido (p. ej. 0.27 MB).
+
+Completar los demás campos requeridos y guardar.
+
+Resultado: aparece el error en toast (“Error al actualizar/crear la empresa”) y no se guarda.
+
+Comportamiento esperado
+
+El sistema debe aceptar y persistir la empresa siempre que el PDF cumpla tipo/límite.
+
+Si hubiese un problema real (tipo, tamaño, etc.), quiero un mensaje de error claro del lado del cliente con causa específica (p. ej. “tipo inválido”, “excede X MB”, “storage no disponible”), no un mensaje genérico.
+
+Qué revisar y corregir (sin entregar código en la respuesta; aplícalo tú en el repo)
+
+FormData del cliente
+
+Verifica que el campo del PDF se envía como archivo binario en FormData y con el nombre de clave exacto que espera el backend (p. ej. catalogoDigital, catalogo_pdf, etc.).
+
+Asegúrate de que no se esté enviando simultáneamente un string/URL vacía que cause validaciones contradictorias.
+
+Confirma que el submit no limpia el archivo antes del request y que no se dispara doble submit.
+
+Endpoint del backend
+
+Revisa la ruta que maneja crear/actualizar empresa para el campo de catálogo.
+
+Asegura compatibilidad con multipart/form-data.
+
+Valida MIME type (application/pdf) y tamaño. El archivo de 0.27 MB debe pasar.
+
+Si se guarda en S3/Cloud/FS: revisa credenciales, permisos, CORS, ruta de escritura y que el backend retorne URL o ID esperado al cliente.
+
+Maneja errores con mensajes específicos y códigos HTTP adecuados (400/413/415/500), que el cliente pueda mostrar.
+
+Mapping/Validaciones del modelo
+
+Confirma que el campo de catálogo en DB sea opcional si el usuario decide borrarlo, y acepte uno nuevo si se reemplaza.
+
+Evita validaciones que exijan simultáneamente URL y archivo. Debe ser uno u otro según lo que envíe el cliente.
+
+UI/Estado del componente
+
+Al cargar un PDF existente, que la UI lo represente como “adjunto actual” y permita reemplazar o eliminar sin corromper el estado.
+
+Asegura que el botón de guardar muestre loading, desactive el doble click y reaccione al estado real de la promesa.
+
+Logs y trazabilidad
+
+Agrega logs temporalmente en cliente y servidor para este flujo (request size, headers clave, campo recibido, validaciones).
+
+En la consola de red (Network) confirma que el request de multipart/form-data contiene el archivo con boundary correcto y que la respuesta del servidor no trae stacktrace oculto.
+
+Pruebas que debes ejecutar
+
+Crear y editar empresa con:
+a) PDF válido pequeño (0.3 MB)
+b) PDF cercano al límite permitido (ej. 4.9 MB si el límite es 5 MB)
+c) Sin PDF (debe guardar)
+d) PDF + imágenes en galería (para descartar colisiones)
+
+Repetir como administrador y como usuario con permisos normales (roles).
+
+Verificar que otros módulos no se vean afectados.
+
+Criterios de aceptación (listo para cerrar issue)
+
+ Puedo crear y editar empresas con PDF adjunto sin errores.
+
+ Si hay error real, el mensaje es específico y legible.
+
+ El archivo queda almacenado y su referencia persiste (URL/ID) y se vuelve a mostrar al reabrir el modal.
+
+ No se rompe ningún otro flujo (subida de imágenes, planes, visibilidad, etc.).
+
+ No se muestran toasts genéricos de “Error al actualizar/crear la empresa” sin detalle.
+
+ Se añadieron pruebas manuales (y si es posible automáticas) del flujo con PDF.
+
+Importante: Por favor limita los cambios al flujo de crear/editar empresa y manejo del catálogo PDF. No alteres comportamientos globales ni otros módulos.
+
+Cuando lo tengas:
+
+Indícame qué estaba fallando exactamente (mismatch de clave, parsing del multipart, validación del tipo, storage, etc.).
+
+Resume los cambios aplicados y adjunta capturas de Network (request/response) y la UI guardando correctamente con un PDF.

@@ -1,0 +1,109 @@
+Ejemplo clave: asignación automática de múltiples empresas desde WordPress
+
+La relación entre el representante y sus empresas debe considerar el correo electrónico utilizado en WordPress, respetando la lógica de sincronización que ya existe actualmente.
+
+Ejemplo:
+
+Actualmente existe el representante:
+
+Correo del representante: manuel@bugy.mx
+
+Y desde WordPress tiene asociada:
+
+Empresa 1: BUCY
+
+Por lo tanto, cuando manuel@bugy.mx inicia sesión en el Panel del Representante, visualiza BUCY.
+
+Posteriormente, desde WordPress se registra o asigna otra empresa al mismo correo electrónico:
+
+Correo: manuel@bugy.mx
+Empresa 2: Empresa Ejemplo Monterrey
+
+El sistema debe detectar que ese correo ya corresponde a un representante existente.
+
+NO debe crear otro representante ni otra cuenta.
+
+En su lugar, la nueva empresa debe sumarse a las empresas asociadas al mismo representante.
+
+El resultado esperado en el dashboard será:
+
+Representante: manuel@bugy.mx
+
+Empresas asociadas:
+
+BUCY
+Empresa Ejemplo Monterrey
+
+Si posteriormente desde WordPress se asigna una tercera empresa al mismo correo:
+
+Correo: manuel@bugy.mx
+Empresa 3: Empresa Ejemplo Guadalajara
+
+El dashboard deberá mostrar:
+
+BUCY
+Empresa Ejemplo Monterrey
+Empresa Ejemplo Guadalajara
+
+Es decir, la lógica esperada conceptualmente es:
+
+mismo correo de representante en WordPress → misma cuenta de representante → acumular empresas asociadas
+
+y NO:
+
+mismo correo → reemplazar empresa anterior
+
+ni:
+
+mismo correo → crear un representante nuevo
+
+Comportamiento en el dashboard
+
+Cuando el representante tenga varias empresas provenientes de WordPress, todas deben quedar disponibles dentro de su mismo Panel del Representante.
+
+Debe poder seleccionar la empresa activa y, al hacerlo, el dashboard debe cargar la información correspondiente exclusivamente a esa empresa:
+
+Empresa activa: BUCY
+→ proyectos de BUCY
+→ certificados de BUCY
+→ plan/membresía de BUCY
+→ reseña de BUCY
+→ demás información relacionada con BUCY
+
+Empresa activa: Empresa Ejemplo Monterrey
+→ proyectos de Empresa Ejemplo Monterrey
+→ certificados de Empresa Ejemplo Monterrey
+→ plan/membresía de Empresa Ejemplo Monterrey
+→ reseña de Empresa Ejemplo Monterrey
+→ demás información relacionada con esa empresa
+
+Sincronización con WordPress
+
+Antes de implementar esta lógica, revisar cómo se realiza actualmente la sincronización desde WordPress.
+
+No asumir que el correo electrónico debe convertirse directamente en una llave primaria o relación definitiva si el sistema ya dispone de IDs de WordPress, IDs internos u otro mecanismo más seguro.
+
+El correo debe utilizarse conforme al flujo existente para identificar al representante, pero las relaciones internas entre representante y empresas deben mantenerse mediante IDs y relaciones de base de datos apropiadas.
+
+La sincronización debe ser idempotente:
+
+Si la empresa ya está asociada al representante, no duplicarla.
+Si es una empresa nueva para ese mismo representante, agregar la relación.
+No eliminar las empresas anteriores simplemente porque llegue una nueva.
+No crear un representante duplicado si el correo ya corresponde a uno existente.
+No duplicar empresas, membresías o certificados en sincronizaciones posteriores.
+Caso que debe probarse obligatoriamente
+
+Realizar una prueba específica con este flujo:
+
+WordPress sincroniza manuel@bugy.mx con BUCY.
+El representante inicia sesión y visualiza BUCY.
+Posteriormente WordPress sincroniza el mismo correo manuel@bugy.mx con una segunda empresa.
+Volver a sincronizar/iniciar sesión.
+Verificar que ahora tenga las dos empresas en su dashboard.
+Verificar que BUCY no haya sido reemplazada.
+Verificar que no se haya creado otro representante.
+Verificar que cambiar de empresa activa cambie correctamente proyectos, certificados y demás información dependiente de la empresa.
+Volver a ejecutar la sincronización y comprobar que ninguna de las dos empresas se duplique.
+
+Resultado final esperado: un mismo representante puede acumular múltiples empresas provenientes de WordPress cuando estas estén asociadas al mismo correo, y todas deben estar disponibles desde una única cuenta y dashboard.

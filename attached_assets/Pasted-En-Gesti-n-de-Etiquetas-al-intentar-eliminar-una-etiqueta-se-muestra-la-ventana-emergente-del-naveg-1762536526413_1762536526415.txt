@@ -1,0 +1,54 @@
+En Gestión de Etiquetas, al intentar eliminar una etiqueta se muestra la ventana emergente del navegador (tipo confirm), no el modal de confirmación propio del sistema.
+Quiero que el borrado de etiquetas use exactamente el mismo pop-up nativo de la aplicación que se usa, por ejemplo, para “Eliminar categoría” (título, textos, estilo, botones y comportamiento).
+
+Lo que necesito
+
+Reemplazar por completo el uso de la confirmación del navegador.
+
+No debe aparecer la ventana genérica del navegador.
+
+No se debe llamar a ningún confirm nativo del navegador.
+
+Usar el modal de confirmación del sistema para “Eliminar etiqueta”:
+
+Título: ¿Eliminar etiqueta?
+
+Subtítulo: Esta acción no se puede deshacer (o el texto equivalente que ya usa el sistema).
+
+Botones: Cancelar y Sí, eliminar, con los mismos estilos y colores que el resto de confirmaciones.
+
+Mismo comportamiento visual: oscurecer fondo, bloqueo del scroll, enfoque inicial en el botón “Cancelar”, cierre con ESC y clic fuera deshabilitado (si así funciona en los otros módulos).
+
+Flujo de acción (sin mostrar código, solo comportamiento):
+
+Clic en icono/botón Eliminar de una etiqueta ⇒ abrir modal propio.
+
+Si el usuario confirma (Sí, eliminar): ejecutar la eliminación, cerrar modal, refrescar la lista (o eliminar fila) y mostrar la notificación/estado de éxito como en los otros módulos.
+
+Si el usuario cancela: cerrar modal sin realizar ninguna acción.
+
+Consistencia y accesibilidad
+
+Reutilizar el mismo componente/servicio de confirmación que usa “Eliminar categoría” (o el que sea estándar en el proyecto).
+
+Mantener textos, estilos, tamaños, iconografía y espaciados para que luzca idéntico a las confirmaciones ya existentes.
+
+Mantener i18n/etiquetas de traducción si aplica.
+
+Criterios de aceptación (QA)
+
+Al intentar eliminar una etiqueta, nunca aparece la alerta del navegador.
+
+Se muestra el modal propio con título y textos correctos, y los botones “Cancelar” / “Sí, eliminar” con los estilos del sistema.
+
+Confirmar ⇒ elimina la etiqueta y actualiza la tabla; Cancelar ⇒ no hace nada.
+
+El modal se comporta igual que en “Eliminar categoría”: sombreado de fondo, bloqueo de scroll, foco adecuado, cierre con ESC si corresponde.
+
+No se rompe el estilo ni la interacción en otros módulos.
+
+Entrega
+
+Indicar qué estaba disparando la alerta del navegador y cómo se sustituyó por el modal nativo.
+
+Confirmar que ahora todas las confirmaciones de borrado en Etiquetas usan el mismo modal estándar que el resto del sistema.

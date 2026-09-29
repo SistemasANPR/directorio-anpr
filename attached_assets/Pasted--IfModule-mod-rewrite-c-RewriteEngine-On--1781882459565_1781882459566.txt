@@ -1,0 +1,134 @@
+<IfModule mod_rewrite.c>
+RewriteEngine On
+
+# =========================================================
+# BUSCADOR: /web/?s=algo → /?s=algo
+# =========================================================
+RewriteCond %{REQUEST_URI} ^/web/?$ [NC]
+RewriteCond %{QUERY_STRING} (^|&)s= [NC]
+RewriteRule ^web/?$ https://anpr.org.mx/ [R=302,L]
+
+# =========================================================
+# REST API WORDPRESS / ELEMENTOR
+# =========================================================
+
+RewriteRule ^wp-json/?(.*)$ /index.php?rest_route=/$1 [QSA,L]
+
+# =========================================================
+# NO TOCAR WORDPRESS / ELEMENTOR
+# =========================================================
+
+RewriteRule ^wp-admin/ - [L]
+RewriteRule ^wp-login\.php$ - [L]
+RewriteRule ^wp-content/ - [L]
+RewriteRule ^wp-includes/ - [L]
+RewriteRule ^xmlrpc\.php$ - [L]
+RewriteRule ^wp-cron\.php$ - [L]
+RewriteRule ^admin-ajax\.php$ - [L]
+
+# Elementor preview/editor
+RewriteCond %{QUERY_STRING} (^|&)elementor-preview= [NC,OR]
+RewriteCond %{QUERY_STRING} (^|&)preview= [NC,OR]
+RewriteCond %{QUERY_STRING} (^|&)action=elementor [NC,OR]
+RewriteCond %{QUERY_STRING} (^|&)elementor [NC]
+RewriteRule ^ - [L]
+
+# =========================================================
+# BLOG NATIVO WORDPRESS
+# =========================================================
+
+RewriteRule ^web/blog/?$ https://anpr.org.mx/blog/ [R=302,L]
+RewriteRule ^web/blog/(.*)$ https://anpr.org.mx/blog/$1 [R=302,L]
+
+RewriteRule ^blog/?$ - [L]
+RewriteRule ^blog/(.*)$ - [L]
+
+# =========================================================
+# EVITAR /web/web
+# =========================================================
+
+RewriteRule ^web/web/?$ https://anpr.org.mx/web/ [R=302,L]
+RewriteRule ^web/web/(.*)$ https://anpr.org.mx/web/$1 [R=302,L]
+
+# =========================================================
+# REDIRECCIONES HACIA REACT (/web)
+# =========================================================
+
+RewriteRule ^nosotros/?$ https://anpr.org.mx/web/nosotros/ [R=302,L]
+RewriteRule ^anpr/?$ https://anpr.org.mx/web/nosotros/ [R=302,L]
+RewriteRule ^nuestro-equipo/?$ https://anpr.org.mx/web/equipo/ [R=302,L]
+RewriteRule ^consejo-anpr/?$ https://anpr.org.mx/web/consejo-consultivo/ [R=302,L]
+RewriteRule ^comites-embajadores/?$ https://anpr.org.mx/web/comite-embajadores/ [R=302,L]
+RewriteRule ^membresias-anpr/?$ https://anpr.org.mx/web/unete/ [R=302,L]
+RewriteRule ^biblioteca-parques/?$ https://anpr.org.mx/web/biblioteca-parques/ [R=302,L]
+RewriteRule ^podcast-parques/?$ https://anpr.org.mx/web/podcast/ [R=302,L]
+RewriteRule ^revista-parques/?$ https://anpr.org.mx/web/revista-parques/ [R=302,L]
+RewriteRule ^webinars/?$ https://anpr.org.mx/web/webinars/ [R=302,L]
+RewriteRule ^eventos/?$ https://anpr.org.mx/web/eventos/ [R=302,L]
+RewriteRule ^agenda-2025/?$ https://anpr.org.mx/web/estudios/ [R=302,L]
+RewriteRule ^centro-para-la-investigacion-y-estudios-de-parques-urbanos/?$ https://anpr.org.mx/web/estudios/ [R=302,L]
+RewriteRule ^green-flag-award-en-mexico/?$ https://anpr.org.mx/web/parques-gfa/ [R=302,L]
+RewriteRule ^academia-parques/?$ https://anpr.org.mx/web/academia-parques/ [R=302,L]
+
+# directorio aparte
+RewriteRule ^directorio/?$ https://directorio.anpr.org.mx/ [R=302,L]
+
+# =========================================================
+# HOME → REACT
+# NO redirigir si es búsqueda de WordPress ?s=
+# =========================================================
+
+RewriteCond %{REQUEST_URI} ^/$
+RewriteCond %{QUERY_STRING} !(^|&)s= [NC]
+RewriteRule ^$ https://anpr.org.mx/web/ [R=302,L]
+
+# =========================================================
+# BLOQUEAR DEBUG.LOG
+# =========================================================
+
+RewriteCond %{REQUEST_URI} ^/?wp\-content/+debug\.log$
+RewriteRule .* - [F,L,NC]
+
+</IfModule>
+
+# =========================================================
+# WORDPRESS
+# =========================================================
+
+# BEGIN WordPress
+# Las directivas (líneas) entre «BEGIN WordPress» y «END WordPress» son
+# generadas dinámicamente y solo deberían ser modificadas mediante filtros de WordPress.
+# Cualquier cambio en las directivas que hay entre esos marcadores serán sobrescritas.
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+RewriteBase /
+RewriteRule ^index\.php$ - [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . /index.php [L]
+</IfModule>
+
+# END WordPress
+
+# =========================================================
+# PHP / LITESPEED
+# =========================================================
+
+php_value max_execution_time 900
+
+<IfModule Litespeed>
+SetEnv noabort 1
+</IfModule>
+
+# =========================================================
+# WORDFENCE DESACTIVADO TEMPORALMENTE
+# =========================================================
+
+# <IfModule LiteSpeed>
+# php_value auto_prepend_file '/home/u582611776/domains/anpr.mx/public_html/wordfence-waf.php'
+# </IfModule>
+
+# <IfModule lsapi_module>
+# php_value auto_prepend_file '/home/u582611776/domains/anpr.mx/public_html/wordfence-waf.php'
+# </IfModule>

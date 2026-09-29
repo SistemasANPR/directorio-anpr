@@ -1,0 +1,147 @@
+“Datos inválidos: Expected number, received array”
+
+Eso indica que al actualizar el proyecto algún dato está llegando como lista o arreglo, pero el sistema espera un solo número. También debe revisarse por qué las imágenes seleccionadas no se incluyen o no se conservan durante la actualización.
+
+Usa este prompt:
+
+Necesito que revises y corrijas el proceso de actualización de proyectos desde el panel del representante.
+
+Actualmente, al intentar actualizar un proyecto, aparece este error:
+
+Datos inválidos: Expected number, received array
+
+Además, las imágenes seleccionadas no se guardan cuando el proyecto es creado o actualizado por un representante.
+
+Trabaja únicamente con la estructura y el código que ya existen en el proyecto. No cambies la arquitectura, no renombres campos innecesariamente, no reemplaces librerías, no agregues nuevas tecnologías y no modifiques partes que no estén directamente relacionadas con este problema.
+
+Primero analiza el flujo actual completo y encuentra la causa exacta antes de hacer cambios.
+
+Problema 1: error al actualizar
+
+Revisa el formulario de actualización, la petición que se envía y la validación que recibe esos datos.
+
+El mensaje:
+
+Expected number, received array
+
+significa que uno de los campos está enviándose como arreglo cuando el sistema espera un número individual.
+
+Debes identificar exactamente:
+
+Qué campo provoca el error.
+Qué valor se está enviando.
+Qué tipo espera actualmente el sistema.
+Por qué durante la edición ese valor se convierte en arreglo.
+Si el problema nace al cargar la información existente, al seleccionar una opción, al preparar la petición o al validar en el servidor.
+
+No cambies validaciones al azar ni conviertas todos los arreglos en números. Determina primero cuál es el comportamiento correcto según la lógica actual del proyecto.
+
+Corrige únicamente el punto donde se genera la incompatibilidad.
+
+Verifica especialmente los campos relacionados con:
+
+Servicios o productos utilizados.
+Estado del proyecto.
+País, estado o ciudad, si usan identificadores.
+Empresa o representante.
+Cualquier selector que cargue valores previamente guardados.
+Cualquier campo que permita una o varias opciones.
+
+Si un campo debe aceptar un solo valor, asegúrate de que se envíe un solo valor.
+
+Si un campo realmente permite varios valores, asegúrate de que el flujo actual lo trate de manera consistente en formulario, petición, validación y guardado.
+
+No asumas cuál de los dos casos aplica. Confírmalo leyendo el código existente.
+
+Problema 2: imágenes que no se guardan
+
+Revisa por qué las imágenes seleccionadas por el representante no se guardan.
+
+Analiza:
+
+Cómo se seleccionan las imágenes.
+Cómo se mantienen en el estado del formulario.
+Cómo se agregan a la petición.
+Cómo se reciben en el servidor.
+Cómo se suben o almacenan.
+Cómo se relacionan con el proyecto.
+Cómo se cargan las imágenes existentes al editar.
+Qué ocurre con las imágenes anteriores cuando solo se modifica otro campo.
+
+Determina si las imágenes:
+
+No se están agregando a la petición.
+Se están enviando con un nombre diferente al esperado.
+Se pierden al preparar los datos.
+Son rechazadas por una validación.
+Sí se suben, pero no se guardan en la base de datos.
+Sí se guardan, pero no se devuelven o no se muestran.
+Son eliminadas accidentalmente durante la actualización.
+Fallan únicamente para el rol representante por permisos o filtros de empresa.
+
+No sustituyas todo el sistema de imágenes. Corrige el flujo actual respetando la implementación existente.
+
+Comportamiento esperado
+
+Después de la corrección:
+
+El representante debe poder actualizar un proyecto propio.
+No debe aparecer el error “Expected number, received array”.
+Los campos existentes deben cargarse correctamente en el formulario.
+Los servicios o productos utilizados deben conservarse y actualizarse correctamente.
+Las imágenes nuevas deben guardarse.
+Las imágenes ya existentes deben conservarse cuando no se eliminan.
+Actualizar solo el texto no debe borrar las imágenes.
+El proyecto actualizado debe mostrarse correctamente después de guardar.
+Los proyectos de otras empresas no deben poder modificarse.
+No deben romperse los flujos de creación ni de edición para otros roles.
+Restricciones
+
+No realices cambios generales ni refactorizaciones innecesarias.
+
+No hagas lo siguiente:
+
+No cambies la arquitectura del proyecto.
+No reemplaces el sistema de formularios.
+No reemplaces la validación actual.
+No cambies el proveedor de almacenamiento.
+No renombres tablas, modelos, rutas o campos sin necesidad.
+No cambies el comportamiento de otros módulos.
+No agregues campos nuevos a la base de datos salvo que sea estrictamente necesario y esté justificado.
+No elimines validaciones existentes para hacer que la petición pase.
+No ocultes el error con conversiones forzadas sin entender su causa.
+No borres imágenes existentes para simplificar la actualización.
+
+Haz el cambio mínimo necesario y compatible con el código actual.
+
+Proceso requerido
+Reproduce el error desde el panel del representante.
+Inspecciona los datos reales que salen del formulario.
+Identifica el campo exacto que llega como arreglo.
+Revisa por qué el sistema espera un número.
+Corrige la incompatibilidad en el lugar adecuado.
+Inspecciona si los archivos de imagen realmente se incluyen en la petición.
+Sigue el recorrido de las imágenes hasta su almacenamiento.
+Corrige el punto exacto donde dejan de procesarse.
+Verifica permisos y relación del representante con la empresa y el proyecto.
+Prueba nuevamente la creación y actualización.
+Confirma que no se afectaron otros roles ni otros formularios.
+Pruebas mínimas
+
+Comprueba estos escenarios:
+
+Actualizar un proyecto modificando solo el nombre.
+Actualizar la descripción.
+Actualizar el estado del proyecto.
+Actualizar los servicios o productos utilizados.
+Actualizar sin agregar nuevas imágenes.
+Agregar una imagen nueva.
+Agregar varias imágenes dentro del límite permitido.
+Conservar imágenes existentes.
+Editar otros campos sin perder imágenes.
+Intentar superar el límite de imágenes.
+Intentar actualizar como representante un proyecto de otra empresa.
+Crear un proyecto nuevo como representante.
+Confirmar que otros roles siguen funcionando.
+
+También revisa la inconsistencia visible en el formulario entre el texto “máximo 4” y el contador “0/5 imágenes”. Determina cuál es el límite real ya definido en el sistema y haz que la interfaz sea consistente, sin modificar la regla de negocio existente.

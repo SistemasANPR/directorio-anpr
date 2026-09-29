@@ -1,0 +1,98 @@
+Corregir fallo al crear y actualizar empresas (error genérico y sin registro)
+
+Contexto:
+Desde Dashboard → Directorio de Empresas → Nueva Empresa o Editar Empresa.
+Aunque se completen solo los campos obligatorios, al pulsar Registrar Empresa aparece el toast rojo: “No se pudo registrar la empresa: Error al crear la empresa”.
+Al editar una empresa y guardar, aparece: “Error al actualizar empresa”.
+
+Evidencia adjunta:
+
+Capturas con el toast de error en creación y en actualización.
+
+Objetivo
+
+Restaurar el funcionamiento del alta y edición de empresas con validaciones correctas y mensajes de error útiles, evitando el toast genérico y permitiendo completar el proceso con éxito.
+
+Pasos para reproducir
+
+Abrir “Nueva Empresa”, completar campos obligatorios y pulsar “Registrar Empresa”.
+
+Resultado actual: aparece el toast de error y no se crea el registro.
+
+Abrir una empresa existente, modificar cualquier campo y pulsar “Guardar/Actualizar”.
+
+Resultado actual: aparece el toast de error y no se guarda.
+
+Alcance
+
+Frontend (formulario, envío, manejo de errores y toasts).
+
+Backend/API (endpoints create/update, validaciones, reglas de plan/membresía y permisos).
+
+No afectar datos existentes.
+
+Trabajo solicitado
+
+Diagnóstico del backend
+
+Revisar que los endpoints de crear y actualizar empresa estén activos, reciban el payload esperado y regresen códigos y mensajes de error detallados (no genéricos).
+
+Verificar reglas de negocio que podrían estar bloqueando:
+
+Límites o validación del Plan/Membresía (productos, proyectos, fotos, visibilidad, fechas).
+
+Campos obligatorios y unicidades (nombre, email, slug, dominio/website).
+
+Permisos/roles del usuario en el dashboard.
+
+Fechas de inicio/fin de la membresía y periodicidad válidas.
+
+Asegurar que el backend devuelva mensajes por campo (ej.: name, email_main, membership, etc.) y un mensaje general claro.
+
+Manejo de errores en frontend
+
+Reemplazar el toast genérico por:
+
+Mensajes por campo visibles en el formulario.
+
+Mensaje general con la causa real (por ejemplo: límite de plan, campo inválido, permiso insuficiente).
+
+Mantener estados de carga y evitar doble envío.
+
+Validaciones funcionales
+
+Confirmar que con solo los campos obligatorios la empresa se crea con éxito.
+
+Confirmar que actualizar cualquier campo persiste y refleja el cambio en la lista.
+
+Verificar que la sección de Plan/Membresía no bloquee cuando los límites son “Sin límite” o cuando existen cupos disponibles, y que el mensaje de bloqueo sea claro si se supera un límite.
+
+Trazabilidad y logs
+
+Registrar en logs del servidor la razón del fallo (ruta, payload sanitizado, regla que falló).
+
+Incluir en la respuesta de error un identificador de seguimiento para soporte.
+
+Criterios de aceptación (CA)
+
+CA1: Crear empresa con campos mínimos funciona y la empresa aparece en la lista sin recargar toda la página.
+
+CA2: Actualizar empresa guarda cambios y se reflejan inmediatamente en la UI.
+
+CA3: Si hay error, se muestran mensajes específicos por campo y un mensaje general claro (no el genérico actual).
+
+CA4: Las validaciones de Plan/Membresía se aplican correctamente y, si bloquean, explican el motivo (límite alcanzado, fechas inválidas, etc.).
+
+CA5: No hay doble envío; el botón muestra estado de carga y se deshabilita durante el proceso.
+
+CA6: Queda documentada la causa raíz y la corrección aplicada.
+
+Pruebas a entregar
+
+Flujo de creación con éxito (capturas antes/después).
+
+Flujo de actualización con éxito.
+
+Caso negativo con error por campo visible (ej.: email inválido) y caso negativo por regla de plan (mensaje claro).
+
+Confirmación de que los toasts muestran información útil y ya no el texto genérico.

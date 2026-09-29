@@ -1,0 +1,93 @@
+Contexto
+En Crear Nuevo Certificado (archivo: client/src/pages/Certificates.tsx), la sección “Asignar automáticamente a planes de membresía” no persiste: el checkbox y la selección de planes no se envían/guardan. En Editar sí se guarda, pero al abrir el modal a veces no refleja el estado hasta que se interactúa.
+
+Objetivo
+
+Que al crear un certificado se envíen y guarden correctamente:
+
+asignacionAutomatica: boolean
+
+planesMembresia: string[] (IDs de planes marcados)
+
+Que al editar el certificado:
+
+El checkbox y los planes aparezcan pre-marcados desde los datos del backend, sin necesidad de hacer clic.
+
+Mantener los mismos nombres de campos y formato en ambos modals (crear/editar), sin afectar el resto del sistema.
+
+Nombres de campos (obligatorios y únicos)
+Usar exactamente estos nombres en crear y editar:
+
+nombreCertificado: string
+
+descripcion: string | ''
+
+fechaEmision: string (ISO yyyy-mm-dd)
+
+fechaVencimiento: string | '' (ISO yyyy-mm-dd)
+
+entidadEmisora: string | ''
+
+planesMembresia: string[] (IDs de planes)
+
+asignacionAutomatica: boolean
+
+estado: 'Activo' | 'Inactivo' (o el enum real de la API)
+
+Imagen: opcional (si no cambia, no la reenvíes)
+
+Qué hay que arreglar (crear y editar)
+
+Conectar el checkbox de Radix a estado real
+
+El control que se ve como <button role="checkbox"> no envía nada por submit nativo.
+
+Debe estar vinculado a estado (controlado) y su valor booleano debe entrar al payload como asignacionAutomatica: true/false.
+
+En editar, inicializar ese estado con el valor que llega del backend para que el checkbox aparezca ya marcado sin hacer clic.
+
+Conectar los checkboxes de planes a planesMembresia: string[]
+
+Cada plan marcado agrega su ID al array.
+
+En editar, prellenar el array para que aparezcan pre-marcados.
+
+Enviar el payload correcto en CREAR
+
+Asegura que el handler de crear incluya explícitamente asignacionAutomatica y planesMembresia (no depende del DOM).
+
+Fechas en ISO (yyyy-mm-dd).
+
+Imagen opcional: si el usuario no cambia imagen, no la incluyas (no obligar a re-subir).
+
+Sincronizar con EDITAR
+
+En el modal de Editar (client/src/components/EditCertificateModal.tsx), usar los mismos nombres de campos y el mismo shape del payload.
+
+Al abrir, hidratar el formulario con los datos del certificado para que el checkbox y los planes ya aparezcan en su valor real.
+
+No tocar nada fuera de estos modals
+
+Limita cambios a client/src/pages/Certificates.tsx (crear) y client/src/components/EditCertificateModal.tsx (editar).
+
+No modifiques otros flujos.
+
+Criterios de aceptación (QA)
+
+Creo un certificado marcando “Asignar automáticamente…” y 2 planes → se guarda; al volver a Editar, el checkbox aparece marcado y los mismos 2 planes aparecen seleccionados sin tocar nada.
+
+Desmarco la opción y guardo → el checkbox aparece desmarcado al reabrir y no hay planes preseleccionados.
+
+Si no cambio imagen al editar, no me obliga a re-subir; guarda ok.
+
+Fechas llegan como ISO; no hay errores de validación por tipos.
+
+No se rompe ningún otro modal o pantalla.
+
+Entrega
+
+Lista de archivos y líneas tocadas.
+
+Confirmación de que asignacionAutomatica y planesMembresia se inyectan explícitamente en el payload en crear/editar.
+
+Evidencia de que en editar el estado inicial del checkbox y los planes proviene del backend y se ve sin interacción.

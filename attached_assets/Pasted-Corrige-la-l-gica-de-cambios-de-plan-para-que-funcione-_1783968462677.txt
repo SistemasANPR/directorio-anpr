@@ -1,0 +1,68 @@
+Corrige la lógica de cambios de plan para que funcione únicamente en la próxima facturación y siempre respete el último cambio solicitado por el usuario.
+
+Necesito este comportamiento exacto:
+
+Cuando un representante cambie de plan, el cambio no debe aplicarse inmediatamente. El plan actual debe mantenerse activo, con todos sus beneficios y límites, hasta que llegue la siguiente fecha de facturación.
+
+Si el usuario cambia de plan varias veces antes de esa fecha, por ejemplo de Premium a Básico, luego nuevamente a Premium y después otra vez a Básico, no deben acumularse varios cambios pendientes. Debe existir un solo cambio programado y siempre debe conservarse únicamente el último plan seleccionado.
+
+Cada nuevo cambio debe reemplazar el cambio pendiente anterior.
+
+Ejemplo:
+
+Plan activo actual: Premium
+Primer cambio solicitado: Básico
+Segundo cambio solicitado: Premium
+Tercer cambio solicitado: Básico
+
+Resultado esperado:
+
+El plan activo sigue siendo Premium hasta la próxima facturación.
+El único plan programado debe ser Básico, porque fue el último cambio realizado.
+No deben existir múltiples registros, cobros o cambios acumulados.
+En la próxima facturación debe cobrarse y activarse únicamente el último plan seleccionado.
+
+El nuevo plan solo debe activarse cuando llegue la fecha de renovación y el nuevo pago haya sido confirmado correctamente.
+
+Si el pago falla, no debe activarse el plan programado.
+
+También corrige la lógica de límites cuando un usuario baja de un plan superior a uno inferior.
+
+Ejemplo:
+
+Si un usuario tiene el plan Premium con productos ilimitados y actualmente tiene más de 8 productos, pero en su próxima facturación cambia al plan Básico, que permite solamente 8 productos:
+
+No borrar ningún producto.
+No desactivar ni eliminar los productos de su dashboard.
+Todos los productos deben seguir apareciendo en el panel privado del representante.
+En el directorio público solo deben mostrarse hasta 8 productos.
+Los productos que excedan el límite deben conservarse en la base de datos.
+Los productos excedentes deben quedar ocultos únicamente en el directorio público.
+Si posteriormente el usuario vuelve a un plan superior, los productos ocultos deben volver a mostrarse automáticamente, sin tener que crearlos otra vez.
+
+La misma lógica debe aplicarse a cualquier otro límite del plan, como proyectos, fotografías u otros contenidos:
+
+Nunca borrar contenido por un cambio de plan.
+Mantener todo visible en el dashboard del representante.
+Aplicar los límites solamente en la visualización pública del directorio.
+Si el usuario vuelve a un plan con límites mayores, restaurar automáticamente la visibilidad pública del contenido correspondiente.
+
+El backend debe diferenciar claramente entre:
+
+Plan activo actual.
+Último plan programado.
+Fecha de próxima facturación.
+Estado del pago.
+Límites del plan activo.
+
+Reglas importantes:
+
+Debe existir un solo cambio de plan pendiente por membresía.
+Cada nuevo cambio debe sobrescribir el cambio pendiente anterior.
+No crear múltiples suscripciones, facturas o cobros por cambiar varias veces antes de la renovación.
+No modificar inmediatamente los beneficios del plan activo.
+No eliminar contenido al reducir el plan.
+Los límites deben aplicarse solamente cuando el nuevo plan entre en vigor.
+La vista pública del directorio debe respetar los límites del plan activo.
+El dashboard privado debe seguir mostrando todo el contenido del representante.
+Mantén el diseño actual y modifica únicamente la lógica necesaria.

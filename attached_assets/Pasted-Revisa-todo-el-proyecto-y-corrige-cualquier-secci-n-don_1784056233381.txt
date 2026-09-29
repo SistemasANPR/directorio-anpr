@@ -1,0 +1,33 @@
+Revisa todo el proyecto y corrige cualquier sección donde los precios, cargos, totales, etiquetas o símbolos de moneda sigan apareciendo en USD cuando desde el panel de administración se haya seleccionado MXN.
+
+La moneda configurada en el panel de administración debe funcionar como la moneda global del sistema. Por lo tanto, si el administrador selecciona MXN, toda la plataforma debe mostrar y utilizar pesos mexicanos de forma consistente, incluyendo:
+
+Panel de administración.
+Sitio público.
+Productos y servicios.
+Carrito y proceso de pago.
+Suscripciones, planes y renovaciones.
+Facturas, recibos y comprobantes.
+Correos electrónicos y notificaciones.
+Reportes, estadísticas y movimientos.
+Impuestos, descuentos, comisiones y totales.
+Cualquier texto, símbolo o referencia relacionada con precios o cobros.
+
+No debe quedar ningún valor fijo, texto hardcodeado, símbolo “$” ambiguo ni referencia a USD en ninguna parte del proyecto cuando la moneda activa sea MXN.
+
+El selector de moneda del panel de administración debe guardar correctamente la opción seleccionada y aplicar el cambio de manera global, tanto en la interfaz como en la lógica del sistema. La moneda mostrada debe obtenerse siempre desde esa configuración central, evitando que cada módulo maneje su propia moneda de forma independiente.
+
+Además, verifica que:
+
+El formato corresponda correctamente a la moneda seleccionada.
+Para MXN se utilice el código “MXN” o “MX$” cuando sea necesario evitar confusión.
+Los decimales, separadores de miles y formatos regionales sean correctos.
+La moneda seleccionada se mantenga después de recargar la página o reiniciar la aplicación.
+No existan valores predeterminados en USD que sobrescriban la configuración del administrador.
+Las integraciones de pago, bases de datos, API y procesos internos reciban la moneda seleccionada correctamente.
+El cambio no sea únicamente visual: también debe aplicarse a los cobros y operaciones reales.
+Si se cambia nuevamente la moneda desde el administrador, toda la plataforma se actualice de forma consistente.
+
+Realiza una revisión completa del código para localizar textos fijos, configuraciones duplicadas, valores predeterminados, componentes o funciones que estén forzando el uso de USD. Centraliza el manejo de moneda y deja el sistema preparado para que la moneda seleccionada desde el panel de administración sea la única fuente de verdad.
+
+Al finalizar, entrega un resumen de los archivos modificados, los problemas encontrados y las correcciones realizadas.

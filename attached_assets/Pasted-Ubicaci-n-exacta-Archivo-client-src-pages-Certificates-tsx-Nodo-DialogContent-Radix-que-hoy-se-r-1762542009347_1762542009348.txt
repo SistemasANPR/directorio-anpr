@@ -1,0 +1,93 @@
+Ubicación exacta
+Archivo: client/src/pages/Certificates.tsx
+Nodo: DialogContent (Radix) que hoy se renderiza con id="radix-:r0:" y clases tipo fixed ... grid w-full ... max-w-2xl.
+
+Situación actual
+Ese DialogContent ocupa visualmente casi toda la pantalla y no tiene scroll interno en el contenido. El formulario crece sin límites y obliga a scrollear el fondo.
+
+Objetivo
+Reconstruir el modal usando el mismo patrón/componente base que los modals ya correctos (Planes/Etiquetas):
+
+Header y Footer siempre visibles.
+
+Scroll solo en el cuerpo (contenido) del modal.
+
+El body de la página no scrollea cuando el modal está abierto.
+
+Instrucciones obligatorias (sin alternativas)
+
+Usar el modal base estándar
+
+Reutiliza el mismo patrón/componente de modal que ya funciona en Planes/Etiquetas (misma estructura y estilos).
+
+No crees variantes locales ni estilos ad-hoc; alinear 100% con el modal estándar del proyecto.
+
+Estructura clara: header / body (scrollable) / footer
+
+Mantén el título “Crear Nuevo Certificado” en el header (con botón “X”).
+
+El formulario completo (imagen, descripción, fechas, entidad emisora, checkboxes…) va en el cuerpo del modal.
+
+Los botones “Cancelar” y “Crear Certificado” van en el footer (siempre visibles).
+
+Scroll interno del cuerpo del modal
+
+Limita la altura total del modal respecto al viewport (igual que en los otros modals) y habilita overflow vertical en el cuerpo.
+
+El header y footer no se mueven; únicamente scrollea el contenido.
+
+Eliminar estilos que fuerzan pantalla completa
+
+Quita/ajusta cualquier clase/estilo en DialogContent que:
+
+fuerce altura completa,
+
+impida el overflow en el cuerpo,
+
+convierta el contenido en un grid que crezca sin límite.
+
+Usa los mismos tamaños/espaciados del modal estándar (ancho, sombras, bordes, paddings, z-index, backdrop).
+
+Bloqueo del scroll del body
+
+Con el modal abierto, el body no debe scrollear (mismo comportamiento que los demás modals).
+
+Accesibilidad y comportamiento
+
+Foco inicial en el primer campo del formulario.
+
+Trampa de foco dentro del modal.
+
+Cierre con ESC y backdrop como en el resto.
+
+No cambiar el formulario
+
+No modifiques nombres de campos, validaciones ni lógica de carga de imagen. Solo envoltorio y layout del modal.
+
+Checklist (QA)
+
+Abrir Nuevo Certificado ⇒ se ve idéntico a los modals de Planes/Etiquetas (no pantalla completa).
+
+Al tener mucho contenido, aparece scroll interno solo en el cuerpo; header y footer fijos.
+
+El body de la página no scrollea con el modal abierto.
+
+Botones Cancelar / Crear siempre visibles (no quedan fuera de la vista).
+
+En móvil/tablet se llega a todo el contenido con el scroll interno y el modal no se sale del viewport.
+
+Subida de imagen, fechas, checkboxes y validaciones funcionan igual.
+
+Ningún otro modal del sistema cambia su aspecto o comportamiento.
+
+Entrega esperada
+
+Indica qué componente base de modal reutilizaste (el mismo que Planes/Etiquetas).
+
+Lista de archivos exactos modificados.
+
+Menciona qué clases/estilos “full screen” quitaste o ajustaste en DialogContent.
+
+Confirma cómo garantizaste el scroll interno del cuerpo y el bloqueo del body.
+
+Adjunta capturas antes/después.

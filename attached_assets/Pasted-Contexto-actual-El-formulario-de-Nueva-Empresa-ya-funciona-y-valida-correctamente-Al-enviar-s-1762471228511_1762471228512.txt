@@ -1,0 +1,108 @@
+Contexto actual:
+
+El formulario de “Nueva Empresa” ya funciona y valida correctamente.
+
+Al enviar, sigue apareciendo el mensaje: “No se pudo registrar la empresa: Error al crear la empresa”.
+
+Necesitamos poder crear empresas sin problemas y sin impacto visible en el sitio público/exterior.
+
+Objetivo
+
+Encontrar la causa raíz en backend/API y corregirla, garantizando que la creación de empresas funcione de extremo a extremo, con mensajes de error útiles y sin regresiones en otras áreas.
+
+Alcance
+
+Backend/API, reglas de negocio, validaciones de plan/membresía, permisos y persistencia en BD/almacenamiento.
+
+Frontend solo para consumo de errores (ya envía correctamente).
+
+No modificar funcionalidades del “exterior” (sitio público). Cualquier cambio debe ser backward compatible.
+
+Pasos de reproducción
+
+Dashboard → Directorio de Empresas → Nueva Empresa.
+
+Completar solo campos obligatorios.
+
+Enviar.
+
+Resultado actual: toast rojo con el error anterior y no se crea el registro.
+
+Plan de diagnóstico (profundo)
+
+Trazabilidad de la petición
+
+Identificar endpoint exacto, payload recibido, respuesta y códigos HTTP.
+
+Confirmar autenticación, permisos/rol y tenant/organización (si aplica).
+
+Reglas de negocio que pueden bloquear
+
+Plan/Membresía: límites de productos/proyectos/fotos, visibilidad, fechas inicio/fin, periodicidad; “Sin límite” no debe bloquear.
+
+Unicidades: nombre, slug, email principal, website/dominio (conflictos 409 o 422).
+
+Relaciones: empresa ↔ usuario de WordPress (si está vinculado), categoría/sector, ubicación.
+
+Fechas y zona horaria: rangos válidos, nulos permitidos.
+
+Permisos: políticas/middlewares que prohíban crear.
+
+Persistencia y restricciones
+
+Esquema/constraints de BD (NOT NULL, claves foráneas, defaults).
+
+Triggers/hooks que podrían fallar (ej.: generación de slug, auditoría, indexaciones).
+
+Almacenamiento de imágenes/documentos: permisos y tamaño/contador.
+
+Logs y manejo de errores
+
+Revisar logs del servidor y capturar la excepción real (stack, regla o constraint que falla).
+
+Asegurar que el backend devuelva errores por campo y un mensaje general entendible (no genérico).
+
+Compatibilidad y entorno
+
+Revisar variables de entorno, rutas, CORS, límites de payload, tiempo de espera, colas.
+
+Verificar diferencias entre staging y producción.
+
+Trabajo solicitado (corrección)
+
+Ajustar la(s) regla(s)/constraint(s) que estén bloqueando la creación.
+
+Normalizar/transformar datos de entrada si corresponde (slug, urls, emails) sin romper registros existentes.
+
+Asegurar que validaciones de plan/membresía solo bloqueen cuando realmente se superan límites.
+
+Devolver errores específicos por campo y un mensaje general claro en casos negativos.
+
+Mantener compatibilidad hacia atrás para que el exterior no cambie.
+
+Criterios de aceptación (CA)
+
+CA1: Con campos mínimos válidos, la empresa se crea y aparece en la lista sin recargar toda la página.
+
+CA2: En caso de error, se muestran mensajes por campo y un mensaje general no genérico, con causa clara.
+
+CA3: Las reglas de Plan/Membresía funcionan y “Sin límite” no bloquea.
+
+CA4: No hay regresiones en edición, listado, ni en el sitio público/exterior.
+
+CA5: Queda documentada la causa raíz y la solución aplicada.
+
+Pruebas a entregar
+
+Flujo de creación exitoso con capturas (payload de ejemplo y respuesta).
+
+Casos negativos:
+
+conflicto de unicidad,
+
+límite de plan,
+
+permiso insuficiente.
+Cada uno debe mostrar el error correcto por campo.
+
+Confirmación de que no hay cambios visibles en el exterior.

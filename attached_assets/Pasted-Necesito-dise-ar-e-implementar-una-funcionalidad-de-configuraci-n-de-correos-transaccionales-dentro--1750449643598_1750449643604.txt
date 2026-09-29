@@ -1,0 +1,15 @@
+Necesito diseñar e implementar una funcionalidad de configuración de correos transaccionales dentro de nuestro sistema. Esta funcionalidad debe ser completamente intuitiva y fácil de usar para una persona no técnica.
+El objetivo es que los usuarios puedan configurar y gestionar las credenciales y todos los parámetros necesarios para el envío de correos electrónicos transaccionales sin necesidad de conocimientos técnicos avanzados.. Los correos que el sistema enviará serán para las siguientes acciones del sistema: Bienvenida (Cuando un representante es asignado a una empresa o cuando un usuario compra un plan), renovación cuando el sistema renueva el plan, cancelación del plan, Notificación de nueva reseña (cuando el administrador aprueba una nueva reseña de la empresa), Avisos de próximo vencimiento de plan (este correo podrá seleccionarse cuantos días antes del vencimiento se envía de manera automática), además poder crear un nuevo tipo de correo. Estas funcionalidades las podrá realizar el usuario administrador dentro del sistema   
+La interfaz de usuario debe ser clara, guiada y autoexplicativa. Incluye, pero no se limita a, las siguientes opciones de configuración:
+•	Proveedor de correo saliente (SMTP): Opciones preestablecidas para los servicios más comunes (ej. Gmail, Outlook 365, SendGrid, Mailgun) con la posibilidad de configurar un servidor SMTP personalizado.
+•	Dirección de correo electrónico del remitente: Campo claro para definir la dirección "De" de los correos.
+•	Nombre del remitente: Campo para definir el nombre que aparecerá al lado de la dirección de correo.
+•	Servidor SMTP: Campo para la dirección del servidor (ej. smtp.ejemplo.com).
+•	Puerto SMTP: Campo para el puerto del servidor (ej. 587, 465).
+•	Tipo de cifrado: Opciones para SSL/TLS, STARTTLS y "Ninguno", con recomendaciones claras sobre la seguridad.
+•	Nombre de usuario (o clave API si aplica): Campo para las credenciales de autenticación.
+•	Contraseña (o secreto API si aplica): Campo seguro para la contraseña/secreto, con opciones para "mostrar/ocultar" y "probar conexión".
+•	Plantillas de correo: Un gestor de plantillas que permita a los usuarios no técnicos personalizar el contenido de los correos (asunto, cuerpo del mensaje, variables dinámicas como {{nombre_usuario}}, {{numero_pedido}}). Considera un editor WYSIWYG si es factible.
+•	Prueba de envío: Un botón o función para enviar un correo de prueba y verificar que la configuración es correcta.
+•	Mensajes de error claros: Feedback comprensible si la configuración es incorrecta o hay problemas de conexión.
+La solución debe priorizar la seguridad de las credenciales y el manejo robusto de errores.

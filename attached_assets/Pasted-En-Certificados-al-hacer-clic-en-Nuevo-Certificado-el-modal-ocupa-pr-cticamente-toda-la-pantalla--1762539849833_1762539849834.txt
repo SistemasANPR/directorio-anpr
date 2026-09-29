@@ -1,0 +1,67 @@
+En Certificados, al hacer clic en “Nuevo Certificado” el modal ocupa prácticamente toda la pantalla y no tiene scroll interno. Quiero que se vea y funcione igual que los demás modals del sistema (por ejemplo, los de Planes y Etiquetas), conservando todo el formulario actual.
+
+Lo que necesito
+
+Unificar estilo y estructura del modal
+
+Usar el mismo componente/base de modal que el resto de la aplicación (misma cabecera, cuerpo y pie).
+
+Tamaños y espaciados consistentes (ancho, bordes, sombras, padding).
+
+Header con título “Nuevo Certificado” y botón cerrar (X).
+
+Footer con botones Cancelar y Crear, alineados como en los otros modals.
+
+Scroll interno (no pantalla completa)
+
+El modal debe tener altura máxima razonable (como los demás) y scroll solo en el cuerpo del modal cuando el contenido exceda el alto.
+
+El fondo de la página no debe scrollear cuando el modal esté abierto.
+
+El header y el footer del modal siempre visibles; solo el contenido (formulario) scrollea.
+
+Formulario intacto y usable
+
+Conservar todos los campos actuales (imagen, descripción, fechas, entidad emisora, asociación a planes, etc.).
+
+Asegurar que el arrastrar/seleccionar imagen funcione dentro del nuevo layout.
+
+La validación, estados de error y mensajes deben mostrarse correctamente sin romper el layout.
+
+Accesibilidad y comportamiento
+
+Foco inicial en el primer campo del formulario.
+
+Trampa de foco dentro del modal; cierre con ESC si así es en el resto.
+
+Clic afuera y scroll del body comportándose igual que en otros modals.
+
+Mantener i18n/textos/estilos consistentes.
+
+Responsivo
+
+En pantallas pequeñas, el modal debe adaptarse (alto máximo, scroll interno) sin salirse de los márgenes.
+
+Evitar que botones o inputs queden fuera de vista sin posibilidad de llegar con scroll.
+
+Criterios de aceptación (QA)
+
+Abrir “Nuevo Certificado” ⇒ Se muestra un modal como los demás, con header y footer visibles y scroll interno en el cuerpo.
+
+Scrolleo del contenido fluido; el body queda bloqueado.
+
+Subida de imagen, fechas y checkboxes funcionan como antes.
+
+No hay desbordes, superposiciones ni recortes de contenido.
+
+Cerrar y volver a abrir mantiene el comportamiento y estilos correctos.
+
+En móvil/tablet el modal sigue siendo usable (scroll interno, botones accesibles).
+
+Entrega
+
+Explica qué componente/estilos de modal se reutilizaron para unificarlo.
+
+Confirma que no se modificó el contenido del formulario, solo la estructura del modal y su comportamiento de scroll.
+
+Verifica que otros modals (Planes, Etiquetas, Categorías) no se vean afectados.

@@ -1,0 +1,105 @@
+Contexto
+
+Proyecto: Directorio de Proveedores de Equipamiento Urbano.
+
+Pantalla: Panel del Representante (sidebar/aside izquierdo + contenido principal).
+
+Problema: en escritorio, el enlace/botón “Cerrar sesión” no es visible en el sidebar izquierdo; además aparece un scroll horizontal molesto en toda la vista.
+
+Ver captura de referencia: (la tengo local; asume que el correo/nombre del representante es largo).
+
+Objetivo
+
+Hacer visible y accesible “Cerrar sesión” dentro del aside izquierdo en todas las resoluciones soportadas, sin solapamientos ni recortes.
+
+Eliminar el scroll horizontal no intencional en la página.
+
+Ajustar el ancho del aside para que se adapte al nombre/correo del representante (que puede ser largo) sin romper el layout.
+
+Requisitos funcionales (Acceptance Criteria)
+
+AC1 – Visibilidad: “Cerrar sesión” siempre aparece dentro del aside en desktop y tablet. No debe quedar oculto tras overflow ni requerir scroll horizontal para verlo.
+
+AC2 – Ancho del aside: El aside crece lo suficiente para acomodar nombres/correos largos, con un mínimo razonable y un máximo para no invadir el contenido principal. Los textos largos pueden truncarse con elipsis si exceden el máximo.
+
+AC3 – Sin scroll horizontal: No debe haber scroll horizontal en html, body ni en el contenedor principal salvo componentes que lo necesiten explícitamente (p. ej., tablas responsivas con scroll interno).
+
+AC4 – Responsivo: En puntos de quiebre menores (tablet/móvil), el aside puede colapsar o volverse drawer, pero “Cerrar sesión” sigue accesible (menú colapsable, botón dentro del menú, etc.).
+
+AC5 – Accesibilidad: El control de “Cerrar sesión” es navegable por teclado, tiene contraste suficiente y rol/label adecuados para lectores de pantalla.
+
+AC6 – Persistencia del layout: No se rompen otras secciones (Resumen, Mi Empresa, Proyectos, etc.). Los breadcrumbs/tabs siguen alineados.
+
+Requisitos técnicos (lineamientos, sin código)
+
+Layout: Revisa el contenedor general (probable display: grid o flex). Evita que el contenido principal imponga un ancho mayor que el viewport.
+
+Anchuras máximas: Define un max-width del main y/o usa contenedores fluidos para que no empujen el layout.
+
+Overflow: Evita overflow-x: auto|scroll en html/body. Si se necesita scroll horizontal, que sea local (por ejemplo, tablas) y no del documento.
+
+Aside adaptable:
+
+Establece min-width y max-width razonables para el aside (p. ej., se ajusta al contenido hasta un tope).
+
+Para textos (nombre/correo) usa truncamiento con elipsis si superan el máximo.
+
+Evita que iconos o paddings sumen ancho inesperado (usar box-sizing: border-box).
+
+Z-index/posición: Asegura que el botón de “Cerrar sesión” no quede tapado por banners o toasts (como el de error rojo de la captura).
+
+Breakpoints: En móvil, el aside puede ser un drawer. Garantiza que el botón “Cerrar sesión” esté en el slot inferior del menú o accesible desde un botón de menú.
+
+Archivos a revisar (ajusta a tu estructura)
+
+Hoja(s) de estilo global y del layout del dashboard.
+
+Componente del aside izquierdo (markup y estilos).
+
+Contenedor del contenido principal y cualquier wrapper que pueda estar forzando ancho.
+
+Componentes que podrían estar causando overflow (tablas, toasts, badges, carousels).
+
+Posibles fuentes de overflow a auditar
+
+Elementos con anchos fijos grandes (px) dentro del main.
+
+Margen/padding que se desborda en combinaciones de display:flex.
+
+Elementos absolutos o toasts posicionados fuera del viewport.
+
+Tablas o listas sin max-width/wrapping.
+
+Definición de Hecho (DoD)
+
+Todos los AC cumplen en Chrome, Firefox y Safari actuales.
+
+Pruebas visuales en ≥1280px, 1024px, 768px, 375px.
+
+No hay scroll horizontal en el documento.
+
+Lighthouse/axe sin errores críticos de accesibilidad en el menú lateral.
+
+QA manual: navegar con Tab hasta “Cerrar sesión”, activar y comprobar que funciona.
+
+Pasos de prueba (QA)
+
+Carga el Panel del Representante con un correo muy largo (simular si es necesario).
+
+Verifica que el aside se ajuste y que “Cerrar sesión” se vea sin desplazamiento horizontal.
+
+Reduce el ancho de la ventana a 1024px, 768px y 375px; el control de “Cerrar sesión” sigue accesible.
+
+Revisa que ninguna sección introduzca scroll horizontal.
+
+Clic en “Cerrar sesión” → redirige correctamente.
+
+Entregables
+
+Explica brevemente qué causaba el overflow/ocultamiento.
+
+Describe qué cambiaste (componentes/estilos afectados).
+
+Incluye capturas antes/después y una lista de verificación de los AC.
+
+(Opcional) Propón una pequeña guía de estilos para anchuras del aside y manejo de textos largos.

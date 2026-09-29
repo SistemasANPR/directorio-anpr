@@ -1,0 +1,55 @@
+Aún persisten varios problemas en el formulario de “Registrar Nueva Empresa”.
+
+Solo se arregló parcialmente el tema de “vincular usuario de WordPress”, pero el resto del formulario sigue teniendo errores similares.
+
+Por ejemplo:
+
+Cuando selecciono una categoría o etiqueta, el valor desaparece o se deselecciona automáticamente.
+
+Algunos campos de texto pierden su valor al escribir, cambiar de vista o actualizar resultados.
+
+En general, los valores del formulario no se mantienen correctamente y se reinician con facilidad.
+
+Necesito que revises y corrijas el manejo completo del formulario, no solo un campo en específico.
+
+Lo que debe hacerse:
+
+Todos los campos (texto, selects, categorías, etiquetas, archivos, usuario vinculado, etc.) deben mantener su valor mientras el usuario interactúa con el formulario.
+
+El valor de un campo no debe limpiarse ni reiniciarse:
+
+al escribir,
+
+al perder el foco,
+
+al actualizar resultados (si hay búsqueda en vivo),
+
+ni al cambiar de pestaña o subvista dentro del formulario.
+
+Los campos solo deben limpiarse cuando el usuario cierra el formulario/modal o cuando se pulse explícitamente un botón de “Limpiar” o “Cancelar”.
+
+Si existe búsqueda en vivo (por ejemplo, para vincular usuarios o filtrar categorías), aplica un debounce de 300–500 ms, para que el refresco de resultados no sobrescriba el texto o valor seleccionado.
+
+Verifica que no existan problemas de remontaje del componente (key, re-render, useEffect, watchers) que estén reiniciando los valores.
+
+Revisa si hay resets automáticos del formulario después de cada acción (como guardar, cambiar categoría o actualizar listas) y evita que afecten los campos actuales.
+
+Si hay relaciones entre campos (por ejemplo, categoría → etiquetas), los valores dependientes deben conservarse coherentemente y no eliminarse al actualizar otros campos.
+
+Implementa una gestión de estado sólida (por ejemplo, usando un objeto central formData o un store global/reactivo) que mantenga todos los valores sincronizados correctamente.
+
+Asegúrate de que al guardar, la información enviada sea la misma que el usuario ve en pantalla y que los valores seleccionados sigan visibles después del guardado.
+
+Criterios de aceptación:
+
+Puedo escribir en cualquier campo sin que el texto se borre.
+
+Puedo seleccionar categorías, etiquetas u opciones y se mantienen seleccionadas.
+
+El formulario no se reinicia automáticamente por acciones internas.
+
+Solo se limpia al cerrar o cancelar.
+
+Todo el flujo de edición y registro funciona de forma estable y consistente.
+
+En resumen: corrige todo el manejo de estado del formulario de “Registrar Nueva Empresa” para que todos los campos se comporten correctamente, sin pérdidas de datos ni reseteos involuntarios.

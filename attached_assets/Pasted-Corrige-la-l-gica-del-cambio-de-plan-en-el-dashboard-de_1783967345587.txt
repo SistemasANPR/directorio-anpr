@@ -1,0 +1,43 @@
+Corrige la lógica del cambio de plan en el dashboard del representante.
+
+Actualmente, cuando el usuario cambia de plan, aparece el mensaje de que los cambios se aplicarán en el próximo período de facturación. Necesito que todo el sistema respete exactamente esa lógica.
+
+Cuando un representante seleccione otro plan:
+
+No cambies el plan inmediatamente.
+Mantén activo el plan actual hasta su fecha de vencimiento.
+Mantén también sus beneficios, límites y permisos actuales hasta esa fecha.
+Guarda el nuevo plan como próximo plan o cambio programado.
+Aplica el nuevo plan únicamente en la siguiente fecha de facturación.
+En esa fecha, realiza el cobro correspondiente al nuevo plan.
+Activa el nuevo plan solo después de que el pago haya sido confirmado correctamente.
+No realices cobros inmediatos ni cálculos proporcionales.
+No cambies la fecha de inicio ni la fecha de vencimiento del período actual.
+
+Después de solicitar el cambio, muestra este mensaje:
+
+Plan cambiado exitosamente
+Tu cambio al plan [nombre del nuevo plan] ha sido programado. Continuarás con tu plan actual hasta el [fecha de vencimiento]. El nuevo plan se aplicará en tu próxima facturación.
+
+Mientras exista un cambio programado, muestra en el dashboard:
+
+Plan actual.
+Próximo plan.
+Fecha en la que se aplicará el cambio.
+Periodicidad del próximo plan, mensual o anual.
+Precio de la próxima renovación.
+Opción para cancelar el cambio programado.
+
+Ejemplo:
+
+Plan actual: Premium
+Próximo plan: Básico
+Cambio programado para: 29/01/2027
+
+El backend debe diferenciar claramente entre el plan activo y el próximo plan. Todos los beneficios y límites deben seguir consultando el plan activo hasta que llegue la fecha de renovación y el pago sea exitoso.
+
+Si el pago falla, no actives el nuevo plan.
+
+Evita que el usuario programe varios cambios al mismo tiempo. Si ya existe un cambio pendiente, permite reemplazarlo o cancelarlo.
+
+Mantén el diseño actual y modifica únicamente la lógica necesaria para que el cambio se aplique correctamente en la próxima facturación.

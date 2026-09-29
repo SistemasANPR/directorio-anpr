@@ -1,0 +1,66 @@
+Corrige e implementa la lógica para cambiar o mejorar los planes de membresía desde el dashboard del representante.
+
+Cuando un usuario cambie de plan, el sistema debe considerar que esta acción puede generar un nuevo cobro. No se debe actualizar la membresía únicamente desde la interfaz sin haber confirmado primero el pago correspondiente.
+
+Mejora a un plan superior
+
+Cuando un usuario con un plan Básico quiera mejorar a un plan superior:
+
+Mostrar claramente el precio del nuevo plan.
+Calcular el saldo proporcional no utilizado del plan actual.
+Aplicar ese saldo como crédito al nuevo plan.
+Cobrar únicamente la diferencia correspondiente.
+No activar el nuevo plan hasta que el pago haya sido confirmado correctamente.
+Después de confirmar el pago, actualizar inmediatamente el plan, sus beneficios y la información mostrada en el dashboard.
+
+Antes de confirmar el cambio, mostrar un aviso como el siguiente:
+
+“Al cambiar de plan, se realizará el cobro correspondiente. El saldo restante de tu membresía actual podrá aplicarse al nuevo plan y tu ciclo de facturación será actualizado según la modalidad seleccionada.”
+
+Renovación mensual o anual
+
+El sistema debe respetar la modalidad de pago seleccionada:
+
+Si el usuario selecciona pago mensual, la membresía se renovará mensualmente.
+Si selecciona pago anual, la membresía se renovará anualmente.
+Antes de realizar el pago, mostrar el monto que se cobrará, la modalidad seleccionada y la nueva fecha de renovación.
+Guardar correctamente en la base de datos el tipo de facturación, la fecha de inicio y la próxima fecha de renovación.
+
+Si el cambio de plan inicia un nuevo ciclo de facturación, debe indicarse claramente antes de que el usuario confirme el pago.
+
+Cambio entre facturación mensual y anual
+
+Si el usuario cambia de mensual a anual o de anual a mensual:
+
+Mostrar el nuevo precio total.
+Informar que cambiará su ciclo de facturación.
+Mostrar la nueva fecha de renovación.
+Aplicar el saldo disponible del plan anterior cuando corresponda.
+Solicitar confirmación antes de generar el cobro.
+Plan máximo
+
+Cuando el usuario ya tenga el plan Premium o el plan de mayor nivel:
+
+Ocultar o desactivar la opción “Cambiar plan”.
+No permitir que el usuario intente mejorar a un plan inexistente.
+Mostrar un mensaje como: “Actualmente cuentas con el plan más completo disponible”.
+Permitir únicamente las acciones válidas, como administrar el método de pago, cambiar la modalidad de renovación o cancelar la membresía.
+Seguridad y validaciones
+El frontend no debe modificar directamente el plan del usuario.
+El cambio debe procesarse desde el backend.
+El backend debe verificar el plan actual, el nuevo plan, el precio, el crédito disponible y el estado del pago.
+Los precios y descuentos deben calcularse en el servidor, no confiar en valores enviados desde el navegador.
+Evitar cobros duplicados si el usuario presiona varias veces el botón.
+Si el pago falla o se cancela, conservar el plan anterior sin modificar beneficios ni fechas.
+Actualizar el dashboard únicamente después de recibir la confirmación exitosa del proveedor de pagos.
+
+Mantén el diseño actual, pero agrega una ventana de confirmación con el resumen del cambio:
+
+Plan actual.
+Nuevo plan.
+Modalidad mensual o anual.
+Crédito aplicado.
+Importe que se cobrará.
+Nueva fecha de renovación.
+Botón “Confirmar y pagar”.
+Botón “Cancelar”.

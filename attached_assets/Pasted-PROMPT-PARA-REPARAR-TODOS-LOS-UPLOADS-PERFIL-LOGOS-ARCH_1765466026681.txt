@@ -1,0 +1,68 @@
+PROMPT PARA REPARAR TODOS LOS UPLOADS (PERFIL, LOGOS, ARCHIVOS) EN REPLIT
+
+Necesito que revises y repares completamente el sistema de carga de archivos de la aplicación. Aunque reparaste el upload de imágenes de perfil, ahora al subir el logo de una empresa aparece el error: “Error al subir imagen al servidor”.
+
+Requiero una solución completa y definitiva para que TODOS los tipos de uploads funcionen, incluyendo imágenes de perfil, logos de empresa y cualquier archivo futuro.
+
+Por favor realiza lo siguiente:
+
+Revisa todas las rutas, controladores y middlewares relacionados con uploads, no solo los de perfil.
+
+Elimina cualquier referencia restante a Cloudinary, credenciales o servicios externos. Todo debe funcionar 100% local.
+
+Implementa un sistema único y centralizado de carga de archivos usando Multer, con estas reglas:
+
+Carpeta raíz: /uploads
+
+Subcarpeta automática por tipo: /uploads/images, /uploads/logos, /uploads/documents, etc.
+
+Crear carpetas si no existen.
+
+Asegurar permisos correctos.
+
+Establecer límites de tamaño:
+
+Imágenes: máximo 2MB
+
+PDF u otros: máximo 5MB
+
+Validar extensiones permitidas dependiendo del endpoint:
+
+Perfil: png, jpg, jpeg
+
+Logo empresa: png, jpg, jpeg, svg (añádelo si falta)
+
+Revisa y corrige los endpoints donde se guardan logos de empresa. Asegúrate de que:
+
+Multer sí está recibiendo el archivo
+
+La ruta se guarda correctamente en la base de datos
+
+Se responde un JSON con éxito
+
+Corrige cualquier path incorrecto, como:
+
+Rutas mal formadas al guardar
+
+Rutas absolutas en vez de relativas
+
+Diferencias entre /uploads y uploads/
+
+Verifica el frontend:
+
+Que se envíe multipart/form-data
+- Que el nombre del campo (file, logo, image, etc.) coincida con el backend
+
+Realiza pruebas reales dentro de Replit:
+
+Subir imagen de perfil
+
+Subir logo de empresa
+
+Subir un archivo de prueba
+
+Confirma que todo funciona y muéstrame claramente los cambios realizados.
+
+Es fundamental que el sistema quede robusto, consistente y fácil de mantener.
+
+Por favor procede con las reparaciones y confirma cuando todos los uploads estén funcionando correctamente.

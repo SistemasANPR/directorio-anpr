@@ -1,0 +1,62 @@
+Necesito que arregles un problema en el modal de creación de categorías dentro del módulo “Directorio de Empresas > Categorías > Crear Nueva Categoría”.
+
+Problemas específicos:
+
+El modal tiene más contenido del que cabe en pantalla y no permite hacer scroll interno, por lo que el botón de “Crear” queda oculto.
+
+Cuando se sube un ícono personalizado, el modal crece aún más y el botón desaparece por completo.
+
+Hay un toast que a veces se queda congelado sobre el modal.
+
+El modal parece tener un overflow: hidden o un alto fijo que evita el scroll.
+
+✅ Lo que quiero que soluciones SIN AFECTAR NINGUNA OTRA PARTE DEL SISTEMA
+
+IMPORTANTE:
+Haz los cambios solo dentro del modal de creación de categorías, sin alterar estilos globales, hojas de estilo generales, clases compartidas o componentes que afectan a otros módulos.
+No modifiques ningún otro modal del sistema.
+
+✅ Correcciones que sí deben aplicarse (solo para este modal):
+
+El modal debe tener max-height: 90vh para que nunca crezca más que la pantalla.
+
+El cuerpo interno del modal debe permitir scroll:
+
+overflow-y: auto;
+
+Aplícalo únicamente al contenedor del contenido del modal (modal-body).
+
+El botón inferior (“Crear”) debe siempre ser visible:
+
+Puedes fijarlo dentro del modal usando position: sticky; bottom: 0; background: white;
+
+Solo en este modal.
+
+Arreglar los toast:
+
+Deben cerrar correctamente.
+
+No deben quedar congelados.
+
+No deben aparecer encima del modal.
+
+Ajusta solo su comportamiento para este módulo si es necesario, sin afectar otros toasts del sistema.
+
+No ocultar scroll en ningún contenedor padre del modal solo dentro de este módulo.
+
+✅ Resultado esperado
+
+El usuario puede desplazarse dentro del modal sin problemas.
+
+El botón “Crear” y todas las acciones del modal están siempre accesibles.
+
+Al subir íconos, el modal sigue siendo usable.
+
+Los toast funcionan sin quedar congelados ni superponerse al modal.
+
+Ninguna otra parte del sistema cambia ni se afecta.
+
+✅ Recordatorio final
+
+No modifiques estilos globales, clases compartidas ni componentes que usen otras partes del sistema.
+Todos los cambios deben ser aislados y aplicados únicamente al modal de creación de categorías.

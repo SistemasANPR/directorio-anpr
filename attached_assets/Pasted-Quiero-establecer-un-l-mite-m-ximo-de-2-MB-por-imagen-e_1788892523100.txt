@@ -1,0 +1,45 @@
+Quiero establecer un límite máximo de 2 MB por imagen en todas las secciones de la plataforma donde se permita subir imágenes.
+
+Actualmente existen distintos formularios y módulos donde los usuarios pueden cargar imágenes. Quiero que esta validación se aplique de forma general y consistente en todos ellos.
+
+Comportamiento esperado
+
+Cada imagen que el usuario intente subir debe tener un peso máximo de 2 MB.
+
+Si la imagen pesa 2 MB o menos, se debe permitir la carga normalmente.
+
+Si la imagen pesa más de 2 MB, el sistema debe impedir la subida y mostrar un mensaje claro, por ejemplo:
+
+“La imagen supera el tamaño máximo permitido de 2 MB. Selecciona una imagen más ligera.”
+
+La imagen no debe comenzar a cargarse ni guardarse si supera este límite.
+
+Indicación visual
+
+En todos los campos o componentes donde se permita subir una imagen, mostrar de forma visible el límite permitido.
+
+Por ejemplo:
+
+Subir imagen (máximo 2 MB)
+
+o:
+
+Imagen — Tamaño máximo: 2 MB
+
+De esta forma, el usuario podrá conocer el límite antes de seleccionar el archivo.
+
+Validaciones
+
+La validación debe realizarse tanto en el frontend como en el backend.
+
+En el frontend, validar el tamaño inmediatamente después de que el usuario seleccione una imagen para poder mostrar el error antes de intentar subirla.
+
+En el backend, volver a validar obligatoriamente que la imagen no supere los 2 MB, para evitar que el límite pueda saltarse mediante llamadas directas a la API.
+
+No se debe depender únicamente de la extensión o del nombre del archivo. La validación debe comprobar el tamaño real del archivo.
+
+Aplicación global
+
+Revisar todos los módulos existentes donde actualmente se puedan subir imágenes y aplicar esta misma restricción de 2 MB máximo por imagen, procurando reutilizar un mismo componente, función o validación global si la arquitectura actual lo permite.
+
+El objetivo es que ninguna imagen superior a 2 MB pueda subirse a la plataforma, y que el usuario siempre pueda ver claramente este límite antes de realizar la carga.

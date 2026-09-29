@@ -1,0 +1,109 @@
+Rol: Eres un desarrollador front-end encargado de corregir un problema de layout en el “Panel del Representante”.
+
+Contexto del proyecto:
+
+Hay un aside lateral izquierdo con el logo/título, navegación y, al final, el bloque con el nombre/correo del representante y Cerrar sesión.
+
+El contenido principal está a la derecha.
+
+En pantallas de escritorio aparece un scroll horizontal.
+
+El botón Cerrar sesión queda fuera de vista o recortado en el aside.
+
+Problema a resolver (observado en producción):
+
+Scroll horizontal en el dashboard, incluso en escritorio.
+
+El aside es demasiado angosto; el bloque inferior con el correo no cabe y empuja el layout, por eso desaparece Cerrar sesión.
+
+En ciertos anchos, títulos/líneas del breadcrumb y tabs superiores también contribuyen al overflow.
+
+Objetivo:
+
+Eliminar por completo el scroll horizontal en todas las resoluciones de escritorio y tablet.
+
+Asegurar que “Cerrar sesión” sea siempre visible dentro del aside.
+
+Hacer que el ancho del aside se adapte al contenido (nombre/correo), con límites razonables, sin romper el contenido principal.
+
+Dónde intervenir (guía):
+
+Componente/layout del sidebar/aside.
+
+Contenedor principal que define el grid/flex de “aside + contenido”.
+
+Estilos globales y del footer del aside (bloque con avatar, correo y botón Cerrar sesión).
+
+Revisa también el toolbar de pestañas/breadcrumb del contenido, que podría tener min-widths o paddings que causan overflow.
+
+Plan de solución (alto nivel, sin código):
+
+Revisa y elimina cualquier ancho fijo pequeño del aside.
+
+Cambia anchos rígidos por un ancho adaptable al contenido con un límite máximo para no devorar el espacio del contenido.
+
+Permite salto de línea en el correo largo en lugar de forzar una línea única.
+
+Asegura el layout principal con un contenedor grid o flex que:
+
+Reserve el espacio del aside sin forzar un ancho mínimo exagerado para el contenido.
+
+Evite que cualquier hijo genere overflow horizontal.
+
+Controla el overflow global:
+
+Prohíbe overflow-x en el nivel de layout adecuado; si algo desborda (tabs, tarjetas o banners), deben encoger, envolver texto o hacer scroll horizontal solo dentro de su propio contenedor, nunca en el body.
+
+Corrige el bloque inferior del aside (perfil + Cerrar sesión):
+
+Asegura wrapping del texto (nombre/correo) y que los botones no se salgan.
+
+Si hay tooltips/badges, que no aumenten el ancho del aside.
+
+Revisa las barras superiores (tabs/filtros/alertas):
+
+Quita min-widths innecesarios, evita márgenes/paddings que sumen más que el viewport, y habilita quebrado de texto si es preciso.
+
+Haz pruebas en los breakpoints clave (1440, 1280, 1024, 991, 768).
+
+En todos, sin scroll horizontal y con Cerrar sesión visible.
+
+Criterios de aceptación (obligatorios):
+
+No existe scroll horizontal en el dashboard en escritorio ni tablet.
+
+El aside muestra siempre el bloque inferior completo: avatar/nombre o correo y el botón Cerrar sesión accesible.
+
+El ancho del aside se adapta al nombre/correo largo sin cortar y sin empujar el contenido principal fuera de pantalla.
+
+Las pestañas/breadcrumb y banners no provocan overflow.
+
+No se degradan otras páginas que usan el mismo layout.
+
+Casos de prueba manuales:
+
+Inicia sesión con un correo largo (como en las capturas).
+
+Cambia el tamaño de la ventana entre 768–1440 px.
+
+Revisa que los toasts/alertas (cuadro rojo de error) no tapen elementos vitales del aside ni generen overflow.
+
+Navega por “Mi Empresa / Proyectos / Certificados / Mi Reseña” y confirma que ninguna vista crea scroll horizontal.
+
+Usa el tabulador del teclado para llegar a Cerrar sesión (accesibilidad).
+
+Riesgos/regresiones a evitar:
+
+No ocultar el problema aplicando overflow-x oculto en el body si aún hay componentes que desbordan; cada componente que cause overflow debe ajustarse.
+
+No reducir el tamaño de fuente del correo para “que quepa”; debe envolver correctamente.
+
+No permitir que el aside crezca ilimitadamente: establecer un máximo razonable para pantallas pequeñas/medianas.
+
+Entrega esperada:
+
+Ajustes en los estilos y/o layout del aside y contenedor principal.
+
+Comentario en el PR explicando qué causaba el overflow y qué cambios lo corrigen.
+
+Evidencias (capturas) mostrando el aside más ancho y el botón Cerrar sesión visible sin scroll horizontal.

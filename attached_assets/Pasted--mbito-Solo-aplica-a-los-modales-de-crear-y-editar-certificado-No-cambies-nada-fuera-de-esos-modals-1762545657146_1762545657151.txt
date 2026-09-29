@@ -1,0 +1,72 @@
+Ámbito
+Solo aplica a los modales de crear y editar certificado. No cambies nada fuera de esos modals.
+
+Archivos implicados
+
+Crear: client/src/pages/Certificates.tsx (sección Asignación Automática).
+
+Editar: client/src/components/EditCertificateModal.tsx (líneas ~508 en adelante).
+
+Objetivo
+
+Que al abrir el modal de Editar, el campo Asignación Automática y los planes seleccionados aparezcan pre-cargados visualmente, sin necesidad de hacer clic.
+
+Que Crear y Editar usen exactamente los mismos nombres de campos y el mismo shape de estado para esta sección:
+
+asignacionAutomatica: boolean
+
+planesMembresia: string[] (IDs de planes)
+
+Qué hay que corregir
+
+Unificar nombres y control del estado
+
+Usa los mismos names/keys que en Crear: asignacionAutomatica y planesMembresia.
+
+En Editar, inicializa state desde los datos del certificado cuando se abre el modal (no esperar a interacción del usuario).
+
+Checkbox controlado (sin “doble checkbox”)
+
+En Editar, el bloque actual tiene un botón role="checkbox" y además un <input type="checkbox"> oculto. Esa duplicidad provoca desincronización.
+
+Deja un solo control (el componente de checkbox del sistema) y hazlo controlado por asignacionAutomatica.
+
+El estado visual (atributos checked/data-state="checked") debe provenir de asignacionAutomatica al montar el modal.
+
+Sincronizar la lista de planes
+
+Los checkboxes de Planes de Membresía en Editar deben inicializarse con los IDs que vengan en planesMembresia.
+
+El estado visual de cada plan debe reflejarse de inmediato al abrir (si está en el array, aparece marcado).
+
+Reset de estado al cerrar/abrir
+
+Al cerrar el modal, limpia/rehidrata correctamente para que al reabrir vuelva a cargar lo del certificado, no valores antiguos.
+
+Validación y envío
+
+En Editar, al guardar, se deben enviar los mismos campos y el mismo shape que en Crear para asignacionAutomatica y planesMembresia.
+
+No cambies contratos de API ni lógica fuera de estos modals.
+
+Criterios de aceptación (QA)
+
+Abro Editar Certificado de uno que tiene asignacionAutomatica = true y planesMembresia = ['X','Y'] ⇒ el checkbox aparece marcado y los planes X y Y marcados desde el primer render.
+
+Abro Editar de otro con asignacionAutomatica = false ⇒ aparece desmarcado y sin planes.
+
+Marco/desmarco cosas y se reflejan al instante en la UI y en el estado.
+
+Cierro y reabro ⇒ no se arrastran valores del anterior.
+
+Crear y Editar envían mismos nombres de campos para esta sección.
+
+No se modifica nada fuera de los modals de certificados.
+
+Entrega
+
+Explica qué control duplicado causaba la desincronización (botón role="checkbox" + <input> oculto) y cómo quedó un único control controlado.
+
+Indica los archivos y líneas tocadas en Certificates.tsx y EditCertificateModal.tsx.
+
+Confirma que asignacionAutomatica y planesMembresia se hidratan al abrir y se resetean al cerrar.

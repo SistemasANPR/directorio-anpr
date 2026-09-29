@@ -1,0 +1,84 @@
+Por favor corrige el modal “Agregar Nueva Categoría” del módulo Directorio de Empresas > Categorías.
+Quedó desconfigurado y se ve mal. Necesito que lo arregles correctamente siguiendo estas reglas muy importantes:
+
+✅ 1. Respeta por completo el diseño original del proyecto
+
+No cambies estilos globales, no modifiques otros modales, no inventes estilos nuevos y no reemplaces el diseño existente.
+Solo corrige este modal.
+
+✅ 2. El modal debe ser ADAPTABLE y verse bien
+
+Debe funcionar así:
+
+Si el contenido es pequeño → se muestra normal, sin scroll.
+
+Si el contenido crece (por la descripción, campos, o subir icono) → se activa un scroll interno suave y limpio dentro del cuerpo del modal.
+
+El modal NO debe crecer más que la pantalla.
+
+NO debe aparecer nada fuera de lugar (como el botón flotando en medio).
+
+✅ 3. Requisitos exactos para que funcione bien:
+✅ A) El modal debe tener:
+
+max-height: 90vh
+
+display: flex
+
+flex-direction: column
+
+(Esto permite que el contenido se ajuste solo.)
+
+✅ B) El área de contenido (modal-body) debe tener:
+
+overflow-y: auto
+
+padding normal (no exagerado)
+
+No debe afectar el header ni el footer del modal.
+
+✅ C) El footer del modal (donde están los botones):
+
+Debe quedar SIEMPRE fijo en la parte de abajo, así:
+
+flex-shrink: 0
+
+NO usar position: sticky, ya que eso rompió el diseño.
+
+Debe verse igual que siempre, alineado, limpio.
+
+✅ D) EL DISEÑO DEBE SER IDÉNTICO AL ORIGINAL
+
+No debe verse cortado, flotando, movido o hacia la mitad como ahora.
+
+✅ 4. El botón “Crear Categoría” debe ir abajo
+
+Debe estar en un footer normal, pegado al borde inferior del modal, sin moverse del lugar.
+
+No debe quedar cortado ni flotando.
+
+✅ 5. No afectes otros módulos
+
+No cambies estilos globales, clases compartidas, componentes comunes ni el comportamiento de otros modales.
+
+Todos los ajustes deben limitarse a:
+
+✅ el componente del modal
+✅ su CSS local o scoped
+✅ su estructura interna
+
+✅ 6. Resultado esperado
+
+El modal se ve limpio y profesional.
+
+Todo el contenido cabe correctamente.
+
+Cuando hay mucho contenido, aparece scroll interno sin romper nada.
+
+Los botones se quedan abajo como debe ser.
+
+Los toasts no se superponen ni quedan congelados.
+
+El diseño original no cambia.
+
+Repit: por favor ajusta el CSS y la estructura interna SOLO de este modal para lograrlo, sin alterar el resto del sistema.

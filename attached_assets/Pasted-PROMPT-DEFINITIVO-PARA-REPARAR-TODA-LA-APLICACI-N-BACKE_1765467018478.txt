@@ -1,0 +1,104 @@
+PROMPT DEFINITIVO PARA REPARAR TODA LA APLICACIÓN (BACKEND, FRONTEND, UPLOADS, BD, FLUJOS, TODO)
+
+Necesito que realices una reparación completa, profunda y exhaustiva de toda la aplicación. No quiero corregir solo una función o un módulo: quiero que revises, depures y dejes funcionando al 100% TODOS los flujos del sistema.
+
+La aplicación está presentando errores en distintos puntos críticos, por ejemplo:
+
+Error al subir imágenes (perfil, logos de empresa, etc.)
+
+Error al registrar empresas: “No se pudo registrar la empresa: Error al crear la empresa”
+
+Validaciones incompletas o mal configuradas
+
+Fallos en rutas, controladores, middlewares y servicios
+
+Inconsistencias entre frontend y backend
+
+Problemas para guardar archivos en el servidor
+
+Manejo incorrecto de respuestas y errores
+
+REQUIERO UNA REVISIÓN Y REPARACIÓN COMPLETA DE:
+
+1. Sistema de uploads
+
+Centraliza todos los uploads en un solo módulo.
+
+Implementa Multer correctamente con carpetas automáticas.
+
+Asegura permisos, límites de tamaño y validación de extensiones.
+
+Repara los endpoints que guardan logos de empresas.
+
+Verifica que la ruta se guarde bien en la base de datos.
+
+Elimina cualquier rastro de Cloudinary.
+
+2. Registro y edición de empresas
+
+Repara el endpoint que actualmente falla (Error al crear la empresa).
+
+Asegura que el proceso permita imágenes múltiples sin errores.
+
+Arregla validaciones inconsistentes.
+
+Garantiza que todo el proceso termine con un 200 OK real.
+
+3. Revisión del backend completo
+
+Revisa todas las rutas, modelos, servicios, controladores y middlewares.
+
+Valida integridad de la base de datos.
+
+Corrige nombres de campos inconsistentes entre frontend y backend.
+
+Arregla cualquier excepción o error silencioso.
+
+Estandariza el manejo de errores y respuestas JSON.
+
+4. Revisión del frontend completo
+
+Revisa formularios, inputs, names, envíos multipart/form-data.
+
+Arregla llamadas axios/fetch incorrectas.
+
+Garantiza que los datos se envíen exactamente como el backend los espera.
+
+Verifica que los toast y mensajes coincidan con los estados del servidor.
+
+5. Revisión de la base de datos
+
+Asegura que existan todos los campos necesarios.
+
+Repara cualquier inconsistencia en modelos o migraciones.
+
+Verifica relaciones entre empresas, planes, usuarios e imágenes.
+
+6. Pruebas internas reales
+
+Después de reparar todo, ejecuta pruebas dentro del entorno Replit:
+
+Crear empresa con varios logos.
+
+Editar empresa.
+
+Subir imágenes de perfil.
+
+Guardar cambios de usuario.
+
+Verificar validaciones de límites de planes.
+
+Revisar que no haya errores en consola.
+
+7. Resultados esperados
+
+TODOS los módulos deben quedar funcionando sin errores.
+
+TODO el sistema de uploads debe funcionar en 100% de los casos.
+
+Registro de empresas debe completarse sin fallos.
+
+Debes mostrar todos los cambios realizados y explicar qué estaba mal.
+
+Por favor procede con la reparación general de toda la app, y una vez completado, confirma que:
+“Toda la aplicación ha sido revisada, reparada y validada con éxito, y todos los flujos funcionan al 100%.”

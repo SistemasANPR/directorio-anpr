@@ -1,0 +1,83 @@
+El modal de edición se renderiza desde: client/src/components/EditCertificateModal.tsx (lo confirmo por el metadata del DOM).
+
+Síntoma
+Al pulsar Guardar Cambios aparece el toast: “Error al actualizar el certificado” y no se guardan los cambios.
+
+Objetivo
+Corregir la actualización para que el certificado se guarde correctamente y el usuario vea un mensaje de éxito. Evitar errores por formato de payload, método HTTP o manejo de la respuesta.
+
+Qué revisar y corregir (obligatorio)
+
+Endpoint y método correctos
+
+Usar la ruta y método que espera el backend para actualizar (ej.: PUT /certificates/:id o PATCH /certificates/:id).
+
+Asegúrate de que se envíe el id del certificado que se está editando.
+
+Formato del payload
+
+Imagen:
+
+Si no se cambia la imagen, no enviar un archivo vacío ni campo de imagen vacío.
+
+Si sí se cambia, enviar como multipart/form-data; si no, enviar JSON normal.
+
+Fechas: normalizar a YYYY-MM-DD (o al formato que use el backend).
+
+Estado: mapear a lo que espera el backend (activo/inactivo, 1/0 o true/false).
+
+Planes asociados: enviar un array de IDs (no etiquetas ni objetos crudos).
+
+Campos opcionales: enviar null o omitir; no enviar cadenas vacías si rompen validación.
+
+Validaciones del lado cliente
+
+No bloquear el envío por reglas que no aplican (p. ej., exigir valor numérico cuando el campo está controlado por un checkbox).
+
+Mostrar mensajes de validación campo por campo si el backend devuelve errores 422; no solo el toast genérico.
+
+Manejo de la respuesta
+
+Tratar 2xx como éxito incluso si es 204 No Content (no intentes response.json() si no hay cuerpo).
+
+Si hay 200 con JSON, parsear con Content-Type: application/json.
+
+Errores 4xx/5xx: mostrar mensaje claro con detalle (primer error del backend) y mantener el modal abierto.
+
+Cabeceras y sesión
+
+Incluir CSRF / Authorization si corresponde.
+
+Revisar CORS/preflight si hay peticiones PUT/PATCH con cabeceras personalizadas.
+
+Actualizar la UI tras éxito
+
+Cerrar el modal, refrescar la tarjeta del certificado (o la lista), y mostrar toast de éxito.
+
+Evitar doble envío: deshabilitar el botón mientras se procesa.
+
+Criterios de aceptación (QA)
+
+Edito cualquier campo del certificado y pulso Guardar Cambios ⇒ se guarda sin errores y aparece toast de éxito.
+
+Si no cambio la imagen, la actualización funciona (no se envía archivo vacío).
+
+Si cambio la imagen, también funciona (multipart cuando corresponde).
+
+Fechas y estado se guardan correctamente (sin desajustes de formato/booleanos).
+
+Planes asociados se persisten (ids correctos).
+
+Si el backend devuelve 422 con errores de validación, se muestran mensajes específicos por campo además del toast, sin cerrar el modal.
+
+No aparece Unexpected end of JSON input ni errores por parseo de respuesta.
+
+Entrega esperada
+
+Explica qué estaba fallando (endpoint/método, payload, imagen, fechas, parseo de respuesta, etc.).
+
+Indica archivos y líneas tocadas en EditCertificateModal.tsx (y cualquier helper/servicio de API si aplica).
+
+Confirma el contrato final: método, ruta, tipo de cuerpo cuando hay/ no hay imagen, y cómo se manejan 200/204.
+
+Adjunta capturas antes/después.

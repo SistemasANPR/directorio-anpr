@@ -1,0 +1,46 @@
+Corrige la sincronización entre la asignación de representantes, la aplicación y la base de datos de producción.
+
+Actualmente, cuando se asigna un representante a una empresa, el cambio no se refleja correctamente. También necesito que, cuando se elimine una cuenta, se eliminen o limpien correctamente sus registros relacionados en la base de datos de producción.
+
+Implementa esta lógica:
+
+Asignación de representante a empresa
+Cuando un administrador asigne un representante a una empresa, guarda correctamente la relación en la base de datos de producción.
+La relación debe quedar asociada mediante los identificadores reales del representante y de la empresa.
+Después de guardar, actualiza inmediatamente la interfaz para que el cambio se vea reflejado sin necesidad de recargar manualmente.
+Al volver a abrir la empresa, debe mostrarse el representante asignado.
+El representante asignado debe poder ver y administrar únicamente la empresa que le corresponde.
+Verifica que la consulta que carga los datos incluya correctamente la relación entre empresa y representante.
+Si ya existe un representante asignado y se asigna otro, reemplaza la relación anterior de forma segura, sin crear registros duplicados.
+Evita que una misma asignación se guarde varias veces.
+Eliminación de cuentas
+
+Cuando se elimine una cuenta:
+
+La eliminación debe ejecutarse también en la base de datos de producción.
+No debe eliminarse solamente de la interfaz.
+Elimina o desvincula correctamente los registros relacionados con esa cuenta.
+Si la cuenta es de un representante, elimina su relación con la empresa.
+No elimines la empresa ni su contenido solo por eliminar al representante, salvo que exista una regla explícita para ello.
+Si la cuenta también existe en el sistema de autenticación, elimínala tanto del proveedor de autenticación como de la base de datos.
+Si una parte de la eliminación falla, no dejes el sistema en un estado inconsistente.
+Maneja el proceso desde el backend, no únicamente desde el frontend.
+Validaciones
+Confirma que todas las operaciones estén usando la conexión y las variables de entorno de producción correctas.
+No mezcles datos de desarrollo con producción.
+Verifica que la asignación persista después de cerrar sesión, recargar la página o reiniciar la aplicación.
+Verifica que una cuenta eliminada ya no pueda iniciar sesión.
+Verifica que no queden relaciones huérfanas en la base de datos.
+Agrega mensajes claros de éxito o error.
+Mantén el diseño actual y modifica únicamente la lógica necesaria.
+
+Antes de dar la tarea por terminada, prueba estos casos:
+
+Asignar un representante a una empresa sin representante.
+Cambiar el representante de una empresa.
+Recargar la aplicación y confirmar que la asignación persiste.
+Iniciar sesión como representante y confirmar que ve su empresa.
+Eliminar una cuenta de representante.
+Confirmar que la cuenta ya no existe en autenticación ni en la base de datos.
+Confirmar que la empresa sigue existiendo.
+Confirmar que no quedaron relaciones duplicadas o huérfanas.

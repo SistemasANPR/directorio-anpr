@@ -1,0 +1,59 @@
+En Gestión de Etiquetas, al abrir el modal “Editar Etiqueta” (aunque no guarde cambios) y luego abrir “Nueva Etiqueta”, el formulario de creación aparece prellenado con los datos de la última etiqueta abierta. El problema ocurre solo por haber abierto el modal de edición, no por guardar.
+
+Lo que necesito
+
+El modal “Nueva Etiqueta” debe abrirse siempre limpio y prístino, independiente del modal de “Editar Etiqueta”.
+
+Esto debe cumplirse aunque previamente se haya abierto un modal de edición y se haya cerrado sin guardar.
+
+No debe conservarse ningún valor previo (nombre, descripción, color, id, estados de validación, ni mensajes de error).
+
+Reglas claras de comportamiento
+
+Al abrir “Nueva Etiqueta”
+
+Inicializa el formulario con valores por defecto (campos vacíos y color por defecto).
+
+No debe existir id ni referencia a una etiqueta previa.
+
+No debe reutilizarse el estado del modal de edición ni estados globales/compartidos.
+
+No debe cargar datos de memoria del navegador (autocompletado) ni de almacenamiento (local/session storage).
+
+Al abrir “Editar Etiqueta”
+
+Solo aquí se prellenan los datos de la etiqueta seleccionada.
+
+Ese estado no debe filtrarse al modo Crear después de cerrar.
+
+Al cerrar cualquier modal (Cancelar, “X”, clic en fondo, ESC o después de Crear/Actualizar)
+
+Restablece el estado del formulario y cualquier estado derivado (errores, touched, loading, etc.).
+
+La próxima apertura de “Nueva Etiqueta” debe empezar en blanco.
+
+Prevención de efectos colaterales
+
+Si se reutiliza el mismo componente para crear/editar, asegúrate de separar los modos y re-inicializar el estado al cambiar de modo.
+
+Evita que un store/estado global mantenga valores que se inyecten en el “Crear”.
+
+Deshabilita o evita el autocompletado del navegador en estos campos si está causando que se rellenen solos.
+
+Criterios de aceptación (QA)
+
+Abro Editar de cualquier etiqueta → cierro sin guardar → abro Nueva Etiqueta ⇒ todos los campos vacíos y sin id.
+
+Repito el flujo varias veces, incluso alternando rápido entre Editar y Nueva Etiqueta ⇒ nunca se arrastran datos.
+
+Después de Crear o Cancelar, vuelvo a Nueva Etiqueta ⇒ sigue limpio.
+
+No se muestran mensajes de validación anteriores ni colores/valores previos.
+
+El diseño, textos y estilos no cambian.
+
+Entrega
+
+Explica brevemente qué estado se estaba reutilizando y cómo se aisló/reinicializó para que “Nueva Etiqueta” sea siempre prístino.
+
+Confirma que no se usan datos persistidos (store/autofill/localStorage) al abrir “Nueva Etiqueta”.

@@ -1,0 +1,354 @@
+Necesito que analices e implementes de punta a punta el flujo de gestión de métodos de pago, renovación de membresías y activación/inactivación de empresas.
+
+Contexto
+
+Actualmente el sistema ya permite:
+
+Registrar una tarjeta como método de pago.
+Cambiar o actualizar la tarjeta con la que se paga una membresía.
+Cobrar una membresía de forma recurrente.
+
+Ahora necesito agregar la posibilidad de eliminar o desvincular la tarjeta registrada, asegurando que esto no genere inconsistencias en la membresía ni en el estado de la empresa.
+
+Antes de implementar, revisa la arquitectura, modelos, endpoints, servicios, jobs, webhooks y componentes existentes relacionados con:
+
+Empresas.
+Membresías o suscripciones.
+Métodos de pago.
+Renovaciones.
+Facturación.
+Pasarela de pagos.
+Webhooks.
+Estado activo o inactivo de una empresa.
+
+Respeta los patrones, convenciones, estructura de carpetas y tecnologías que ya utiliza el proyecto. No dupliques lógica existente.
+
+Objetivo principal
+
+Permitir que un usuario autorizado pueda eliminar la tarjeta o método de pago asociado a la empresa.
+
+Eliminar una tarjeta no debe cancelar inmediatamente una membresía que todavía se encuentre pagada y vigente. La empresa debe continuar activa hasta la fecha de vencimiento de su periodo actual.
+
+Cuando llegue la fecha de renovación:
+
+Si existe un método de pago válido, se debe intentar realizar el cobro normalmente.
+Si no existe un método de pago, la renovación debe marcarse como no pagada.
+Si el pago falla y la membresía ya terminó, la empresa debe pasar a estado inactivo.
+Una empresa inactiva no debe tener acceso a las funcionalidades protegidas por una membresía activa.
+Reglas de negocio
+El usuario debe poder agregar, cambiar, actualizar y eliminar su método de pago.
+Solamente usuarios con los permisos correspondientes pueden administrar el método de pago de una empresa.
+Al eliminar la tarjeta:
+Se debe eliminar o desvincular el método de pago tanto en el sistema local como en la pasarela de pagos, cuando corresponda.
+No se debe cancelar el periodo de membresía que ya fue pagado.
+No se debe inactivar inmediatamente la empresa si su membresía todavía está vigente.
+La renovación automática debe quedar deshabilitada o imposibilitada hasta que se registre un nuevo método de pago.
+La interfaz debe advertir claramente que, si no se agrega otra tarjeta antes del vencimiento, la empresa será inactivada al finalizar la membresía.
+Si la membresía vence y no existe un método de pago válido:
+No debe generarse un cobro ficticio.
+La renovación debe registrarse como fallida, pendiente o no pagada, según el modelo existente.
+La membresía debe quedar vencida, expirada, cancelada por falta de pago o en el estado equivalente que maneje el proyecto.
+La empresa debe cambiar a estado inactivo.
+Se debe guardar la fecha y el motivo de la inactivación.
+El motivo debe identificar que fue por vencimiento de membresía sin pago o sin método de pago.
+Si existe una tarjeta, pero el cobro falla:
+Registrar el intento de pago.
+Registrar el código, mensaje y motivo del error devuelto por la pasarela.
+Aplicar los reintentos existentes, en caso de que el sistema ya cuente con una política de reintentos.
+Evitar cobros duplicados mediante idempotencia.
+Mientras la membresía todavía esté vigente, la empresa puede permanecer activa.
+Una vez que termine el periodo pagado y no haya un pago exitoso, la empresa debe quedar inactiva.
+Si posteriormente el usuario agrega una nueva tarjeta:
+Guardar y vincular correctamente el nuevo método de pago.
+Permitir que el usuario reactive o renueve la membresía.
+La empresa solamente debe volver a estar activa después de confirmar un pago exitoso o una membresía válida.
+No activar la empresa únicamente por registrar una tarjeta.
+Si el usuario realiza manualmente un pago exitoso antes del vencimiento:
+Mantener activa la empresa.
+Actualizar las fechas de vigencia de la membresía.
+Registrar la transacción.
+Evitar que un job o webhook posterior la inactive por información desactualizada.
+Los webhooks de la pasarela deben ser la fuente de confirmación final del pago cuando el proveedor trabaje de esa forma.
+Los webhooks deben:
+Validar la firma.
+Ser idempotentes.
+Tolerar eventos repetidos.
+Tolerar eventos recibidos fuera de orden.
+No sobrescribir un pago exitoso con un evento antiguo de pago fallido.
+Actualizar correctamente pago, membresía y empresa dentro de una transacción cuando sea posible.
+No almacenar información sensible de la tarjeta, como número completo o código de seguridad. Guardar únicamente los identificadores y datos permitidos por la pasarela, por ejemplo:
+ID del método de pago.
+Marca.
+Últimos cuatro dígitos.
+Mes y año de expiración.
+ID del cliente en la pasarela.
+Modelo de datos
+
+Revisa los modelos existentes y agrega solamente los campos necesarios.
+
+Considera, de acuerdo con la arquitectura actual, campos equivalentes a:
+
+Empresa
+status: active o inactive.
+inactive_reason.
+inactivated_at.
+Membresía
+status.
+current_period_start.
+current_period_end.
+auto_renew.
+cancel_at_period_end.
+expired_at.
+Método de pago
+provider.
+provider_customer_id.
+provider_payment_method_id.
+brand.
+last4.
+expiration_month.
+expiration_year.
+is_default.
+status.
+detached_at.
+Pago o intento de cobro
+status.
+amount.
+currency.
+provider_transaction_id.
+idempotency_key.
+failure_code.
+failure_message.
+attempted_at.
+paid_at.
+
+No agregues estos campos literalmente si el proyecto ya cuenta con equivalentes. Reutiliza el modelo actual y crea una migración segura.
+
+Backend
+
+Implementa o ajusta los casos de uso necesarios para:
+
+Consultar el método de pago actual.
+Agregar una tarjeta.
+Cambiar la tarjeta predeterminada.
+Actualizar la tarjeta.
+Eliminar o desvincular la tarjeta.
+Consultar el estado de la membresía.
+Renovar manualmente una membresía.
+Procesar renovaciones automáticas.
+Procesar pagos exitosos.
+Procesar pagos fallidos.
+Inactivar una empresa cuando su periodo pagado haya terminado.
+Reactivar una empresa después de un pago exitoso.
+
+El endpoint para eliminar el método de pago debe:
+
+Validar autenticación.
+Validar autorización sobre la empresa.
+Buscar el método de pago vinculado.
+Evitar errores si ya fue eliminado, aplicando un comportamiento idempotente.
+Desvincularlo de la pasarela cuando corresponda.
+Actualizar el registro local.
+Deshabilitar la renovación automática cuando no quede otro método de pago válido.
+Mantener la membresía activa hasta current_period_end.
+Devolver el nuevo estado de método de pago, membresía, renovación automática y empresa.
+
+Utiliza transacciones de base de datos para operaciones que modifiquen varias entidades relacionadas.
+
+Proceso automático de vencimiento
+
+Asegúrate de que exista un job, tarea programada, worker o proceso equivalente que revise membresías vencidas.
+
+El proceso debe buscar membresías cuyo periodo haya terminado y que no tengan una renovación pagada.
+
+Para cada membresía:
+
+Confirmar nuevamente el estado más reciente del pago.
+Confirmar que no exista otro pago exitoso para el nuevo periodo.
+Confirmar que la fecha actual sea posterior a current_period_end.
+Marcar la membresía como vencida.
+Marcar la empresa como inactiva.
+Guardar el motivo y la fecha.
+Invalidar cachés, sesiones o permisos si el sistema lo requiere.
+Evitar procesar dos veces la misma membresía.
+Registrar logs estructurados del resultado.
+
+El job no debe inactivar empresas que:
+
+Todavía tengan una membresía vigente.
+Hayan realizado un pago exitoso.
+Tengan un periodo de gracia válido configurado en el sistema.
+Posean una membresía gratuita, vitalicia, manual o exenta de pago.
+Control de acceso
+
+Centraliza la validación de acceso según el estado de la empresa y la membresía.
+
+Una empresa inactiva:
+
+Puede iniciar sesión únicamente si el producto requiere que acceda a la sección de facturación.
+Debe poder visualizar el motivo de la inactivación.
+Debe poder registrar una nueva tarjeta.
+Debe poder renovar o pagar la membresía.
+No debe acceder a las funciones operativas protegidas.
+
+No distribuyas validaciones inconsistentes en múltiples controladores. Utiliza middleware, guard, policy, servicio de dominio o el mecanismo equivalente del proyecto.
+
+No bloquees:
+
+El acceso al módulo de pagos.
+El registro de una nueva tarjeta.
+La consulta de planes.
+La renovación.
+El cierre de sesión.
+El acceso a soporte, cuando exista.
+Frontend
+
+En la sección de facturación o membresía muestra:
+
+Tarjeta actual, con marca y últimos cuatro dígitos.
+Fecha de expiración.
+Estado de renovación automática.
+Fecha de vencimiento de la membresía.
+Estado actual de la empresa.
+Acciones para agregar, cambiar, actualizar y eliminar la tarjeta.
+
+Antes de eliminar la tarjeta, mostrar un modal de confirmación con un mensaje similar a:
+
+“Al eliminar este método de pago no se cancelará inmediatamente tu membresía. Podrás continuar utilizando el servicio hasta el final del periodo pagado. Si no agregas otro método de pago antes del vencimiento, la renovación no podrá procesarse y la empresa será inactivada.”
+
+El modal debe incluir:
+
+Nombre o últimos cuatro dígitos de la tarjeta.
+Fecha de vencimiento de la membresía.
+Consecuencia de no registrar una nueva tarjeta.
+Botón de cancelar.
+Botón explícito de eliminar método de pago.
+Estado de carga.
+Manejo de errores.
+Prevención de doble clic.
+
+Después de eliminar la tarjeta:
+
+Actualizar la interfaz sin recargar toda la página cuando sea posible.
+Mostrar una confirmación.
+Indicar que no existe un método de pago.
+Mostrar una alerta persistente hasta que se agregue una nueva tarjeta.
+Mostrar la fecha límite para evitar la inactivación.
+Cambiar la acción principal a “Agregar método de pago”.
+
+Cuando la empresa esté inactiva, mostrar una pantalla clara que explique:
+
+Que la membresía terminó.
+Que el último pago no se completó o no existía un método de pago.
+Qué debe hacer el usuario para reactivar la empresa.
+Un botón para agregar una tarjeta.
+Un botón para realizar el pago o renovar.
+Casos límite
+
+Contempla y prueba como mínimo:
+
+Eliminar una tarjeta cuando la membresía todavía tiene días vigentes.
+Eliminar la única tarjeta disponible.
+Eliminar una tarjeta cuando existen varias.
+Eliminar la tarjeta predeterminada y asignar otra disponible como predeterminada.
+Intentar eliminar una tarjeta que ya fue eliminada.
+Fallo de la pasarela al desvincular la tarjeta.
+Método eliminado en la pasarela, pero todavía presente localmente.
+Método eliminado localmente, pero todavía presente en la pasarela.
+Membresía sin método de pago al momento de renovar.
+Tarjeta expirada.
+Tarjeta rechazada.
+Fondos insuficientes.
+Timeout de la pasarela.
+Webhook duplicado.
+Webhook recibido fuera de orden.
+Job de vencimiento ejecutándose al mismo tiempo que un webhook exitoso.
+Pago manual realizado segundos antes de la inactivación.
+Dos procesos intentando renovar la misma membresía.
+Empresa con membresía gratuita o vitalicia.
+Empresa ya inactiva.
+Reactivación después de registrar una tarjeta y pagar.
+Cambio de tarjeta antes del vencimiento.
+Usuario sin permisos intentando modificar el método de pago.
+Seguridad
+No recibir datos sensibles de tarjeta directamente en el backend si la pasarela proporciona componentes seguros o tokenización.
+Validar todos los identificadores.
+Validar que el método de pago pertenezca al cliente y a la empresa correcta.
+No permitir eliminar métodos de pago de otra empresa.
+Validar webhooks mediante su firma oficial.
+No incluir datos sensibles en logs.
+Aplicar rate limiting donde corresponda.
+Utilizar claves de idempotencia en cobros.
+Auditar quién agregó, cambió o eliminó un método de pago.
+Auditoría y observabilidad
+
+Registra eventos estructurados para:
+
+Método de pago agregado.
+Método de pago actualizado.
+Método de pago eliminado.
+Renovación iniciada.
+Renovación exitosa.
+Renovación fallida.
+Membresía vencida.
+Empresa inactivada.
+Empresa reactivada.
+Webhook procesado.
+Webhook ignorado por ser duplicado o antiguo.
+
+Incluye identificadores útiles, pero nunca información sensible de la tarjeta.
+
+Notificaciones
+
+Integra las notificaciones disponibles en el proyecto.
+
+Como mínimo, contempla:
+
+Confirmación al eliminar la tarjeta.
+Recordatorio antes del vencimiento cuando no existe método de pago.
+Aviso de pago fallido.
+Aviso de membresía vencida.
+Aviso de empresa inactivada.
+Confirmación de reactivación.
+
+Evita enviar notificaciones duplicadas si el job o webhook se procesa más de una vez.
+
+Pruebas
+
+Agrega pruebas unitarias, de integración y, cuando aplique, end-to-end.
+
+Las pruebas deben verificar:
+
+Eliminación correcta del método de pago.
+Autorización.
+Idempotencia.
+Conservación del acceso hasta el fin del periodo pagado.
+Inactivación posterior al vencimiento sin pago.
+No inactivación antes del vencimiento.
+Renovación con un nuevo método de pago.
+Reactivación solamente después de un pago exitoso.
+Procesamiento de webhooks duplicados.
+Condiciones de carrera entre jobs, pagos y webhooks.
+Manejo correcto de fallos de la pasarela.
+Restricción de funcionalidades para empresas inactivas.
+Acceso permitido al módulo de facturación para poder reactivar la cuenta.
+
+Usa mocks o el entorno de pruebas oficial de la pasarela.
+
+Criterios de aceptación
+
+La implementación estará completa cuando:
+
+Un usuario autorizado pueda eliminar su tarjeta.
+La tarjeta quede correctamente desvinculada.
+La membresía vigente no se cancele inmediatamente.
+La empresa continúe activa hasta el final del periodo ya pagado.
+Sin una nueva tarjeta, la renovación no se procese como exitosa.
+Después del vencimiento sin pago, la membresía quede vencida.
+Después del vencimiento sin pago, la empresa quede inactiva.
+Una empresa inactiva no pueda utilizar las funciones protegidas.
+La empresa pueda acceder al flujo de facturación para recuperarse.
+Agregar una tarjeta no reactive por sí solo la empresa.
+Un pago exitoso renueve la membresía y reactive la empresa.
+No existan cobros, webhooks, notificaciones ni inactivaciones duplicadas.
+Todos los escenarios principales cuenten con pruebas.
+El código respete la arquitectura y estándares existentes.

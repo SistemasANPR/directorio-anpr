@@ -1,0 +1,46 @@
+En la vista Gestión de Etiquetas, al abrir el modal “Nueva Etiqueta” se están precargando los datos de la última etiqueta que edité (por ejemplo, “Calidad Premium”).
+Problema: El formulario de creación reutiliza el estado del formulario de edición y trae valores previos.
+
+Lo que necesito
+
+Quiero que el modal “Nueva Etiqueta” se abra siempre limpio, sin ningún dato previo, y que sea independiente del modal de “Editar Etiqueta”.
+
+Comportamiento esperado
+
+Al hacer clic en “Nueva Etiqueta”:
+
+Todos los campos deben iniciar vacíos o con sus valores por defecto (nombre vacío, descripción vacía, color por defecto o sin selección).
+
+No se debe conservar ningún valor de una edición o apertura anterior.
+
+El modal debe mostrar claramente el modo Crear (título “Nueva Etiqueta” y botón “Crear”).
+
+La acción debe ser de creación (no debe haber ningún id o referencia a una etiqueta existente).
+
+Al hacer clic en “Editar” sobre una etiqueta existente:
+
+Solo en este caso el formulario se prellena con los datos de esa etiqueta.
+
+El modal debe mostrar el modo Editar (título “Editar Etiqueta” y botón “Actualizar”).
+
+Al cerrar cualquier modal (cancelar o guardar):
+
+El estado del formulario debe reiniciarse para que al volver a abrir “Nueva Etiqueta” aparezca limpio.
+
+También deben limpiarse mensajes de validación y cualquier estado de error previo.
+
+Criterios de aceptación (QA)
+
+Abro “Editar” de una etiqueta cualquiera, cierro el modal y luego abro “Nueva Etiqueta” ⇒ el formulario aparece en blanco y en modo Crear.
+
+Creo una etiqueta, cierro; vuelvo a abrir “Nueva Etiqueta” ⇒ sigue en blanco.
+
+Después de usar “Editar”, nunca se arrastran datos al modo Crear.
+
+No hay id ni referencias de etiqueta cargadas al crear.
+
+Los estilos, textos y diseño actuales se mantienen sin cambios.
+
+Nota
+
+Si se está reutilizando el mismo componente/modal para crear y editar, asegúrate de separar claramente ambos modos y restaurar el estado inicial cuando se abra “Nueva Etiqueta” (sin usar valores persistidos ni autocompletado del navegador para esos campos).

@@ -1,0 +1,111 @@
+Archivos involucrados (solo estos):
+
+client/src/pages/Certificates.tsx (modal Crear)
+
+client/src/components/EditCertificateModal.tsx (modal Editar)
+
+Problema actual
+
+En Editar, la sección “Asignación Automática” aparece en blanco/desmarcada hasta que el usuario interactúa, aunque al crear sí se guardaron planes y el flag de asignación.
+
+En Crear y Editar no están usando exactamente el mismo estado/control para esa sección.
+
+Objetivo
+
+Que Crear y Editar usen los mismos nombres de campos y el mismo mapeo para esta sección y que al abrir Editar se vean ya cargados (sin click) el checkbox y los planes seleccionados.
+
+No tocar nada fuera de estos dos modals.
+
+Campos (usar exactamente estos nombres, tal cual)
+
+nombreCertificado: string
+
+descripcion: string | ''
+
+fechaEmision: string (formato ISO yyyy-mm-dd)
+
+fechaVencimiento: string | '' (ISO o vacío)
+
+entidadEmisora: string | ''
+
+planesMembresia: string[] (IDs de planes)
+
+asignacionAutomatica: boolean
+
+estado: 'Activo' | 'Inactivo' (o el enum real que usa la API)
+
+Imagen: opcional en Editar (si no cambia, no exigir reenvío).
+
+Nota: No agregues ni renombres otros campos. No cambies el contrato con la API.
+
+Lo que debes hacer (solo en los dos modals)
+
+Controlar el checkbox “Asignación Automática” con el mismo campo
+
+En Crear y Editar, el checkbox debe leer y escribir en asignacionAutomatica.
+
+Editar debe inicializarlo con el valor del registro cargado (true/false) y verse marcado o no sin interacción del usuario.
+
+Evita estados duplicados (nada de “estado local” diferente al del formulario); debe ser componente controlado.
+
+Sincronizar la selección de planes
+
+En Crear y Editar, los checkboxes de planes deben bindearse a planesMembresia: string[] (IDs).
+
+En Editar, preseleccionar los planes que vengan en el registro.
+
+Al marcar/desmarcar, actualizar planesMembresia (agregar/quitar IDs) en el mismo estado del formulario.
+
+Render condicional consistente
+
+Si asignacionAutomatica === true, mostrar la sección “Planes de Membresía Asociados” activa (habilitada).
+
+Si false, puedes deshabilitarla visualmente (sin borrar lo cargado), pero NO resetees planesMembresia automáticamente.
+
+Carga inicial en Editar
+
+Al abrir Editar, hidrata el formulario con todos los campos del certificado y asegura que:
+
+asignacionAutomatica muestre su estado real.
+
+planesMembresia aparezca con sus checks preseleccionados.
+
+Fechas se muestren en ISO para inputs type="date" (yyyy-mm-dd).
+
+No dependas de “primer click” para aplicar el estado.
+
+Envío
+
+Crear y Editar deben enviar exactamente los nombres de campos de arriba.
+
+En Editar, si la imagen no cambió, no la reenvíes.
+
+Mantén el resto del payload intacto.
+
+UI/UX
+
+Mantén el diseño de los modals como está ahora (header/footer fijos, scroll interno).
+
+No cambies estilos globales ni otros módulos.
+
+Criterios de aceptación (QA)
+
+Creo un certificado con asignacionAutomatica = true y planes [A,B] ⇒ guardo.
+
+Abro Editar ese certificado ⇒ el checkbox aparece marcado y los planes A y B ya preseleccionados, sin hacer clic.
+
+Cambio la selección (p. ej., desmarco B, marco C) ⇒ guardo ⇒ reabro Editar ⇒ veo A y C preseleccionados y el estado del checkbox correcto.
+
+Con asignacionAutomatica = false, no se borra planesMembresia; solo queda deshabilitada la UI.
+
+Fechas válidas en formato ISO yyyy-mm-dd en ambos modals.
+
+No se afectó ningún otro flujo del sistema.
+
+Entrega
+
+Indica dónde se estaban leyendo/escribiendo estados distintos para “Asignación Automática”.
+
+Confirma que ambos modals usan los mismos nombres de campos y que Editar se hidrata y renderiza el estado inicial correcto.
+
+Adjunta capturas antes/después mostrando el checkbox y los planes preseleccionados al abrir Editar.

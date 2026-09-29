@@ -1,0 +1,57 @@
+Desde Dashboard → Directorio de Empresas → Nueva Empresa, al pulsar “Registrar Empresa” no ocurre nada. Además, en el selector de redes sociales aparece “Sitio Web” (ya existe un campo de sitio web en el formulario) y en múltiples pantallas todavía se muestra “Twitter” en lugar de “X”.
+
+Objetivos
+
+Arreglar el botón “Registrar Empresa”.
+
+Debe enviar el formulario y crear la empresa correctamente.
+
+Mostrar estado de carga y deshabilitar el botón durante el envío.
+
+Al éxito: cerrar el modal, notificar éxito y refrescar la lista de empresas.
+
+Al error: mostrar mensajes de validación por campo y un mensaje general.
+
+Asegurar que no se permita el envío doble y que haya manejo de errores del backend.
+
+Redes sociales: eliminar “Sitio Web” del selector.
+
+Quitar “Sitio Web” del dropdown de plataformas de redes sociales en el formulario de registro y en cualquier otra parte del sistema.
+
+Impedir la creación de nuevas redes con la plataforma “Sitio Web”.
+
+Si existen datos históricos con esa plataforma, normalizarlos para que no rompan la UI (migración o mapeo al campo general de sitio web).
+
+Reemplazo global de “Twitter” por “X”.
+
+En todo el sistema (formularios, listados, tarjetas, filtros, reportes, seeds, enums y textos), sustituir el nombre visible por “X” y actualizar el ícono correspondiente.
+
+Mantener compatibilidad con datos antiguos: donde exista el valor “twitter”, normalizarlo a “x” sin romper registros existentes.
+
+Validaciones mínimas del formulario
+
+Nombre de la empresa: requerido.
+
+Email principal: requerido y con formato válido.
+
+Teléfono principal: opcional con formato consistente.
+
+Sitio web: opcional con formato de URL válido.
+
+Vinculación con usuario de WordPress (si se usa): autollenar y coherencia de datos.
+
+Criterios de aceptación
+
+CA1: Al pulsar “Registrar Empresa” se crea el registro y se refleja en la lista sin recargar toda la página.
+
+CA2: Se muestra feedback de carga y no se permite doble envío.
+
+CA3: Los errores del backend se muestran claramente por campo y en un mensaje general.
+
+CA4: “Sitio Web” no aparece en el selector de redes sociales en ninguna parte de la app y no se pueden crear nuevas entradas con esa plataforma.
+
+CA5: En todas las pantallas del sistema, “Twitter” aparece como “X” con su ícono actualizado; los datos antiguos siguen funcionando mediante normalización.
+
+CA6: No hay regresiones en la visualización o edición de redes sociales existentes.
+
+Entrega esperada: cambios aplicados, datos antiguos normalizados, pruebas manuales realizadas (registro exitoso, errores visibles), y confirmación con evidencias (capturas antes/después).

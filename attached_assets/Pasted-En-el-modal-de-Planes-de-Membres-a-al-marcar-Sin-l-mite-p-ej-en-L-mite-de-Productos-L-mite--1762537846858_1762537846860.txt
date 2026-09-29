@@ -1,0 +1,60 @@
+En el modal de Planes de Membresía, al marcar “Sin límite” (p. ej., en Límite de Productos / Límite de Proyectos / Límite de Fotos por Proyecto), el input se rellena con -1. Eso dispara validaciones (“debe ser mayor a 0”) y bloquea la creación/actualización del plan.
+
+Objetivo:
+Cuando el usuario marque “Sin límite”, el formulario no debe quedar inválido. Debe permitir guardar el plan sin errores.
+
+Comportamiento requerido
+
+Marcando “Sin límite”
+
+El campo asociado debe considerarse ilimitado sin provocar errores de validación.
+
+Evitar que el input se muestre como -1 al usuario.
+
+Opciones válidas: dejar el campo vacío, deshabilitado o usar un valor interno que no rompa la validación.
+
+Visualmente, el input puede quedar deshabilitado y sin valor mientras “Sin límite” esté activo.
+
+Desmarcando “Sin límite”
+
+El input vuelve a estar habilitado y requiere un entero > 0 (se aplican las validaciones normales).
+
+Validación
+
+Con “Sin límite” activo, no deben mostrarse mensajes de “La cantidad debe ser mayor a 0”.
+
+El formulario debe poder guardar en ambos casos:
+
+Con límite: número > 0.
+
+Sin límite: campo tratado como ilimitado (sin valor numérico que rompa reglas).
+
+Persistencia/Back-end
+
+Acordar y aplicar una representación consistente de “ilimitado” para el API (por ejemplo null o un flag explícito).
+
+Lo que no quiero es que se envíe -1 si eso hace fallar las validaciones del servidor o muestra errores al usuario.
+
+Consistencia
+
+Aplicar lo mismo a todos los campos que tengan opción “Sin límite”.
+
+No cambiar textos ni estilos; solo el comportamiento y las validaciones.
+
+Criterios de aceptación (QA)
+
+Marco “Sin límite” en cualquiera de los campos ⇒ no aparece el valor -1 en el input, no hay errores de “> 0” y sí puedo guardar.
+
+Desmarco “Sin límite” ⇒ el input exige > 0 y valida correctamente.
+
+Edito un plan que ya tiene “Sin límite” ⇒ el modal refleja el estado (checkbox activo, input deshabilitado/sin valor) y permite actualizar.
+
+La API recibe una representación coherente (null/flag) y no devuelve errores.
+
+Ningún otro campo o regla del plan se ve afectado.
+
+Entrega
+
+Explicar qué causaba que se pusiera -1 y qué cambió para que “Sin límite” no rompa la validación ni el guardado.
+
+Confirmar que el comportamiento es consistente en todos los campos con “Sin límite”.
