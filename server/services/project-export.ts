@@ -1,0 +1,458 @@
+/**
+ * Exportación del proyecto completo (código fuente + base de datos) en un ZIP
+ * descargable, listo para desplegarse en Vercel y conectarse a un PostgreSQL
+ * propio (por ejemplo, un VPS de Hostinger).
+ *
+ * El paquete que genera `streamFullExport` contiene:
+ *   - Todo el código fuente del directorio (cliente, servidor, API, esquema).
+ *   - El plugin de WordPress que integra membresías/licencias.
+ *   - `database/backup.sql`: volcado completo de la base de datos (usuarios,
+ *     empresas, membresías/licencias, pagos, reseñas, configuración...).
+ *   - `.env.example` con todas las variables de entorno necesarias.
+ *   - `INSTALACION.md` con los pasos de despliegue.
+ *
+ * Nunca se incluyen secretos reales (.env), `node_modules`, el historial de git
+ * ni los archivos subidos por los usuarios.
+ */
+
+import archiver from "archiver";
+import fs from "fs";
+import path from "path";
+import type { Response } from "express";
+import { generateSqlDump } from "./db-export";
+
+/**
+ * Carpetas y archivos que NUNCA entran en el paquete.
+ *
+ * - Pesados o regenerables: node_modules, dist, .cache, uploads, attached_assets
+ * - Sensibles: .env, claves de servicio, volcados antiguos con datos reales
+ * - Específicos del entorno actual: .git, .replit, .upm, .config, .local
+ */
+const EXCLUDED_DIRS = new Set([
+  "node_modules",
+  ".git",
+  ".cache",
+  ".local",
+  ".upm",
+  ".config",
+  ".agents",
+  ".claude",
+  "dist",
+  "uploads",
+  "attached_assets",
+  ".vercel",
+  ".next",
+  "coverage",
+]);
+
+const EXCLUDED_FILES = new Set([
+  ".env",
+  ".env.local",
+  ".env.production",
+  ".env.development",
+  "package-lock.json",
+  "database_export.sql",
+  "production_sync.sql",
+  "generated-icon.png",
+  "map_section.png",
+  ".DS_Store",
+]);
+
+/** Extensiones que jamás deben viajar en el paquete (credenciales). */
+const EXCLUDED_EXTENSIONS = new Set([".pem", ".key", ".p12", ".pfx"]);
+
+/**
+ * Localiza la raíz del proyecto. En el servidor Node es el cwd; en una función
+ * serverless de Vercel los archivos incluidos cuelgan de otra ruta, así que se
+ * prueban varios candidatos y se acepta el primero que tenga `package.json`
+ * junto a las carpetas del proyecto.
+ */
+export function resolveProjectRoot(): string | null {
+  const candidates = [
+    process.cwd(),
+    process.env.PROJECT_ROOT,
+    "/var/task",
+    path.resolve(process.cwd(), ".."),
+  ].filter((c): c is string => Boolean(c));
+
+  for (const candidate of candidates) {
+    try {
+      if (
+        fs.existsSync(path.join(candidate, "package.json")) &&
+        fs.existsSync(path.join(candidate, "shared"))
+      ) {
+        return candidate;
+      }
+    } catch {
+      // Ruta inaccesible: se prueba la siguiente.
+    }
+  }
+  return null;
+}
+
+function shouldSkip(entryName: string, isDirectory: boolean): boolean {
+  if (isDirectory) return EXCLUDED_DIRS.has(entryName);
+  if (EXCLUDED_FILES.has(entryName)) return true;
+  if (EXCLUDED_EXTENSIONS.has(path.extname(entryName).toLowerCase())) return true;
+  // Cualquier variante de .env que no sea la plantilla de ejemplo.
+  if (entryName.startsWith(".env") && entryName !== ".env.example") return true;
+  return false;
+}
+
+export interface CollectedFile {
+  absolutePath: string;
+  /** Ruta dentro del ZIP, con separadores "/". */
+  archivePath: string;
+  size: number;
+}
+
+/** Recorre el proyecto y devuelve la lista de archivos que se van a empaquetar. */
+export function collectProjectFiles(root: string): CollectedFile[] {
+  const files: CollectedFile[] = [];
+
+  const walk = (dir: string, relative: string) => {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(dir, { withFileTypes: true });
+    } catch {
+      return; // Carpeta ilegible: se ignora en vez de romper la exportación.
+    }
+
+    for (const entry of entries) {
+      if (shouldSkip(entry.name, entry.isDirectory())) continue;
+
+      const absolutePath = path.join(dir, entry.name);
+      const archivePath = relative ? `${relative}/${entry.name}` : entry.name;
+
+      if (entry.isDirectory()) {
+        walk(absolutePath, archivePath);
+      } else if (entry.isFile()) {
+        try {
+          files.push({ absolutePath, archivePath, size: fs.statSync(absolutePath).size });
+        } catch {
+          // Archivo desaparecido o sin permisos: se omite.
+        }
+      }
+      // Los enlaces simbólicos se ignoran deliberadamente: podrían apuntar
+      // fuera del proyecto (por ejemplo a node_modules o a secretos).
+    }
+  };
+
+  walk(root, "");
+  return files;
+}
+
+/** Plantilla de variables de entorno, sin ningún valor real. */
+function buildEnvExample(): string {
+  return `# ===================================================================
+# Variables de entorno del Directorio de Proveedores
+# ===================================================================
+# Copia este archivo como ".env" (desarrollo local) o carga estas
+# variables en Vercel: Settings -> Environment Variables.
+# NUNCA subas el archivo .env real a GitHub.
+
+# --- BASE DE DATOS (OBLIGATORIO) -----------------------------------
+# PostgreSQL. Si la instalaste en un VPS de Hostinger:
+#   postgresql://usuario:password@IP_DEL_VPS:5432/directorio?sslmode=require
+DATABASE_URL=postgresql://usuario:password@host:5432/directorio?sslmode=require
+
+# --- SEGURIDAD (OBLIGATORIO) ---------------------------------------
+# Secreto para firmar las sesiones de administrador.
+# Genera uno con: openssl rand -hex 32
+SESSION_SECRET=
+
+# Secreto compartido con WordPress para el auto-login (SSO).
+WP_SSO_SECRET=
+
+# --- CLOUDINARY (obligatorio para subir imágenes) ------------------
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+
+# --- STRIPE (pagos de membresías/licencias) ------------------------
+STRIPE_SECRET_KEY=
+STRIPE_PUBLISHABLE_KEY=
+VITE_STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=
+
+# --- FIREBASE (autenticación) --------------------------------------
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
+# Credencial de servicio (JSON en una sola línea) para firebase-admin:
+FIREBASE_SERVICE_ACCOUNT=
+
+# --- GOOGLE MAPS ---------------------------------------------------
+VITE_GOOGLE_MAPS_API_KEY=
+
+# --- CORREO (SMTP) -------------------------------------------------
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM_EMAIL=
+
+# --- WORDPRESS (membresías / licencias) ----------------------------
+WORDPRESS_URL=
+WORDPRESS_USER=
+WORDPRESS_APP_PASSWORD=
+
+# --- ENTORNO -------------------------------------------------------
+NODE_ENV=production
+`;
+}
+
+/** Guía de instalación que se incluye dentro del ZIP. */
+function buildInstallGuide(meta: { generatedAt: string; tableCount: number; rowCount: number }): string {
+  return `# Instalación del Directorio de Proveedores
+
+Paquete generado el **${meta.generatedAt}**.
+Incluye el código fuente completo y un respaldo de la base de datos con
+**${meta.tableCount} tablas** y **${meta.rowCount} registros** (usuarios,
+empresas, membresías/licencias, pagos, reseñas y configuración).
+
+---
+
+## Contenido del paquete
+
+| Ruta | Qué es |
+|------|--------|
+| \`client/\` | Aplicación React (panel de administración y directorio público) |
+| \`server/\` | Servidor Express para Node (desarrollo y hosting tradicional) |
+| \`api/index.ts\` | Misma API empaquetada como función serverless de Vercel |
+| \`shared/schema.ts\` | Esquema de la base de datos (Drizzle ORM) |
+| \`migrations/\` | Migraciones SQL |
+| \`wordpress-plugin/\` | Plugin de WordPress: SSO y sincronización de membresías |
+| \`database/backup.sql\` | **Respaldo completo de la base de datos** |
+| \`.env.example\` | Plantilla de variables de entorno |
+
+> El paquete **no** incluye \`node_modules\`, el archivo \`.env\` con tus
+> secretos reales, ni las imágenes subidas por los usuarios (esas viven en
+> Cloudinary).
+
+---
+
+## 1. Crear la base de datos PostgreSQL
+
+### Opción A — VPS de Hostinger (control total)
+
+Conéctate por SSH a tu VPS y ejecuta:
+
+\`\`\`bash
+sudo apt update && sudo apt install -y postgresql postgresql-contrib
+
+# Crear usuario y base de datos
+sudo -u postgres psql <<'SQL'
+CREATE USER directorio_user WITH PASSWORD 'CAMBIA_ESTA_PASSWORD';
+CREATE DATABASE directorio OWNER directorio_user;
+GRANT ALL PRIVILEGES ON DATABASE directorio TO directorio_user;
+SQL
+\`\`\`
+
+Permite conexiones remotas (Vercel se conecta desde fuera):
+
+\`\`\`bash
+# postgresql.conf -> escuchar en todas las interfaces
+sudo sed -i "s/^#\\?listen_addresses.*/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
+
+# pg_hba.conf -> exigir contraseña cifrada en conexiones remotas
+echo "hostssl all all 0.0.0.0/0 scram-sha-256" | sudo tee -a /etc/postgresql/*/main/pg_hba.conf
+
+sudo systemctl restart postgresql
+sudo ufw allow 5432/tcp
+\`\`\`
+
+> **Importante:** activa SSL en PostgreSQL antes de abrir el puerto 5432 a
+> Internet, o cualquiera podrá interceptar las credenciales. Hostinger no
+> filtra ese puerto por ti.
+
+### Opción B — PostgreSQL gestionado (Neon, Supabase)
+
+Crea el proyecto y copia la cadena de conexión. No hay servidor que mantener.
+
+---
+
+## 2. Restaurar el respaldo
+
+\`\`\`bash
+psql "postgresql://directorio_user:TU_PASSWORD@IP_DEL_VPS:5432/directorio" < database/backup.sql
+\`\`\`
+
+El archivo recrea tablas, datos, índices, claves foráneas y secuencias.
+**Elimina (DROP) las tablas existentes**, así que restáuralo únicamente sobre
+una base de datos vacía.
+
+---
+
+## 3. Desplegar en Vercel
+
+1. Sube este proyecto a un repositorio de GitHub.
+2. En [vercel.com](https://vercel.com): **Add New → Project** e importa el repo.
+3. Configuración de build:
+   - Framework Preset: **Other**
+   - Build Command: \`npm run build\`
+   - Output Directory: \`dist/public\`
+4. En **Settings → Environment Variables** carga todas las variables de
+   \`.env.example\` con sus valores reales.
+5. **Deploy**.
+
+---
+
+## 4. Ejecutarlo en local
+
+\`\`\`bash
+npm install
+cp .env.example .env    # y rellena los valores
+npm run dev             # http://localhost:5000
+\`\`\`
+
+Para crear el esquema en una base de datos vacía sin usar el respaldo:
+
+\`\`\`bash
+npm run db:push
+\`\`\`
+
+---
+
+## 5. Plugin de WordPress (membresías y licencias)
+
+La carpeta \`wordpress-plugin/\` contiene la integración que sincroniza los
+usuarios y sus membresías entre WordPress y el directorio.
+
+1. Sube la carpeta a \`wp-content/plugins/\` y actívalo desde el panel de WordPress.
+2. En el plugin, configura la URL del directorio y el mismo valor de
+   \`WP_SSO_SECRET\` que pusiste en Vercel. Si los secretos no coinciden, el
+   auto-login falla.
+3. Comprueba la integración desde el directorio en
+   **Configuración → Integración WordPress**.
+
+---
+
+## Verificación final
+
+- [ ] La página principal carga
+- [ ] Puedes iniciar sesión como administrador
+- [ ] Aparecen las empresas del directorio
+- [ ] Se pueden subir imágenes (Cloudinary configurado)
+- [ ] Las membresías/licencias muestran los planes correctos
+- [ ] El auto-login desde WordPress funciona
+`;
+}
+
+export interface FullExportOptions {
+  /** Incluir el volcado de la base de datos dentro del ZIP. */
+  includeDatabase?: boolean;
+  /** Incluir el código fuente dentro del ZIP. */
+  includeSource?: boolean;
+}
+
+interface QueryablePool {
+  query(text: string, values?: any[]): Promise<{ rows: any[] }>;
+}
+
+/**
+ * Construye el ZIP y lo envía por streaming a la respuesta HTTP.
+ *
+ * Se transmite mientras se comprime, así que no se mantiene el paquete completo
+ * en memoria. Las cabeceras se escriben antes de empezar; si algo falla a mitad
+ * del stream ya no se puede cambiar el código de estado, por lo que el error se
+ * registra y se aborta la conexión para que el cliente no reciba un ZIP
+ * truncado creyendo que está completo.
+ */
+export async function streamFullExport(
+  res: Response,
+  pool: QueryablePool,
+  filename: string,
+  options: FullExportOptions = {},
+): Promise<void> {
+  const includeDatabase = options.includeDatabase !== false;
+  const includeSource = options.includeSource !== false;
+
+  // El volcado SQL se genera ANTES de abrir el stream: si la base de datos
+  // falla, todavía se puede responder con un error JSON limpio.
+  let dump: { sql: string; tableCount: number; rowCount: number } | null = null;
+  if (includeDatabase) {
+    dump = await generateSqlDump(pool);
+  }
+
+  let root: string | null = null;
+  let files: CollectedFile[] = [];
+  if (includeSource) {
+    root = resolveProjectRoot();
+    if (!root) {
+      throw new Error(
+        "No se encontró el código fuente del proyecto en este servidor. " +
+          "La exportación del código solo está disponible desde el servidor de la aplicación.",
+      );
+    }
+    files = collectProjectFiles(root);
+    if (!files.length) {
+      throw new Error("No se encontró ningún archivo de código para exportar.");
+    }
+  }
+
+  const archive = archiver("zip", { zlib: { level: 9 } });
+
+  archive.on("warning", (err: any) => {
+    // ENOENT: un archivo desapareció durante el recorrido. No es fatal.
+    if (err?.code === "ENOENT") {
+      console.warn("[project-export] Aviso al comprimir:", err.message);
+    } else {
+      archive.emit("error", err);
+    }
+  });
+
+  archive.on("error", (err: any) => {
+    console.error("[project-export] Error al comprimir:", err);
+    // Las cabeceras ya se enviaron: cortar la conexión es la única forma de
+    // señalar al cliente que el ZIP está incompleto.
+    res.destroy(err);
+  });
+
+  res.setHeader("Content-Type", "application/zip");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.setHeader(
+    "Access-Control-Expose-Headers",
+    "Content-Disposition, X-Export-Tables, X-Export-Rows, X-Export-Files",
+  );
+  if (dump) {
+    res.setHeader("X-Export-Tables", String(dump.tableCount));
+    res.setHeader("X-Export-Rows", String(dump.rowCount));
+  }
+  res.setHeader("X-Export-Files", String(files.length));
+
+  archive.pipe(res);
+
+  // 1. Código fuente
+  for (const file of files) {
+    archive.file(file.absolutePath, { name: `directorio/${file.archivePath}` });
+  }
+
+  // 2. Respaldo de la base de datos
+  if (dump) {
+    archive.append(dump.sql, { name: "directorio/database/backup.sql" });
+  }
+
+  // 3. Plantilla de variables de entorno y guía de instalación
+  if (includeSource) {
+    archive.append(buildEnvExample(), { name: "directorio/.env.example" });
+    archive.append(
+      buildInstallGuide({
+        generatedAt: new Date().toISOString().replace("T", " ").slice(0, 16) + " UTC",
+        tableCount: dump?.tableCount ?? 0,
+        rowCount: dump?.rowCount ?? 0,
+      }),
+      { name: "directorio/INSTALACION.md" },
+    );
+  }
+
+  await archive.finalize();
+}
+
+/** Nombre sugerido: directorio-completo-2026-09-24-1530.zip */
+export function buildPackageFilename(prefix = "directorio-completo", date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp = `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`;
+  return `${prefix}-${stamp}.zip`;
+}

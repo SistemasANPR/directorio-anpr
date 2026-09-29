@@ -1,0 +1,447 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Montserrat font family for the entire site */
+* {
+  font-family: 'Montserrat', sans-serif;
+}
+
+/* Montserrat Black for hero titles */
+.hero-title {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 900; /* Black weight */
+}
+
+:root {
+  --background: 210 11% 98%; /* #F5F7FA */
+  --foreground: 0 0% 29%; /* #4a4a49 - Default text color */
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 29%; /* #4a4a49 - Default text color */
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 29%; /* #4a4a49 - Default text color */
+  --primary: 220 100% 20%; /* #0f2161 - Navy Blue */
+  --primary-foreground: 210 40% 98%;
+  --secondary: 82 85% 45%; /* #bcce16 - Lime Green */
+  --secondary-foreground: 220 100% 20%;
+  --muted: 210 40% 96%;
+  --muted-foreground: 0 0% 29%; /* #4a4a49 - Default text color */
+  --accent: 210 40% 96%;
+  --accent-foreground: 0 0% 29%; /* #4a4a49 - Default text color */
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 210 40% 98%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --ring: 220 100% 20%; /* #0f2161 - Navy Blue */
+  --chart-1: 12 76% 61%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 0 0% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 83.1%;
+  --chart-1: 220 70% 50%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100vw;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Montserrat', sans-serif;
+    color: #4a4a49; /* Default text color for entire platform */
+  }
+
+  /* Apply default text color to all text elements on white backgrounds */
+  h1, h2, h3, h4, h5, h6, p, span, div, a, li, td, th, label {
+    color: #4a4a49;
+  }
+
+  /* Ensure dropdown options have proper color with high specificity */
+  select option,
+  select[class*="rounded-full"] option,
+  .hero select option,
+  div select option {
+    color: #374151 !important;
+    background-color: #ffffff !important;
+    font-weight: normal !important;
+  }
+
+  /* Fix select element text color with high specificity */
+  select,
+  select[class*="rounded-full"],
+  .hero select,
+  div select {
+    color: #374151 !important;
+  }
+
+  /* Override any white text in hero section for form elements */
+  .hero-section select,
+  .hero-section select option,
+  .hero-search-section select,
+  .hero-search-section select option,
+  [style*="background"] select,
+  [style*="background"] select option {
+    color: #374151 !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Specific targeting for hero dropdowns with webkit support */
+  .hero-search-section .flex select {
+    color: #374151 !important;
+    -webkit-text-fill-color: #374151 !important;
+  }
+
+  .hero-search-section .flex select option {
+    color: #374151 !important;
+    background-color: #ffffff !important;
+    -webkit-text-fill-color: #374151 !important;
+  }
+
+  /* Additional webkit specific styling */
+  select option:checked {
+    color: #374151 !important;
+    background-color: #ffffff !important;
+  }
+
+  /* Force color on all select elements in hero */
+  .hero-search-section select::-webkit-list-button {
+    color: #374151 !important;
+  }
+
+  /* White text on colored backgrounds */
+  .bg-blue-900 *, 
+  .bg-blue-800 *, 
+  .bg-blue-700 *, 
+  .bg-blue-600 *,
+  .bg-gray-900 *, 
+  .bg-gray-800 *, 
+  .bg-gray-700 *,
+  .bg-green-600 *, 
+  .bg-green-700 *, 
+  .bg-green-800 *,
+  .bg-red-600 *, 
+  .bg-red-700 *, 
+  .bg-red-800 *,
+  [style*="background: linear-gradient"] *,
+  [style*="background-color: #"] *:not([class*="text-"]),
+  .text-white {
+    color: white !important;
+  }
+
+  /* Specific overrides for colored text when needed */
+  .text-blue-600 {
+    color: #2563eb !important;
+  }
+
+  .text-green-600 {
+    color: #16a34a !important;
+  }
+
+  .text-red-600 {
+    color: #dc2626 !important;
+  }
+
+  /* Gray variants all use the standard gray */
+  .text-gray-600,
+  .text-gray-700,
+  .text-gray-800,
+  .text-gray-900 {
+    color: #4a4a49 !important;
+  }
+
+  /* Ensure white text on dark gradient backgrounds */
+  [style*="linear-gradient(135deg, #0f2161"] * {
+    color: white !important;
+  }
+}
+
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground));
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
+
+/* Loading animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Table hover effects */
+.table-row-hover:hover {
+  background-color: hsl(var(--muted) / 0.5);
+}
+
+/* Custom focus styles */
+.focus-visible:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+
+/* Hide scrollbar for slider */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Responsive utilities */
+@media (max-width: 640px) {
+  .text-responsive {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  
+  .heading-responsive {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+  
+  .subheading-responsive {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 768px) {
+  .text-responsive {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  
+  .heading-responsive {
+    font-size: 1.875rem;
+    line-height: 2.25rem;
+  }
+  
+  .subheading-responsive {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+}
+
+/* Mobile-first card layouts */
+.card-grid-responsive {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .card-grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .card-grid-responsive {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Touch-friendly buttons */
+@media (max-width: 768px) {
+  .btn-touch {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .nav-touch {
+    padding: 1rem 0.75rem;
+  }
+}
+
+/* Responsive table wrapper */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 768px) {
+  .table-responsive table {
+    min-width: 600px;
+  }
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  outline: none;
+  padding: 12px;
+  min-height: 120px;
+  line-height: 1.6;
+  color: #374151;
+}
+
+.ProseMirror p {
+  margin: 0.5em 0;
+}
+
+.ProseMirror h1, .ProseMirror h2, .ProseMirror h3 {
+  font-weight: 600;
+  margin: 1em 0 0.5em 0;
+}
+
+.ProseMirror h1 {
+  font-size: 1.5em;
+}
+
+.ProseMirror h2 {
+  font-size: 1.3em;
+}
+
+.ProseMirror h3 {
+  font-size: 1.1em;
+}
+
+.ProseMirror ul, .ProseMirror ol {
+  padding-left: 1.5em;
+  margin: 0.5em 0;
+}
+
+.ProseMirror li {
+  margin: 0.25em 0;
+}
+
+.ProseMirror strong {
+  font-weight: 600;
+}
+
+.ProseMirror em {
+  font-style: italic;
+}
+
+.ProseMirror a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.ProseMirror blockquote {
+  border-left: 3px solid #d1d5db;
+  padding-left: 1em;
+  margin-left: 0;
+  font-style: italic;
+}
+
+.ProseMirror code {
+  background-color: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 0.25rem;
+  font-size: 0.875em;
+}
+
+.ProseMirror pre {
+  background-color: #f3f4f6;
+  padding: 1em;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+}
+
+.ProseMirror pre code {
+  background: none;
+  padding: 0;
+}
+
+.ProseMirror:focus {
+  outline: none;
+}
+
+/* Drag and Drop Styles */
+.drag-over {
+  border-color: #3b82f6 !important;
+  background-color: #eff6ff !important;
+}
+
+/* Ensure modals appear above Google Maps */
+[role="dialog"],
+[data-radix-dialog-content],
+.dialog-overlay,
+.dialog-content {
+  z-index: 9999 !important;
+}
+
+/* Force text color for Radix UI Select components */
+[data-radix-select-trigger] span,
+[data-radix-select-trigger] [data-radix-select-value],
+button[role="combobox"] span,
+button[role="combobox"] [data-radix-select-value] {
+  color: #374151 !important;
+}
+
+/* Force placeholder color for Radix UI Select */
+[data-radix-select-trigger][data-placeholder] span,
+[data-radix-select-trigger][data-placeholder] [data-radix-select-value],
+button[role="combobox"][data-placeholder] span {
+  color: #374151 !important;
+}
+
+
+
+
