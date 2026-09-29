@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+﻿import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useForm, useFieldArray } from "react-hook-form";
@@ -52,19 +52,20 @@ import {
   Phone,
   Upload,
   RefreshCw,
-  X
+  X,
+  Linkedin
 } from "lucide-react";
-import { SiFacebook, SiX, SiInstagram, SiYoutube, SiLinkedin, SiWhatsapp, SiTiktok, SiTelegram } from "react-icons/si";
+import { SiFacebook, SiX, SiInstagram, SiYoutube, SiWhatsapp, SiTiktok, SiTelegram } from "react-icons/si";
 import Swal from "sweetalert2";
 
 const socialMediaSchema = z.object({
   platform: z.string().min(1, "Plataforma requerida"),
-  url: z.string().url("URL válida requerida"),
-  iconColor: z.string().min(1, "Color de ícono requerido"),
+  url: z.string().url("URL vÃ¡lida requerida"),
+  iconColor: z.string().min(1, "Color de Ã­cono requerido"),
 });
 
 const notificationEmailSchema = z.object({
-  email: z.string().email("Email válido requerido"),
+  email: z.string().email("Email vÃ¡lido requerido"),
 });
 
 const systemSettingsSchema = z.object({
@@ -75,7 +76,7 @@ const systemSettingsSchema = z.object({
   logoUrl: z.string().optional(),
   faviconUrl: z.string().optional(),
   currency: z.string().min(1, "Moneda es requerida"),
-  contactEmail: z.string().email("Email válido requerido").optional(),
+  contactEmail: z.string().email("Email vÃ¡lido requerido").optional(),
   contactPhone: z.string().optional(),
   socialMediaList: z.array(socialMediaSchema).optional(),
   notificationEmailsList: z.array(notificationEmailSchema).optional(),
@@ -102,25 +103,25 @@ const socialMediaPlatforms = [
   { value: "twitter", label: "X", icon: SiX, defaultColor: "#000000" },
   { value: "instagram", label: "Instagram", icon: SiInstagram, defaultColor: "#E4405F" },
   { value: "youtube", label: "YouTube", icon: SiYoutube, defaultColor: "#FF0000" },
-  { value: "linkedin", label: "LinkedIn", icon: SiLinkedin, defaultColor: "#0077B5" },
+  { value: "linkedin", label: "LinkedIn", icon: Linkedin, defaultColor: "#0077B5" },
   { value: "whatsapp", label: "WhatsApp", icon: SiWhatsapp, defaultColor: "#25D366" },
   { value: "tiktok", label: "TikTok", icon: SiTiktok, defaultColor: "#000000" },
   { value: "telegram", label: "Telegram", icon: SiTelegram, defaultColor: "#0088CC" },
 ];
 
 const currencies = [
-  { value: "USD", label: "USD - Dólar Estadounidense", symbol: "$" },
-  { value: "EUR", label: "EUR - Euro", symbol: "€" },
+  { value: "USD", label: "USD - DÃ³lar Estadounidense", symbol: "$" },
+  { value: "EUR", label: "EUR - Euro", symbol: "â‚¬" },
   { value: "MXN", label: "MXN - Peso Mexicano", symbol: "$" },
   { value: "COP", label: "COP - Peso Colombiano", symbol: "$" },
   { value: "ARS", label: "ARS - Peso Argentino", symbol: "$" },
   { value: "CLP", label: "CLP - Peso Chileno", symbol: "$" },
   { value: "PEN", label: "PEN - Sol Peruano", symbol: "S/." },
-  { value: "BRL", label: "BRL - Real Brasileño", symbol: "R$" },
-  { value: "CAD", label: "CAD - Dólar Canadiense", symbol: "C$" },
-  { value: "GBP", label: "GBP - Libra Esterlina", symbol: "£" },
-  { value: "JPY", label: "JPY - Yen Japonés", symbol: "¥" },
-  { value: "CNY", label: "CNY - Yuan Chino", symbol: "¥" },
+  { value: "BRL", label: "BRL - Real BrasileÃ±o", symbol: "R$" },
+  { value: "CAD", label: "CAD - DÃ³lar Canadiense", symbol: "C$" },
+  { value: "GBP", label: "GBP - Libra Esterlina", symbol: "Â£" },
+  { value: "JPY", label: "JPY - Yen JaponÃ©s", symbol: "Â¥" },
+  { value: "CNY", label: "CNY - Yuan Chino", symbol: "Â¥" },
 ];
 
 export default function SystemSettings() {
@@ -192,7 +193,7 @@ export default function SystemSettings() {
   const form = useForm<SystemSettingsFormData>({
     resolver: zodResolver(systemSettingsSchema),
     values: settings ? {
-      systemName: settings.systemName || "Mi Organización",
+      systemName: settings.systemName || "Mi OrganizaciÃ³n",
       systemDescription: settings.systemDescription || "",
       primaryColor: settings.primaryColor || "#3b82f6",
       secondaryColor: settings.secondaryColor || "#64748b",
@@ -204,7 +205,7 @@ export default function SystemSettings() {
       socialMediaList: parseSocialMedia(settings.socialMedia || ""),
       notificationEmailsList: parseNotificationEmails(settings.notificationEmails),
     } : {
-      systemName: "Mi Organización",
+      systemName: "Mi OrganizaciÃ³n",
       systemDescription: "",
       primaryColor: "#3b82f6",
       secondaryColor: "#64748b",
@@ -239,7 +240,7 @@ export default function SystemSettings() {
       // Convert notificationEmailsList to array of strings
       const notificationEmailsArray = data.notificationEmailsList?.map(item => item.email) || [];
 
-      // Guardar también el símbolo correspondiente a la moneda seleccionada,
+      // Guardar tambiÃ©n el sÃ­mbolo correspondiente a la moneda seleccionada,
       // para que toda la plataforma lo use de forma consistente.
       const selectedCurrency = currencies.find((c) => c.value === data.currency);
 
@@ -259,8 +260,8 @@ export default function SystemSettings() {
       queryClient.invalidateQueries({ queryKey: ["/api/system-settings"] });
       queryClient.invalidateQueries({ queryKey: ["/api/public/currency"] });
       Swal.fire({
-        title: "¡Éxito!",
-        text: "Configuración actualizada correctamente",
+        title: "Â¡Ã‰xito!",
+        text: "ConfiguraciÃ³n actualizada correctamente",
         icon: "success",
         confirmButtonText: "Aceptar",
         confirmButtonColor: "#10b981",
@@ -269,7 +270,7 @@ export default function SystemSettings() {
     onError: (error: any) => {
       Swal.fire({
         title: "Error",
-        text: error.message || "Error al actualizar la configuración",
+        text: error.message || "Error al actualizar la configuraciÃ³n",
         icon: "error",
         confirmButtonText: "Aceptar",
         confirmButtonColor: "#ef4444",
@@ -295,13 +296,13 @@ export default function SystemSettings() {
       
       if (result.success) {
         Swal.fire({
-          title: "¡Correos enviados!",
+          title: "Â¡Correos enviados!",
           html: `
             <p>${result.message}</p>
             <div style="margin-top: 15px; text-align: left;">
               ${result.results?.map((r: any) => `
                 <div style="padding: 8px; margin: 4px 0; background: ${r.success ? '#d1fae5' : '#fee2e2'}; border-radius: 4px;">
-                  <strong>${r.email}</strong>: ${r.success ? '✓ Enviado' : '✗ Fallido - ' + r.error}
+                  <strong>${r.email}</strong>: ${r.success ? 'âœ“ Enviado' : 'âœ— Fallido - ' + r.error}
                 </div>
               `).join('')}
             </div>
@@ -317,13 +318,13 @@ export default function SystemSettings() {
         if (result.smtpConfig) {
           errorHtml += `
             <div style="margin-top: 15px; padding: 12px; background: #fef3c7; border-radius: 8px; text-align: left;">
-              <strong>Configuración SMTP actual:</strong><br/>
+              <strong>ConfiguraciÃ³n SMTP actual:</strong><br/>
               <small>Host: ${result.smtpConfig.host}</small><br/>
               <small>Puerto: ${result.smtpConfig.port}</small><br/>
-              <small>Encriptación: ${result.smtpConfig.encryption}</small>
+              <small>EncriptaciÃ³n: ${result.smtpConfig.encryption}</small>
             </div>
             <p style="margin-top: 10px; font-size: 14px; color: #666;">
-              Ve a <strong>Email → Configuración SMTP</strong> para verificar o corregir estos valores.
+              Ve a <strong>Email â†’ ConfiguraciÃ³n SMTP</strong> para verificar o corregir estos valores.
             </p>
           `;
         }
@@ -333,7 +334,7 @@ export default function SystemSettings() {
             <div style="margin-top: 15px; text-align: left;">
               ${result.results.map((r: any) => `
                 <div style="padding: 8px; margin: 4px 0; background: #fee2e2; border-radius: 4px; font-size: 12px;">
-                  <strong>${r.email}</strong>: ✗ Fallido
+                  <strong>${r.email}</strong>: âœ— Fallido
                 </div>
               `).join('')}
             </div>
@@ -341,7 +342,7 @@ export default function SystemSettings() {
         }
         
         Swal.fire({
-          title: "Error de Conexión SMTP",
+          title: "Error de ConexiÃ³n SMTP",
           html: errorHtml,
           icon: "error",
           confirmButtonText: "Entendido",
@@ -378,7 +379,7 @@ export default function SystemSettings() {
         queryClient.invalidateQueries({ queryKey: ["/api/email-templates", "admin_notification"] });
         toast({
           title: "Plantilla guardada",
-          description: "La plantilla de notificación se ha guardado correctamente",
+          description: "La plantilla de notificaciÃ³n se ha guardado correctamente",
         });
         setIsEditingAdminTemplate(false);
       }
@@ -402,7 +403,7 @@ export default function SystemSettings() {
       
       if (result.success) {
         toast({
-          title: "✅ Correo de prueba enviado",
+          title: "âœ… Correo de prueba enviado",
           description: result.message,
         });
       } else {
@@ -440,7 +441,7 @@ export default function SystemSettings() {
     if (file.size > 2 * 1024 * 1024) {
       toast({
         title: "Error", 
-        description: "La imagen supera el tamaño máximo permitido de 2 MB. Selecciona una imagen más ligera.",
+        description: "La imagen supera el tamaÃ±o mÃ¡ximo permitido de 2 MB. Selecciona una imagen mÃ¡s ligera.",
         variant: "destructive",
       });
       return;
@@ -473,7 +474,7 @@ export default function SystemSettings() {
       }
 
       toast({
-        title: "Éxito",
+        title: "Ã‰xito",
         description: `${type === 'logo' ? 'Logo' : 'Favicon'} subido correctamente`,
       });
     } catch (error) {
@@ -533,7 +534,7 @@ export default function SystemSettings() {
     } else {
       root.style.removeProperty('--primary');
       root.style.removeProperty('--secondary');
-      document.title = settings?.systemName || "Mi Organización";
+      document.title = settings?.systemName || "Mi OrganizaciÃ³n";
     }
   };
 
@@ -556,10 +557,10 @@ export default function SystemSettings() {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <Settings className="h-8 w-8" />
-            Configuración del Sistema
+            ConfiguraciÃ³n del Sistema
           </h1>
           <p className="text-muted-foreground mt-2">
-            Personaliza la apariencia y configuración de tu organización
+            Personaliza la apariencia y configuraciÃ³n de tu organizaciÃ³n
           </p>
         </div>
         <div className="flex gap-2">
@@ -578,15 +579,15 @@ export default function SystemSettings() {
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             
-            {/* Información General */}
+            {/* InformaciÃ³n General */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Globe className="h-5 w-5" />
-                  Información General
+                  InformaciÃ³n General
                 </CardTitle>
                 <CardDescription>
-                  Configura la información básica de tu organización
+                  Configura la informaciÃ³n bÃ¡sica de tu organizaciÃ³n
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -597,7 +598,7 @@ export default function SystemSettings() {
                     <FormItem>
                       <FormLabel>Nombre del Sistema</FormLabel>
                       <FormControl>
-                        <Input {...field} placeholder="Mi Organización" />
+                        <Input {...field} placeholder="Mi OrganizaciÃ³n" />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -609,11 +610,11 @@ export default function SystemSettings() {
                   name="systemDescription"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Descripción</FormLabel>
+                      <FormLabel>DescripciÃ³n</FormLabel>
                       <FormControl>
                         <Textarea 
                           {...field} 
-                          placeholder="Descripción de tu organización"
+                          placeholder="DescripciÃ³n de tu organizaciÃ³n"
                           rows={3}
                         />
                       </FormControl>
@@ -719,15 +720,15 @@ export default function SystemSettings() {
               </CardContent>
             </Card>
 
-            {/* Imágenes */}
+            {/* ImÃ¡genes */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Image className="h-5 w-5" />
-                  Imágenes
+                  ImÃ¡genes
                 </CardTitle>
                 <CardDescription>
-                  Logo y favicon de tu organización
+                  Logo y favicon de tu organizaciÃ³n
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -754,7 +755,7 @@ export default function SystemSettings() {
                                   className="mx-auto w-24 h-24 object-contain border rounded"
                                 />
                                 <div className="space-y-1">
-                                  <p className="text-sm text-green-600 font-medium">✓ Logo cargado correctamente</p>
+                                  <p className="text-sm text-green-600 font-medium">âœ“ Logo cargado correctamente</p>
                                   <p className="text-xs text-gray-500">Haz clic o arrastra un archivo para cambiar</p>
                                 </div>
                               </div>
@@ -763,7 +764,7 @@ export default function SystemSettings() {
                                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                                 <div className="space-y-1">
                                   <p className="text-sm font-medium text-gray-700">
-                                    Arrastra tu logo aquí o haz clic para seleccionar
+                                    Arrastra tu logo aquÃ­ o haz clic para seleccionar
                                   </p>
                                   <p className="text-xs text-gray-500">
                                     PNG, JPG, JPEG, SVG hasta 2 MB
@@ -829,7 +830,7 @@ export default function SystemSettings() {
                                   className="mx-auto w-8 h-8 object-contain border rounded"
                                 />
                                 <div className="space-y-1">
-                                  <p className="text-sm text-green-600 font-medium">✓ Favicon cargado</p>
+                                  <p className="text-sm text-green-600 font-medium">âœ“ Favicon cargado</p>
                                   <p className="text-xs text-gray-500">Haz clic para cambiar</p>
                                 </div>
                               </div>
@@ -884,10 +885,10 @@ export default function SystemSettings() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Mail className="h-5 w-5" />
-                  Información de Contacto
+                  InformaciÃ³n de Contacto
                 </CardTitle>
                 <CardDescription>
-                  Datos de contacto de la organización
+                  Datos de contacto de la organizaciÃ³n
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -910,7 +911,7 @@ export default function SystemSettings() {
                   name="contactPhone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Teléfono de Contacto</FormLabel>
+                      <FormLabel>TelÃ©fono de Contacto</FormLabel>
                       <FormControl>
                         <Input {...field} placeholder="+1 234 567 8900" />
                       </FormControl>
@@ -921,7 +922,7 @@ export default function SystemSettings() {
               </CardContent>
             </Card>
 
-            {/* Correos de Notificación */}
+            {/* Correos de NotificaciÃ³n */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -929,7 +930,7 @@ export default function SystemSettings() {
                   Notificaciones de Nuevos Registros
                 </CardTitle>
                 <CardDescription>
-                  Correos electrónicos que recibirán alertas cuando se registre una nueva empresa
+                  Correos electrÃ³nicos que recibirÃ¡n alertas cuando se registre una nueva empresa
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -941,7 +942,7 @@ export default function SystemSettings() {
                       render={({ field }) => (
                         <FormItem className="flex-1">
                           <FormLabel className={index > 0 ? "sr-only" : ""}>
-                            Email de Notificación
+                            Email de NotificaciÃ³n
                           </FormLabel>
                           <FormControl>
                             <Input 
@@ -969,7 +970,7 @@ export default function SystemSettings() {
                 {notificationFields.length === 0 && (
                   <div className="text-center py-6 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
                     <Mail className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                    <p className="text-sm">No hay correos de notificación configurados</p>
+                    <p className="text-sm">No hay correos de notificaciÃ³n configurados</p>
                     <p className="text-xs text-gray-400 mt-1">Agrega correos para recibir alertas de nuevos registros</p>
                   </div>
                 )}
@@ -1025,13 +1026,13 @@ export default function SystemSettings() {
             </Card>
           </div>
 
-          {/* Dialog para editar plantilla de notificación */}
+          {/* Dialog para editar plantilla de notificaciÃ³n */}
           <Dialog open={isEditingAdminTemplate} onOpenChange={setIsEditingAdminTemplate}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Mail className="h-5 w-5" />
-                  Plantilla de Correo de Notificación
+                  Plantilla de Correo de NotificaciÃ³n
                 </DialogTitle>
                 <DialogDescription>
                   Personaliza el correo que reciben los administradores cuando se registra una nueva empresa
@@ -1104,7 +1105,7 @@ export default function SystemSettings() {
                 Redes Sociales
               </CardTitle>
               <CardDescription>
-                Configura las redes sociales de tu organización con colores personalizados
+                Configura las redes sociales de tu organizaciÃ³n con colores personalizados
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -1216,7 +1217,7 @@ export default function SystemSettings() {
             </CardContent>
           </Card>
 
-          {/* Información sobre Vista Previa */}
+          {/* InformaciÃ³n sobre Vista Previa */}
           {isPreviewMode && (
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="pt-6">
@@ -1225,7 +1226,7 @@ export default function SystemSettings() {
                   <span className="font-medium">Modo Vista Previa Activo</span>
                 </div>
                 <p className="text-blue-700 text-sm mt-1">
-                  Los cambios de colores y título se están aplicando temporalmente. 
+                  Los cambios de colores y tÃ­tulo se estÃ¡n aplicando temporalmente. 
                   Guarda los cambios para aplicarlos permanentemente.
                 </p>
               </CardContent>
@@ -1252,7 +1253,7 @@ export default function SystemSettings() {
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Guardar Configuración
+                  Guardar ConfiguraciÃ³n
                 </>
               )}
             </Button>
@@ -1262,3 +1263,4 @@ export default function SystemSettings() {
     </div>
   );
 }
+
