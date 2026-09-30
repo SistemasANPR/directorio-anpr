@@ -1,9 +1,9 @@
-import express, { type Request, Response, NextFunction } from "express";
+﻿import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import Stripe from "stripe";
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
-import * as schema from "../shared/schema";
+import * as schema from "../shared/schema.js";
 import { eq, like, sql, and, or, asc, desc, inArray, isNull, gte, lte, count } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -25,7 +25,7 @@ import {
   emailConfiguration,
   emailTemplates,
   frontendConfigurationTable
-} from "../shared/schema";
+} from "../shared/schema.js";
 import nodemailer from "nodemailer";
 import path from "path";
 import { generateSqlDump, buildDumpFilename } from "../server/services/db-export";
@@ -196,12 +196,12 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// ============ EXPORTACIÓN DE LA BASE DE DATOS ============
+// ============ EXPORTACIÃ“N DE LA BASE DE DATOS ============
 
 const ADMIN_DASHBOARD_PERMISSION = 'admin.dashboard';
 
 // Confirma contra la base de datos que el usuario indicado es administrador.
-// Nunca se confía en el rol enviado por el cliente.
+// Nunca se confÃ­a en el rol enviado por el cliente.
 async function isAdminUserId(userId: number): Promise<boolean> {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) return false;
@@ -215,11 +215,11 @@ async function isAdminUserId(userId: number): Promise<boolean> {
   return permisos.includes(ADMIN_DASHBOARD_PERMISSION);
 }
 
-// Autorización de las herramientas del panel de administración.
+// AutorizaciÃ³n de las herramientas del panel de administraciÃ³n.
 //
-// Es la MISMA puerta que usa el panel en el cliente: cualquier sesión válida
+// Es la MISMA puerta que usa el panel en el cliente: cualquier sesiÃ³n vÃ¡lida
 // cuyo rol sea administrador. Acepta las tres identidades FIRMADAS del sistema
-// —ID token de Firebase, sesión de WordPress (SSO) y cookie de administrador—
+// â€”ID token de Firebase, sesiÃ³n de WordPress (SSO) y cookie de administradorâ€”
 // y nunca el header x-user-info, que cualquiera puede fabricar desde el
 // navegador. Devuelve el id del administrador, o null.
 async function getAdminPanelUserId(req: any): Promise<number | null> {
@@ -237,12 +237,12 @@ async function getAdminPanelUserId(req: any): Promise<number | null> {
           .limit(1);
         if (fbUser && (await isAdminUserId(fbUser.id))) return fbUser.id;
       } catch {
-        // Token inválido: se intenta con las demás sesiones firmadas.
+        // Token invÃ¡lido: se intenta con las demÃ¡s sesiones firmadas.
       }
     }
   }
 
-  // Sesión de WordPress: token firmado por el servidor durante el auto-login.
+  // SesiÃ³n de WordPress: token firmado por el servidor durante el auto-login.
   const wordpressToken = String(req.headers['x-wordpress-session'] || '');
   if (wordpressToken) {
     const payload = verifyWordPressSessionToken(wordpressToken, Date.now());
@@ -265,17 +265,17 @@ async function getAdminPanelUserId(req: any): Promise<number | null> {
   return null;
 }
 
-// Explica en el error POR QUÉ falló, para que un administrador legítimo sepa
-// qué hacer en vez de recibir un 401 mudo.
+// Explica en el error POR QUÃ‰ fallÃ³, para que un administrador legÃ­timo sepa
+// quÃ© hacer en vez de recibir un 401 mudo.
 function describeMissingAdminIdentity(req: any): string {
   const hasFirebase = String(req.headers['authorization'] || '').startsWith('Bearer ');
   const hasWordPress = Boolean(req.headers['x-wordpress-session']);
   const hasCookie = Boolean(parseCookie(req.headers.cookie, ADMIN_SESSION_COOKIE));
 
   if (!hasFirebase && !hasWordPress && !hasCookie) {
-    return 'No se recibió ninguna sesión verificable. Vuelve a iniciar sesión en el panel e inténtalo de nuevo.';
+    return 'No se recibiÃ³ ninguna sesiÃ³n verificable. Vuelve a iniciar sesiÃ³n en el panel e intÃ©ntalo de nuevo.';
   }
-  return 'Tu sesión es válida pero la cuenta no tiene rol de administrador, o la sesión expiró. Vuelve a iniciar sesión.';
+  return 'Tu sesiÃ³n es vÃ¡lida pero la cuenta no tiene rol de administrador, o la sesiÃ³n expirÃ³. Vuelve a iniciar sesiÃ³n.';
 }
 
 // Descarga un volcado .sql completo, restaurable en cualquier PostgreSQL
@@ -308,7 +308,7 @@ app.get('/api/admin/database-export', async (req, res) => {
   }
 });
 
-// Resumen previo a la descarga: cuántos archivos y tablas se exportarían.
+// Resumen previo a la descarga: cuÃ¡ntos archivos y tablas se exportarÃ­an.
 app.get('/api/admin/export-info', async (req, res) => {
   try {
     if (!(await getAdminPanelUserId(req))) {
@@ -320,7 +320,7 @@ app.get('/api/admin/export-info', async (req, res) => {
     const sourceBytes = files.reduce((total, file) => total + file.size, 0);
 
     // Conteo EXACTO por tabla: pg_stat_user_tables.n_live_tup devuelve 0 si el
-    // recolector de estadísticas aún no ha pasado, y el resumen mentiría.
+    // recolector de estadÃ­sticas aÃºn no ha pasado, y el resumen mentirÃ­a.
     const { rows: tableRows } = await pool.query(`
       SELECT c.relname AS table_name
       FROM pg_class c
@@ -349,12 +349,12 @@ app.get('/api/admin/export-info', async (req, res) => {
       })),
     });
   } catch (error: any) {
-    console.error('Error obteniendo el resumen de exportación:', error);
+    console.error('Error obteniendo el resumen de exportaciÃ³n:', error);
     res.status(500).json({ error: error?.message || 'No se pudo obtener el resumen' });
   }
 });
 
-// Paquete ZIP: código fuente + respaldo de la base de datos + guía de instalación.
+// Paquete ZIP: cÃ³digo fuente + respaldo de la base de datos + guÃ­a de instalaciÃ³n.
 app.get('/api/admin/project-export', async (req, res) => {
   try {
     const adminId = await getAdminPanelUserId(req);
@@ -367,7 +367,7 @@ app.get('/api/admin/project-export', async (req, res) => {
     const includeSource = req.query.includeSource !== 'false';
     if (!includeDatabase && !includeSource) {
       return res.status(400).json({
-        error: 'Debes incluir al menos el código fuente o la base de datos',
+        error: 'Debes incluir al menos el cÃ³digo fuente o la base de datos',
       });
     }
 
@@ -940,11 +940,11 @@ app.get('/api/roles', async (req, res) => {
 app.post('/api/upload-image', imageUpload.single('image'), validateUploadedImages, async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+      return res.status(400).json({ error: 'No se recibiÃ³ ningÃºn archivo' });
     }
     
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ error: 'Cloudinary no está configurado' });
+      return res.status(500).json({ error: 'Cloudinary no estÃ¡ configurado' });
     }
     
     const result = await uploadToCloudinary(req.file.buffer, 'anpr/images', 'image');
@@ -967,7 +967,7 @@ app.post('/api/upload-images', imageUpload.array('images', 10), validateUploaded
     }
     
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ error: 'Cloudinary no está configurado' });
+      return res.status(500).json({ error: 'Cloudinary no estÃ¡ configurado' });
     }
     
     const uploadPromises = req.files.map(file => 
@@ -982,15 +982,15 @@ app.post('/api/upload-images', imageUpload.array('images', 10), validateUploaded
     
     res.json({ success: true, images: imageUrls });
   } catch (error) {
-    console.error('Error al subir imágenes:', error);
-    res.status(500).json({ error: 'Error al procesar las imágenes' });
+    console.error('Error al subir imÃ¡genes:', error);
+    res.status(500).json({ error: 'Error al procesar las imÃ¡genes' });
   }
 });
 
 app.post('/api/upload-document', documentUpload.single('document'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+      return res.status(400).json({ error: 'No se recibiÃ³ ningÃºn archivo' });
     }
     if (req.file.buffer.byteLength > IMAGE_MAX_BYTES &&
       (isImageBytes(req.file.buffer) || !isSupportedDocumentBytes(req.file.buffer))) {
@@ -998,7 +998,7 @@ app.post('/api/upload-document', documentUpload.single('document'), async (req, 
     }
     
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ error: 'Cloudinary no está configurado' });
+      return res.status(500).json({ error: 'Cloudinary no estÃ¡ configurado' });
     }
     
     const result = await uploadToCloudinary(req.file.buffer, 'anpr/documents', 'raw');
@@ -1017,11 +1017,11 @@ app.post('/api/upload-document', documentUpload.single('document'), async (req, 
 app.post('/api/upload', imageUpload.single('file'), validateUploadedImages, async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ error: 'No se recibió ningún archivo' });
+      return res.status(400).json({ error: 'No se recibiÃ³ ningÃºn archivo' });
     }
     
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ error: 'Cloudinary no está configurado' });
+      return res.status(500).json({ error: 'Cloudinary no estÃ¡ configurado' });
     }
     
     const result = await uploadToCloudinary(req.file.buffer, 'anpr/profiles', 'image');
@@ -1042,7 +1042,7 @@ app.delete('/api/delete-image/:publicId(*)', async (req, res) => {
     const { publicId } = req.params;
     
     if (!process.env.CLOUDINARY_CLOUD_NAME) {
-      return res.status(500).json({ error: 'Cloudinary no está configurado' });
+      return res.status(500).json({ error: 'Cloudinary no estÃ¡ configurado' });
     }
     
     const result = await cloudinary.uploader.destroy(publicId);
@@ -1063,15 +1063,16 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   if (err?.name === 'MulterError' && err.code === 'LIMIT_FILE_SIZE') {
     return res.status(413).json({
       error: err.field === 'document'
-        ? 'El documento supera el tamaño máximo permitido de 20 MB. Selecciona un archivo más ligero.'
+        ? 'El documento supera el tamaÃ±o mÃ¡ximo permitido de 20 MB. Selecciona un archivo mÃ¡s ligero.'
         : IMAGE_TOO_LARGE_MESSAGE,
     });
   }
   if (err?.name === 'MulterError' && (err.code === 'LIMIT_FILE_COUNT' || err.code === 'LIMIT_UNEXPECTED_FILE')) {
-    return res.status(400).json({ error: 'Se excedió el número máximo de archivos permitidos.' });
+    return res.status(400).json({ error: 'Se excediÃ³ el nÃºmero mÃ¡ximo de archivos permitidos.' });
   }
   res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
 });
 
 // Export for Vercel
 export default app;
+
