@@ -28,7 +28,7 @@ import {
 } from "../shared/schema.js";
 import nodemailer from "nodemailer";
 import path from "path";
-import { generateSqlDump, buildDumpFilename } from "../server/services/db-export";
+import { generateSqlDump, buildDumpFilename } from "../server/services/db-export.js";
 import {
   streamFullExport,
   buildPackageFilename,
@@ -1075,4 +1075,5 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Export for Vercel
 export default app;
+
 
