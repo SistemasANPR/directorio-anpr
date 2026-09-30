@@ -34,10 +34,10 @@ import {
   buildPackageFilename,
   collectProjectFiles,
   resolveProjectRoot,
-} from "../server/services/project-export";
-import { verifyAdminSession, parseCookie, ADMIN_SESSION_COOKIE } from "../server/adminSession";
-import { getFirebaseAdmin } from "../server/firebase-admin";
-import { verifyWordPressSessionToken } from "../server/services/wordpress";
+} from "../server/services/project-export.js";
+import { verifyAdminSession, parseCookie, ADMIN_SESSION_COOKIE } from "../server/adminSession.js";
+import { getFirebaseAdmin } from "../server/firebase-admin.js";
+import { verifyWordPressSessionToken } from "../server/services/wordpress.js";
 import { v2 as cloudinary } from 'cloudinary';
 import multer from 'multer';
 import {
@@ -1075,5 +1075,6 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Export for Vercel
 export default app;
+
 
 
