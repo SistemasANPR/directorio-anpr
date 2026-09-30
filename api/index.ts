@@ -50,7 +50,7 @@ import {
   isImageBytes,
   isImageMimeType,
   isSupportedDocumentBytes,
-} from '../shared/image-upload';
+} from '../shared/image-upload.js';
 
 // Configure Cloudinary
 if (process.env.CLOUDINARY_CLOUD_NAME) {
@@ -1075,6 +1075,7 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Export for Vercel
 export default app;
+
 
 
 

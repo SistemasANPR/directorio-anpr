@@ -1,7 +1,7 @@
 ﻿import nodemailer from 'nodemailer';
 import { storage } from './storage.js';
 import { db } from './db.js';
-import { companies, membershipTypes } from '@shared/schema';
+import { companies, membershipTypes } from '../shared/schema.js';
 
 interface EmailData {
   nombre_usuario?: string;
@@ -361,4 +361,5 @@ export async function checkAndSendExpirationNotifications(): Promise<{
   
   return { sent, errors, details };
 }
+
 

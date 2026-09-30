@@ -61,7 +61,7 @@
   type InsertFrontendConfiguration,
   type CompanyWithDetails,
   type ProjectWithDetails
-} from "@shared/schema";
+} from "../shared/schema.js";
 import { db } from "./db.js";
 import { eq, like, sql, and, or, asc, gt, isNull, desc } from "drizzle-orm";
 import nodemailer from "nodemailer";
@@ -2649,4 +2649,6 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+
+
 

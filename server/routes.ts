@@ -19,12 +19,12 @@ import {
   isImageBytes,
   isImageMimeType,
   isSupportedDocumentBytes,
-} from "@shared/image-upload";
+} from "../shared/image-upload.js";
 import path from "path";
 import fs from "fs";
 import * as nodeCrypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
-import { insertUserSchema, insertCompanySchema, insertCategorySchema, insertTagSchema, insertMembershipTypeSchema, insertCertificateSchema, insertRoleSchema, insertOpinionSchema, insertMembershipPaymentSchema, insertProjectSchema, insertIntegrationSettingsSchema, insertPdfSettingsSchema, insertEmailConfigurationSchema, insertEmailTemplateSchema, insertFrontendConfigurationSchema, insertCompanyLocationSchema } from "@shared/schema";
+import { insertUserSchema, insertCompanySchema, insertCategorySchema, insertTagSchema, insertMembershipTypeSchema, insertCertificateSchema, insertRoleSchema, insertOpinionSchema, insertMembershipPaymentSchema, insertProjectSchema, insertIntegrationSettingsSchema, insertPdfSettingsSchema, insertEmailConfigurationSchema, insertEmailTemplateSchema, insertFrontendConfigurationSchema, insertCompanyLocationSchema } from "../shared/schema.js";
 import { z } from "zod";
 import { uploadFromBuffer, deleteFile as deleteCloudinaryFile } from "./cloudinary.js";
 import bcrypt from "bcrypt";
@@ -10114,4 +10114,5 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   return httpServer;
 }
+
 
