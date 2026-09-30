@@ -3,13 +3,6 @@
     "buildCommand":  "npm run build",
     "outputDirectory":  "dist/public",
     "framework":  null,
-    "functions":  {
-                      "api/**/*.ts":  {
-                                          "maxDuration":  60,
-                                          "memory":  1024,
-                                          "includeFiles":  "{client,server,shared,api,migrations,scripts,docs,wordpress-plugin}/**"
-                                      }
-                  },
     "rewrites":  [
                      {
                          "source":  "/api/(.*)",
