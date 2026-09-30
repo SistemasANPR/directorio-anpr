@@ -1,11 +1,11 @@
-{
+﻿{
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "dist/public",
   "framework": null,
   "functions": {
     "api/**/*.ts": {
-      "runtime": "@vercel/node@3.0.0",
+      "runtime": "@vercel/node@latest",
       "maxDuration": 60,
       "memory": 1024,
       "includeFiles": "{client,server,shared,api,migrations,scripts,docs,wordpress-plugin}/**"
@@ -32,3 +32,4 @@
     }
   ]
 }
+
