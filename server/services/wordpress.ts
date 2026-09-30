@@ -1,32 +1,32 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 import jwt from "jsonwebtoken";
-import { storage } from "../storage";
+import { storage } from "../storage.js";
 
 /**
- * Servicio de sesión vía WordPress para representantes de empresa.
+ * Servicio de sesiÃ³n vÃ­a WordPress para representantes de empresa.
  *
  * Permite que un usuario ya autenticado en WordPress (anpr.org.mx) sea
  * reconocido en el directorio como REPRESENTANTE de su empresa, SIN crear
- * cuentas ni pedir contraseña. Toda verificación contra WordPress/MemberPress
- * se hace aquí, en el backend, usando las credenciales de aplicación ya
+ * cuentas ni pedir contraseÃ±a. Toda verificaciÃ³n contra WordPress/MemberPress
+ * se hace aquÃ­, en el backend, usando las credenciales de aplicaciÃ³n ya
  * configuradas (WORDPRESS_URL / WORDPRESS_USERNAME / WORDPRESS_APP_PASSWORD).
  * Las credenciales NUNCA se exponen al frontend.
  *
- * No usamos JWT porque el proyecto no lo usa: la sesión se materializa como la
+ * No usamos JWT porque el proyecto no lo usa: la sesiÃ³n se materializa como la
  * misma "identidad efectiva" que ya consume toda la app (header x-user-info).
- * Aun así emitimos un token firmado (HMAC-SHA256, mismo patrón que el servicio
- * de recuperación de contraseña) como artefacto verificable con expiración.
+ * Aun asÃ­ emitimos un token firmado (HMAC-SHA256, mismo patrÃ³n que el servicio
+ * de recuperaciÃ³n de contraseÃ±a) como artefacto verificable con expiraciÃ³n.
  */
 
-// Secreto dedicado para firmar (HMAC) el token de sesión. Debe fallar cerrado:
-// reutilizar otros secretos o un literal conocido permitiría falsificar sesiones.
+// Secreto dedicado para firmar (HMAC) el token de sesiÃ³n. Debe fallar cerrado:
+// reutilizar otros secretos o un literal conocido permitirÃ­a falsificar sesiones.
 const configuredSigningSecret = process.env.WP_SSO_SECRET;
 if (!configuredSigningSecret || configuredSigningSecret.length < 32) {
   throw new Error("WP_SSO_SECRET must be configured with at least 32 characters");
 }
 const SIGNING_SECRET: string = configuredSigningSecret;
 
-// Expiración del token de sesión. Corta por diseño: la sesión vive en memoria
+// ExpiraciÃ³n del token de sesiÃ³n. Corta por diseÃ±o: la sesiÃ³n vive en memoria
 // en el frontend y se vuelve a derivar en cada recarga re-verificando WordPress.
 export const WP_SESSION_TTL_SECONDS = 24 * 60 * 60; // 24 horas
 
@@ -36,9 +36,9 @@ interface WordPressConfig {
 }
 
 /**
- * Resuelve la configuración de WordPress. Primero variables de entorno; si
- * faltan, cae a la tabla integration_settings (mismo patrón que el resto del
- * proyecto). Devuelve null si no hay configuración completa.
+ * Resuelve la configuraciÃ³n de WordPress. Primero variables de entorno; si
+ * faltan, cae a la tabla integration_settings (mismo patrÃ³n que el resto del
+ * proyecto). Devuelve null si no hay configuraciÃ³n completa.
  */
 export async function getWordPressConfig(): Promise<WordPressConfig | null> {
   let wordpressUrl = process.env.WORDPRESS_URL;
@@ -68,10 +68,10 @@ export async function getWordPressConfig(): Promise<WordPressConfig | null> {
 /**
  * Verifica con la API de WordPress que `wpUserId` corresponde realmente a
  * `wpEmail`. Esto impide que alguien falsifique el email en el body de la
- * petición: el email se confirma contra WordPress usando context=edit (que solo
- * expone el email con credenciales de aplicación válidas).
+ * peticiÃ³n: el email se confirma contra WordPress usando context=edit (que solo
+ * expone el email con credenciales de aplicaciÃ³n vÃ¡lidas).
  *
- * Devuelve true únicamente si el email de WordPress coincide (case-insensitive)
+ * Devuelve true Ãºnicamente si el email de WordPress coincide (case-insensitive)
  * con el recibido.
  */
 export async function verifyWordPressIdentity(
@@ -113,12 +113,12 @@ export async function verifyWordPressIdentity(
 }
 
 /**
- * Determina si el usuario tiene una membresía ACTIVA a la fecha actual.
+ * Determina si el usuario tiene una membresÃ­a ACTIVA a la fecha actual.
  *
- * Combina dos señales (cualquiera positiva basta), para ser robusto frente a
- * variaciones de versión de MemberPress:
- *   1. /wp-json/mp/v1/members/{id} → membresías activas declaradas.
- *   2. /wp-json/mp/v1/transactions → transacción válida (complete/confirmed/
+ * Combina dos seÃ±ales (cualquiera positiva basta), para ser robusto frente a
+ * variaciones de versiÃ³n de MemberPress:
+ *   1. /wp-json/mp/v1/members/{id} â†’ membresÃ­as activas declaradas.
+ *   2. /wp-json/mp/v1/transactions â†’ transacciÃ³n vÃ¡lida (complete/confirmed/
  *      active) sin vencer (expires_at en el futuro, o sin fecha de vencimiento).
  */
 export async function hasActiveMembership(
@@ -127,7 +127,7 @@ export async function hasActiveMembership(
 ): Promise<boolean> {
   const now = Date.now();
 
-  // Señal 1: endpoint de miembros de MemberPress.
+  // SeÃ±al 1: endpoint de miembros de MemberPress.
   try {
     const response = await fetch(
       `${config.baseUrl}/wp-json/mp/v1/members/${wpUserId}`,
@@ -142,7 +142,7 @@ export async function hasActiveMembership(
     if (response.ok) {
       const member: any = await response.json();
 
-      // MemberPress expone las membresías activas de varias formas según versión.
+      // MemberPress expone las membresÃ­as activas de varias formas segÃºn versiÃ³n.
       const active = member?.active_memberships;
       if (Array.isArray(active) && active.length > 0) {
         return true;
@@ -178,7 +178,7 @@ export async function hasActiveMembership(
     );
   }
 
-  // Señal 2: transacciones de MemberPress (fallback fiable).
+  // SeÃ±al 2: transacciones de MemberPress (fallback fiable).
   try {
     const response = await fetch(
       `${config.baseUrl}/wp-json/mp/v1/transactions?member=${wpUserId}&per_page=100`,
@@ -203,9 +203,9 @@ export async function hasActiveMembership(
     const validStatuses = ["complete", "confirmed", "active"];
     return transactions.some((t: any) => {
       if (!validStatuses.includes(String(t?.status).toLowerCase())) return false;
-      if (!t?.expires_at) return true; // sin vencimiento → vigente
+      if (!t?.expires_at) return true; // sin vencimiento â†’ vigente
       const expires = new Date(t.expires_at).getTime();
-      // MemberPress usa 0000-00-00 para "sin expiración".
+      // MemberPress usa 0000-00-00 para "sin expiraciÃ³n".
       if (Number.isNaN(expires)) return true;
       return expires > now;
     });
@@ -230,7 +230,7 @@ export interface WordPressSessionPayload {
 }
 
 /**
- * Firma un token de sesión (base64url(payload).firmaHMAC) con expiración.
+ * Firma un token de sesiÃ³n (base64url(payload).firmaHMAC) con expiraciÃ³n.
  * No requiere almacenamiento: es autocontenido y verificable con el secreto.
  */
 export function signWordPressSessionToken(
@@ -252,8 +252,8 @@ export function signWordPressSessionToken(
 }
 
 /**
- * Verifica y decodifica un token de sesión. Devuelve el payload si la firma es
- * válida y no ha expirado; en caso contrario null. Usa comparación en tiempo
+ * Verifica y decodifica un token de sesiÃ³n. Devuelve el payload si la firma es
+ * vÃ¡lida y no ha expirado; en caso contrario null. Usa comparaciÃ³n en tiempo
  * constante para la firma.
  */
 export function verifyWordPressSessionToken(
@@ -287,15 +287,15 @@ export function verifyWordPressSessionToken(
 // -----------------------------------------------------------------------------
 // Flujo alternativo y autocontenido: WordPress firma un JWT (HS256) con un
 // secreto compartido (WP_SSO_SECRET) cuando un miembro logueado llega al
-// directorio. El directorio lo verifica AQUÍ y deriva la sesión desde la BD
+// directorio. El directorio lo verifica AQUÃ y deriva la sesiÃ³n desde la BD
 // LOCAL (tablas users/companies), sin llamar a la API de WordPress y sin crear
-// ningún registro. Convive con el flujo por cookie de arriba.
+// ningÃºn registro. Convive con el flujo por cookie de arriba.
 // =============================================================================
 
 /** Secreto compartido con WordPress para firmar/verificar el JWT del SSO. */
 const WP_SSO_SECRET = process.env.WP_SSO_SECRET;
 
-/** Payload mínimo que esperamos del JWT emitido por WordPress. */
+/** Payload mÃ­nimo que esperamos del JWT emitido por WordPress. */
 export interface WordPressJwtPayload {
   email: string;
   iat?: number;
@@ -305,8 +305,8 @@ export interface WordPressJwtPayload {
 
 /**
  * Verifica y decodifica el JWT recibido en `?wp_token=`. Devuelve el payload si
- * la firma (HS256 con WP_SSO_SECRET) es válida y NO ha expirado; en cualquier
- * otro caso (secreto sin configurar, firma inválida, token expirado o sin email)
+ * la firma (HS256 con WP_SSO_SECRET) es vÃ¡lida y NO ha expirado; en cualquier
+ * otro caso (secreto sin configurar, firma invÃ¡lida, token expirado o sin email)
  * devuelve null. `jsonwebtoken.verify` ya rechaza tokens expirados (claim exp).
  */
 export function verifyWordPressJwt(token: string): WordPressJwtPayload | null {
@@ -328,13 +328,15 @@ export function verifyWordPressJwt(token: string): WordPressJwtPayload | null {
 
     return { ...(decoded as Record<string, unknown>), email } as WordPressJwtPayload;
   } catch (error: any) {
-    // Firma inválida, token expirado (TokenExpiredError), malformado, etc.
-    console.log(`[WP SSO] Token inválido: ${error?.message}`);
+    // Firma invÃ¡lida, token expirado (TokenExpiredError), malformado, etc.
+    console.log(`[WP SSO] Token invÃ¡lido: ${error?.message}`);
     return null;
   }
 }
 
-/** ¿Está configurado el SSO por JWT (existe WP_SSO_SECRET)? */
+/** Â¿EstÃ¡ configurado el SSO por JWT (existe WP_SSO_SECRET)? */
 export function isWordPressJwtConfigured(): boolean {
   return !!WP_SSO_SECRET;
 }
+
+

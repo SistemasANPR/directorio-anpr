@@ -1,10 +1,10 @@
-import crypto from "crypto";
+﻿import crypto from "crypto";
 
-// Secreto para firmar la cookie de sesión de administrador. Reutiliza un secreto
-// de entorno real y de alta entropía (WP_SSO_SECRET está presente tanto en
-// desarrollo como en producción). NO hay respaldo hardcodeado: si no existiera
-// ningún secreto, firmar lanza error y verificar niega el acceso (falla segura),
-// en vez de aceptar cookies firmadas con una constante pública falsificable.
+// Secreto para firmar la cookie de sesiÃ³n de administrador. Reutiliza un secreto
+// de entorno real y de alta entropÃ­a (WP_SSO_SECRET estÃ¡ presente tanto en
+// desarrollo como en producciÃ³n). NO hay respaldo hardcodeado: si no existiera
+// ningÃºn secreto, firmar lanza error y verificar niega el acceso (falla segura),
+// en vez de aceptar cookies firmadas con una constante pÃºblica falsificable.
 function getSecret(): string {
   const secret =
     process.env.SESSION_SECRET ||
@@ -12,17 +12,17 @@ function getSecret(): string {
     process.env.WORDPRESS_APP_PASSWORD;
   if (!secret) {
     throw new Error(
-      "No hay secreto de firma configurado (SESSION_SECRET / WP_SSO_SECRET) para la sesión de administrador",
+      "No hay secreto de firma configurado (SESSION_SECRET / WP_SSO_SECRET) para la sesiÃ³n de administrador",
     );
   }
   return secret;
 }
 
 export const ADMIN_SESSION_COOKIE = "admin_session";
-export const ADMIN_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 días
+export const ADMIN_SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 dÃ­as
 
 // Emite un token firmado (HMAC-SHA256) que prueba, de forma verificable por el
-// servidor, que el usuario inició sesión con credenciales válidas. No es
+// servidor, que el usuario iniciÃ³ sesiÃ³n con credenciales vÃ¡lidas. No es
 // falsificable sin el secreto del servidor.
 export function signAdminSession(userId: number): string {
   const payload = `${userId}.${Date.now() + ADMIN_SESSION_TTL_MS}`;
@@ -62,3 +62,4 @@ export function parseCookie(header: string | undefined, name: string): string | 
   }
   return null;
 }
+

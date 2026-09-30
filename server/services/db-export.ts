@@ -1,17 +1,17 @@
-/**
- * Exportación completa de la base de datos PostgreSQL a un archivo .sql.
+﻿/**
+ * ExportaciÃ³n completa de la base de datos PostgreSQL a un archivo .sql.
  *
  * Genera un volcado autocontenido (equivalente a `pg_dump --clean`) que se puede
- * restaurar en cualquier servidor PostgreSQL —incluido un VPS de Hostinger— con:
+ * restaurar en cualquier servidor PostgreSQL â€”incluido un VPS de Hostingerâ€” con:
  *
  *     psql "postgresql://usuario:pass@host:5432/basededatos" < backup.sql
  *
  * No depende del binario `pg_dump` (no existe en las funciones serverless de
- * Vercel): todo se reconstruye leyendo el catálogo del propio PostgreSQL.
+ * Vercel): todo se reconstruye leyendo el catÃ¡logo del propio PostgreSQL.
  *
  * Los valores se serializan en el servidor de base de datos con
- * `quote_nullable(columna::text)`. Así el escapado de comillas, saltos de línea,
- * JSON, arrays y fechas lo hace PostgreSQL y no código JavaScript propenso a
+ * `quote_nullable(columna::text)`. AsÃ­ el escapado de comillas, saltos de lÃ­nea,
+ * JSON, arrays y fechas lo hace PostgreSQL y no cÃ³digo JavaScript propenso a
  * errores: cada literal vuelve ya citado y listo para un INSERT.
  */
 
@@ -53,9 +53,9 @@ function ident(name: string): string {
 }
 
 /**
- * Ordena las tablas topológicamente según sus claves foráneas para que los
- * INSERT de una tabla hija ocurran después de los de su padre. Las
- * restricciones se crean al final del volcado, así que esto es solo una mejora
+ * Ordena las tablas topolÃ³gicamente segÃºn sus claves forÃ¡neas para que los
+ * INSERT de una tabla hija ocurran despuÃ©s de los de su padre. Las
+ * restricciones se crean al final del volcado, asÃ­ que esto es solo una mejora
  * de legibilidad y robustez; los ciclos se resuelven dejando el orden original.
  */
 function sortTablesByDependency(tables: string[], fks: ConstraintRow[]): string[] {
@@ -125,7 +125,7 @@ export async function generateSqlDump(
     ORDER BY t.relname, con.conname
   `)) as { rows: ConstraintRow[] };
 
-  // --- 3. Índices que NO provienen de una restricción ---
+  // --- 3. Ãndices que NO provienen de una restricciÃ³n ---
   const { rows: indexes } = await pool.query(`
     SELECT i.tablename, i.indexname, i.indexdef
     FROM pg_indexes i
@@ -273,7 +273,7 @@ export async function generateSqlDump(
     }
   }
 
-  // --- Restricciones: primero PK/UNIQUE/CHECK, después las foráneas ---
+  // --- Restricciones: primero PK/UNIQUE/CHECK, despuÃ©s las forÃ¡neas ---
   out.push(`-- ============================================================`);
   out.push(`-- 5. Claves primarias, unicidad y validaciones`);
   out.push(`-- ============================================================`);
@@ -331,14 +331,14 @@ export async function generateSqlDump(
       const lastValue = BigInt(rows[0]?.last_value ?? 1);
       const isCalled = Boolean(rows[0]?.is_called);
 
-      // Último valor REALMENTE entregado: si is_called es false, la secuencia
-      // todavía no ha servido last_value.
+      // Ãšltimo valor REALMENTE entregado: si is_called es false, la secuencia
+      // todavÃ­a no ha servido last_value.
       const ONE = BigInt(1);
       let target = isCalled ? lastValue : lastValue - ONE;
 
-      // Una secuencia por detrás del mayor id de su tabla es un estado roto:
-      // el primer INSERT tras restaurar fallaría con "duplicate key". Ocurre
-      // cuando los datos se insertaron con ids explícitos. Se corrige aquí para
+      // Una secuencia por detrÃ¡s del mayor id de su tabla es un estado roto:
+      // el primer INSERT tras restaurar fallarÃ­a con "duplicate key". Ocurre
+      // cuando los datos se insertaron con ids explÃ­citos. Se corrige aquÃ­ para
       // que la base restaurada quede siempre operativa.
       const owner = ownerBySequence.get(seq.sequence_name);
       if (owner) {
@@ -354,13 +354,13 @@ export async function generateSqlDump(
             target = maxData;
           }
         } catch {
-          // Columna no numérica o tabla inaccesible: se conserva el valor original.
+          // Columna no numÃ©rica o tabla inaccesible: se conserva el valor original.
         }
       }
 
       const seqLiteral = `'public.${seq.sequence_name.replace(/'/g, "''")}'`;
       if (target < ONE) {
-        // Aún no se ha entregado ningún valor: el próximo debe ser el primero.
+        // AÃºn no se ha entregado ningÃºn valor: el prÃ³ximo debe ser el primero.
         out.push(`SELECT pg_catalog.setval(${seqLiteral}, 1, false);`);
       } else {
         out.push(`SELECT pg_catalog.setval(${seqLiteral}, ${target}, true);`);
@@ -387,3 +387,4 @@ export function buildDumpFilename(date = new Date()): string {
   const stamp = `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}-${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}`;
   return `backup-directorio-${stamp}.sql`;
 }
+

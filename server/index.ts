@@ -1,6 +1,6 @@
-import express, { type Request, Response, NextFunction } from "express";
-import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+﻿import express, { type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "./routes.js";
+import { setupVite, serveStatic, log } from "./vite.js";
 
 const app = express();
 
@@ -58,7 +58,7 @@ app.use((req, res, next) => {
       }
 
       if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
+        logLine = logLine.slice(0, 79) + "â€¦";
       }
 
       log(logLine);
@@ -75,26 +75,26 @@ app.use((req, res, next) => {
     let status = err.status || err.statusCode || 500;
     let message = err.message || "Error interno del servidor";
 
-    // Errores de subida de archivos (multer): devolver una razón clara en español.
+    // Errores de subida de archivos (multer): devolver una razÃ³n clara en espaÃ±ol.
     if (err && err.name === "MulterError") {
       status = 400;
       switch (err.code) {
         case "LIMIT_FILE_SIZE":
           status = 413;
           message = ["document", "catalogoFile"].includes(err.field)
-            ? "El documento supera el tamaño máximo permitido de 20 MB. Selecciona un archivo más ligero."
-            : "La imagen supera el tamaño máximo permitido de 2 MB. Selecciona una imagen más ligera.";
+            ? "El documento supera el tamaÃ±o mÃ¡ximo permitido de 20 MB. Selecciona un archivo mÃ¡s ligero."
+            : "La imagen supera el tamaÃ±o mÃ¡ximo permitido de 2 MB. Selecciona una imagen mÃ¡s ligera.";
           break;
         case "LIMIT_FILE_COUNT":
         case "LIMIT_UNEXPECTED_FILE":
-          message = "Se excedió el número máximo de archivos permitidos.";
+          message = "Se excediÃ³ el nÃºmero mÃ¡ximo de archivos permitidos.";
           break;
         default:
           message = `Error al subir el archivo: ${err.message}`;
       }
     }
 
-    // Log para diagnóstico (no se debe perder el error).
+    // Log para diagnÃ³stico (no se debe perder el error).
     console.error("Unhandled error:", err);
 
     // Si ya se enviaron cabeceras, delega en el handler por defecto de Express.
@@ -102,7 +102,7 @@ app.use((req, res, next) => {
       return next(err);
     }
 
-    // Responder al cliente. NO relanzar: hacerlo provoca una excepción no
+    // Responder al cliente. NO relanzar: hacerlo provoca una excepciÃ³n no
     // capturada que puede tumbar el proceso.
     res.status(status).json({ error: message, message });
   });
@@ -128,3 +128,4 @@ app.use((req, res, next) => {
     log(`serving on port ${port}`);
   });
 })();
+

@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from 'cloudinary';
+﻿import { v2 as cloudinary } from 'cloudinary';
 
 // Configure Cloudinary
 cloudinary.config({
@@ -109,3 +109,4 @@ export async function uploadFromBuffer(
 }
 
 export { cloudinary };
+

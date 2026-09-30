@@ -1,4 +1,4 @@
-import { 
+﻿import { 
   users, 
   companies, 
   representativeCompanies,
@@ -62,7 +62,7 @@ import {
   type CompanyWithDetails,
   type ProjectWithDetails
 } from "@shared/schema";
-import { db } from "./db";
+import { db } from "./db.js";
 import { eq, like, sql, and, or, asc, gt, isNull, desc } from "drizzle-orm";
 import nodemailer from "nodemailer";
 
@@ -369,7 +369,7 @@ export class DatabaseStorage implements IStorage {
 
   // Si existen filas duplicadas (mismo uid/email), se elige de forma
   // determinista la de mayor privilegio (admin > representante > otras) y,
-  // dentro del mismo rol, la más antigua. Así una cuenta duplicada con rol
+  // dentro del mismo rol, la mÃ¡s antigua. AsÃ­ una cuenta duplicada con rol
   // "user" no oculta la cuenta de representante que tiene empresa vinculada.
   private pickPreferredUser(rows: User[]): User | undefined {
     if (rows.length <= 1) return rows[0];
@@ -398,13 +398,13 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Evitar cuentas duplicadas: si ya existe un usuario con el mismo
-    // Firebase UID o el mismo email (sin distinguir mayúsculas), se reutiliza
-    // esa cuenta en lugar de insertar otra fila. Para cerrar la condición de
+    // Firebase UID o el mismo email (sin distinguir mayÃºsculas), se reutiliza
+    // esa cuenta en lugar de insertar otra fila. Para cerrar la condiciÃ³n de
     // carrera (dos peticiones concurrentes durante el registro), todo ocurre
-    // dentro de una transacción con un candado consultivo por email: la
-    // segunda petición espera a que la primera termine y entonces encuentra
-    // la cuenta ya creada. No se usa un índice único porque producción aún
-    // contiene filas duplicadas históricas que lo harían fallar.
+    // dentro de una transacciÃ³n con un candado consultivo por email: la
+    // segunda peticiÃ³n espera a que la primera termine y entonces encuentra
+    // la cuenta ya creada. No se usa un Ã­ndice Ãºnico porque producciÃ³n aÃºn
+    // contiene filas duplicadas histÃ³ricas que lo harÃ­an fallar.
     const emailKey = insertUser.email.trim().toLowerCase();
     return await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtext(${'user_email:' + emailKey}))`);
@@ -510,21 +510,21 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number): Promise<boolean> {
-    // Todo se hace dentro de una transacción: o se completa todo o no se
+    // Todo se hace dentro de una transacciÃ³n: o se completa todo o no se
     // aplica nada (evita dejar la BD en un estado inconsistente). Un error
     // real se propaga para que la ruta devuelva 500 y el admin pueda reintentar.
     return await db.transaction(async (tx) => {
-      // 1) Desvincular al usuario como dueño de sus empresas (NO borrar la
-      //    empresa). companies.userId no tiene ON DELETE, así que hay que
-      //    ponerlo en null antes de borrar el usuario o fallaría el FK.
+      // 1) Desvincular al usuario como dueÃ±o de sus empresas (NO borrar la
+      //    empresa). companies.userId no tiene ON DELETE, asÃ­ que hay que
+      //    ponerlo en null antes de borrar el usuario o fallarÃ­a el FK.
       await tx.update(companies)
         .set({ userId: null, updatedAt: new Date() })
         .where(eq(companies.userId, id));
 
       // 2) Quitar el id del array representantesVentas de cualquier empresa
-      //    (vínculo secundario de representante) para no dejar IDs huérfanos.
-      //    La columna física es `json`; se castea a jsonb para reconstruir el
-      //    array sin el id (contemplando que el id esté guardado como número o
+      //    (vÃ­nculo secundario de representante) para no dejar IDs huÃ©rfanos.
+      //    La columna fÃ­sica es `json`; se castea a jsonb para reconstruir el
+      //    array sin el id (contemplando que el id estÃ© guardado como nÃºmero o
       //    como texto).
       await tx.execute(sql`
         UPDATE companies
@@ -538,13 +538,13 @@ export class DatabaseStorage implements IStorage {
                OR representantes_ventas::jsonb @> jsonb_build_array(${String(id)}::text))
       `);
 
-      // 3) Eliminar vínculos normalizados (también tienen FK CASCADE en
-      // producción, pero esto mantiene el borrado explícito y compatible).
+      // 3) Eliminar vÃ­nculos normalizados (tambiÃ©n tienen FK CASCADE en
+      // producciÃ³n, pero esto mantiene el borrado explÃ­cito y compatible).
       await tx.delete(representativeCompanies)
         .where(eq(representativeCompanies.representativeUserId, id));
 
       // 4) Borrar el usuario. opinions y membership_payments tienen ON DELETE
-      //    CASCADE, así que se eliminan automáticamente con el usuario.
+      //    CASCADE, asÃ­ que se eliminan automÃ¡ticamente con el usuario.
       const result = await tx.delete(users).where(eq(users.id, id));
       return (result.rowCount || 0) > 0;
     });
@@ -552,7 +552,7 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Alias heredado. Desde el modelo multiempresa, asignar nunca reemplaza las
-   * asociaciones anteriores y comparte el mismo límite transaccional de tres.
+   * asociaciones anteriores y comparte el mismo lÃ­mite transaccional de tres.
    */
   async setCompanyRepresentative(companyId: number, userId: number): Promise<void> {
     await this.addRepresentativeCompany(companyId, userId);
@@ -770,7 +770,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  /** Desvincula al usuario como dueño de TODAS las empresas (deja de ser representante). */
+  /** Desvincula al usuario como dueÃ±o de TODAS las empresas (deja de ser representante). */
   async unassignRepresentativeFromAllCompanies(userId: number): Promise<void> {
     await db.transaction(async (tx) => {
       await tx.execute(sql`SELECT pg_advisory_xact_lock(${userId})`);
@@ -854,10 +854,10 @@ export class DatabaseStorage implements IStorage {
   } = {}): Promise<{ companies: CompanyWithDetails[]; total: number }> {
     const { search, categoryId, membershipTypeId, tagIds, estado, limit = 10, offset = 0, includeInactive = false } = options;
     
-    // NOTA: la inactivación por membresía vencida ya NO se hace aquí. Está
+    // NOTA: la inactivaciÃ³n por membresÃ­a vencida ya NO se hace aquÃ­. EstÃ¡
     // centralizada en el job diario deactivateExpiredCompanies (server/routes.ts)
     // y en los webhooks de Stripe, que guardan motivo/fecha, releen el estado
-    // más reciente (evita carreras con pagos) y envían la notificación una sola vez.
+    // mÃ¡s reciente (evita carreras con pagos) y envÃ­an la notificaciÃ³n una sola vez.
     
     let whereConditions = [];
 
@@ -886,7 +886,7 @@ export class DatabaseStorage implements IStorage {
       whereConditions.push(eq(companies.estado, estado));
     }
 
-    // Por defecto, solo mostrar empresas activas en el frontend público
+    // Por defecto, solo mostrar empresas activas en el frontend pÃºblico
     // Si no se especifica un estado y no se incluyen inactivas, mostrar solo activas
     if (!estado && !includeInactive) {
       whereConditions.push(eq(companies.estado, 'activo'));
@@ -963,7 +963,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateCompany(id: number, companyData: Partial<InsertCompany>): Promise<Company | undefined> {
-    // Si se está actualizando la galería de productos, verificar límites
+    // Si se estÃ¡ actualizando la galerÃ­a de productos, verificar lÃ­mites
     if (companyData.galeriaProductosUrls) {
       const currentCompany = await this.getCompany(id);
       if (currentCompany) {
@@ -974,20 +974,20 @@ export class DatabaseStorage implements IStorage {
           ? companyData.galeriaProductosUrls.length 
           : 0;
         
-        // Solo validar si se están agregando productos
+        // Solo validar si se estÃ¡n agregando productos
         if (newProductCount > currentProductCount) {
           await this.validateProductLimits(id, newProductCount - currentProductCount);
         }
       }
     }
 
-    // Si se está actualizando la fecha de vencimiento de membresía, activar automáticamente la empresa si la fecha es futura
+    // Si se estÃ¡ actualizando la fecha de vencimiento de membresÃ­a, activar automÃ¡ticamente la empresa si la fecha es futura
     if (companyData.fechaFinMembresia) {
       const fechaVencimiento = new Date(companyData.fechaFinMembresia);
       const hoy = new Date();
       hoy.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
       
-      // Si la fecha de vencimiento es posterior a hoy, activar la empresa automáticamente
+      // Si la fecha de vencimiento es posterior a hoy, activar la empresa automÃ¡ticamente
       if (fechaVencimiento >= hoy) {
         companyData.estado = 'activo';
       }
@@ -1097,9 +1097,9 @@ export class DatabaseStorage implements IStorage {
 
   /**
    * Resuelve la empresa de un representante de WordPress SIN crear datos.
-   * Coincide por cualquiera de estos vínculos con datos ya existentes:
+   * Coincide por cualquiera de estos vÃ­nculos con datos ya existentes:
    *   - email1 de la empresa == email de WordPress (case-insensitive)
-   *   - userId (dueño) == id del usuario existente vinculado a ese email
+   *   - userId (dueÃ±o) == id del usuario existente vinculado a ese email
    *   - representantesVentas (array jsonb de IDs) contiene ese id de usuario
    * Devuelve la primera coincidencia, o undefined si no hay empresa asignada.
    */
@@ -1129,7 +1129,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createCompanyLocation(location: InsertCompanyLocation): Promise<SelectCompanyLocation> {
-    // Si la nueva ubicación es principal, desmarcar otras ubicaciones principales
+    // Si la nueva ubicaciÃ³n es principal, desmarcar otras ubicaciones principales
     if (location.isPrincipal) {
       await db
         .update(companyLocations)
@@ -1177,7 +1177,7 @@ export class DatabaseStorage implements IStorage {
       .set({ isPrincipal: false })
       .where(eq(companyLocations.companyId, companyId));
     
-    // Marcar la ubicación especificada como principal
+    // Marcar la ubicaciÃ³n especificada como principal
     const [location] = await db
       .update(companyLocations)
       .set({ isPrincipal: true, updatedAt: new Date() })
@@ -1255,7 +1255,7 @@ export class DatabaseStorage implements IStorage {
       .where(sql`${companies.tagIds} ? ${id.toString()}`);
     
     if (companiesUsingTag.length > 0) {
-      throw new Error(`No se puede eliminar la etiqueta porque está siendo utilizada por ${companiesUsingTag.length} empresa(s)`);
+      throw new Error(`No se puede eliminar la etiqueta porque estÃ¡ siendo utilizada por ${companiesUsingTag.length} empresa(s)`);
     }
     
     const [deletedTag] = await db.delete(tags).where(eq(tags.id, id)).returning();
@@ -1326,7 +1326,7 @@ export class DatabaseStorage implements IStorage {
 
   async createCertificate(insertCertificate: InsertCertificate, companyId?: number | null): Promise<Certificate> {
     // `companyId` la fija SIEMPRE el backend (no viene del cliente): identifica a
-    // la empresa dueña del certificado para aislarlo. NULL = certificado global.
+    // la empresa dueÃ±a del certificado para aislarlo. NULL = certificado global.
     const [certificate] = await db
       .insert(certificates)
       .values({ ...insertCertificate, companyId: companyId ?? null })
@@ -1636,7 +1636,7 @@ export class DatabaseStorage implements IStorage {
     const [settings] = await db.select().from(systemSettings).limit(1);
     
     if (!settings) {
-      // Crear configuración por defecto si no existe
+      // Crear configuraciÃ³n por defecto si no existe
       const [defaultSettings] = await db
         .insert(systemSettings)
         .values({})
@@ -1732,7 +1732,7 @@ export class DatabaseStorage implements IStorage {
   async createProject(insertProject: InsertProject): Promise<Project> {
     return db.transaction(async (tx) => {
       // Serializa las altas por empresa: el conteo y el INSERT deben ser una
-      // sola operación para que solicitudes simultáneas no excedan el plan.
+      // sola operaciÃ³n para que solicitudes simultÃ¡neas no excedan el plan.
       await tx.execute(sql`
         SELECT pg_advisory_xact_lock(
           hashtext(${`project_limit:${insertProject.companyId}`})
@@ -1745,7 +1745,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(companies.id, insertProject.companyId))
         .limit(1);
       if (!company?.membershipTypeId) {
-        throw new Error("La empresa no tiene un plan de membresía válido");
+        throw new Error("La empresa no tiene un plan de membresÃ­a vÃ¡lido");
       }
 
       const [membershipType] = await tx
@@ -1754,7 +1754,7 @@ export class DatabaseStorage implements IStorage {
         .where(eq(membershipTypes.id, company.membershipTypeId))
         .limit(1);
       if (!membershipType) {
-        throw new Error("Plan de membresía no encontrado");
+        throw new Error("Plan de membresÃ­a no encontrado");
       }
 
       const [{ count }] = await tx
@@ -1770,7 +1770,7 @@ export class DatabaseStorage implements IStorage {
         && (!Number.isInteger(configuredLimit) || configuredLimit < -1)
       ) {
         const error: any = new Error(
-          `El límite de proyectos configurado para el plan ${membershipType.nombrePlan} no es válido`,
+          `El lÃ­mite de proyectos configurado para el plan ${membershipType.nombrePlan} no es vÃ¡lido`,
         );
         error.code = "INVALID_PROJECT_LIMIT_CONFIG";
         throw error;
@@ -1781,7 +1781,7 @@ export class DatabaseStorage implements IStorage {
 
       if (projectLimit >= 0 && projectCount >= projectLimit) {
         const error: any = new Error(
-          `Has alcanzado el límite de ${projectLimit} proyectos permitidos en tu plan ${membershipType.nombrePlan}`,
+          `Has alcanzado el lÃ­mite de ${projectLimit} proyectos permitidos en tu plan ${membershipType.nombrePlan}`,
         );
         error.code = "PROJECT_LIMIT_REACHED";
         throw error;
@@ -1796,18 +1796,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async validateProjectLimits(companyId: number): Promise<void> {
-    // Obtener información de la empresa y su plan de membresía
+    // Obtener informaciÃ³n de la empresa y su plan de membresÃ­a
     const company = await this.getCompany(companyId);
     if (!company || !company.membershipTypeId) {
-      throw new Error("La empresa no tiene un plan de membresía válido");
+      throw new Error("La empresa no tiene un plan de membresÃ­a vÃ¡lido");
     }
 
     const membershipType = await this.getMembershipType(company.membershipTypeId);
     if (!membershipType) {
-      throw new Error("Plan de membresía no encontrado");
+      throw new Error("Plan de membresÃ­a no encontrado");
     }
 
-    // Verificar límite de proyectos
+    // Verificar lÃ­mite de proyectos
     const currentProjectCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(projects)
@@ -1821,7 +1821,7 @@ export class DatabaseStorage implements IStorage {
       && (!Number.isInteger(configuredLimit) || configuredLimit < -1)
     ) {
       const error: any = new Error(
-        `El límite de proyectos configurado para el plan ${membershipType.nombrePlan} no es válido`,
+        `El lÃ­mite de proyectos configurado para el plan ${membershipType.nombrePlan} no es vÃ¡lido`,
       );
       error.code = "INVALID_PROJECT_LIMIT_CONFIG";
       throw error;
@@ -1831,25 +1831,25 @@ export class DatabaseStorage implements IStorage {
       : configuredLimit;
 
     if (projectLimit >= 0 && projectCount >= projectLimit) {
-      const error: any = new Error(`Has alcanzado el límite de ${projectLimit} proyectos permitidos en tu plan ${membershipType.nombrePlan}`);
+      const error: any = new Error(`Has alcanzado el lÃ­mite de ${projectLimit} proyectos permitidos en tu plan ${membershipType.nombrePlan}`);
       error.code = "PROJECT_LIMIT_REACHED";
       throw error;
     }
   }
 
   async validateProductLimits(companyId: number, newProductCount: number = 1): Promise<void> {
-    // Obtener información de la empresa y su plan de membresía
+    // Obtener informaciÃ³n de la empresa y su plan de membresÃ­a
     const company = await this.getCompany(companyId);
     if (!company || !company.membershipTypeId) {
-      throw new Error("La empresa no tiene un plan de membresía válido");
+      throw new Error("La empresa no tiene un plan de membresÃ­a vÃ¡lido");
     }
 
     const membershipType = await this.getMembershipType(company.membershipTypeId);
     if (!membershipType) {
-      throw new Error("Plan de membresía no encontrado");
+      throw new Error("Plan de membresÃ­a no encontrado");
     }
 
-    // Verificar límite de productos (basado en galería de productos)
+    // Verificar lÃ­mite de productos (basado en galerÃ­a de productos)
     const currentProductCount = Array.isArray(company.galeriaProductosUrls) 
       ? company.galeriaProductosUrls.length 
       : 0;
@@ -1857,7 +1857,7 @@ export class DatabaseStorage implements IStorage {
     const productLimit = membershipType.cantidadProductosAdmitidos || 0;
 
     if (productLimit > 0 && (currentProductCount + newProductCount) > productLimit) {
-      throw new Error(`Has alcanzado el límite de ${productLimit} productos permitidos en tu plan ${membershipType.nombrePlan}. Actualmente tienes ${currentProductCount} productos.`);
+      throw new Error(`Has alcanzado el lÃ­mite de ${productLimit} productos permitidos en tu plan ${membershipType.nombrePlan}. Actualmente tienes ${currentProductCount} productos.`);
     }
   }
 
@@ -1970,12 +1970,12 @@ export class DatabaseStorage implements IStorage {
       });
 
       if (response.ok) {
-        return { success: true, message: "Conexión exitosa con WordPress" };
+        return { success: true, message: "ConexiÃ³n exitosa con WordPress" };
       } else {
-        return { success: false, message: `Error de conexión: ${response.status} ${response.statusText}` };
+        return { success: false, message: `Error de conexiÃ³n: ${response.status} ${response.statusText}` };
       }
     } catch (error: any) {
-      return { success: false, message: `Error de conexión: ${error.message}` };
+      return { success: false, message: `Error de conexiÃ³n: ${error.message}` };
     }
   }
 
@@ -1997,7 +1997,7 @@ export class DatabaseStorage implements IStorage {
       }
 
       if (!wordpressUrl || !apiKey || !apiSecret) {
-        return { users: [], total: 0, message: "Configuración de WordPress incompleta. Configure las variables de entorno WORDPRESS_URL, WORDPRESS_USERNAME y WORDPRESS_APP_PASSWORD" };
+        return { users: [], total: 0, message: "ConfiguraciÃ³n de WordPress incompleta. Configure las variables de entorno WORDPRESS_URL, WORDPRESS_USERNAME y WORDPRESS_APP_PASSWORD" };
       }
 
       const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
@@ -2140,11 +2140,11 @@ export class DatabaseStorage implements IStorage {
     try {
       const settings = await this.getIntegrationSettings();
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return { syncedUsers: 0, message: "Configuración de WordPress incompleta" };
+        return { syncedUsers: 0, message: "ConfiguraciÃ³n de WordPress incompleta" };
       }
 
       if (!settings.syncEnabled) {
-        return { syncedUsers: 0, message: "Sincronización deshabilitada" };
+        return { syncedUsers: 0, message: "SincronizaciÃ³n deshabilitada" };
       }
 
       const usersUrl = `${settings.wordpressUrl.replace(/\/$/, '')}/wp-json/wp/v2/users`;
@@ -2206,7 +2206,7 @@ export class DatabaseStorage implements IStorage {
 
       return { syncedUsers: syncedCount, message: `${syncedCount} usuarios sincronizados exitosamente` };
     } catch (error: any) {
-      return { syncedUsers: 0, message: `Error de sincronización: ${error.message}` };
+      return { syncedUsers: 0, message: `Error de sincronizaciÃ³n: ${error.message}` };
     }
   }
 
@@ -2217,8 +2217,8 @@ export class DatabaseStorage implements IStorage {
     // If no settings exist, create default ones
     if (!settings) {
       return await this.createPdfSettings({
-        companyName: "ANPR México",
-        companySubtitle: "Asociación Nacional de Profesionales en Relaciones Públicas",
+        companyName: "ANPR MÃ©xico",
+        companySubtitle: "AsociaciÃ³n Nacional de Profesionales en Relaciones PÃºblicas",
         websiteUrl: "www.anpr.org.mx",
         primaryColor: "#bcce16",
         secondaryColor: "#2d3748",
@@ -2231,7 +2231,7 @@ export class DatabaseStorage implements IStorage {
         showLogo: true,
         showWebsite: true,
         showAddress: true,
-        footerText: "Este recibo fue generado automáticamente"
+        footerText: "Este recibo fue generado automÃ¡ticamente"
       });
     }
     
@@ -2345,13 +2345,13 @@ export class DatabaseStorage implements IStorage {
         
         // Provide more specific error messages
         if (verifyError.code === 'ETIMEDOUT' || verifyError.message.includes('Greeting never received')) {
-          throw new Error(`No se pudo conectar al servidor SMTP ${configData.smtpHost}:${configData.smtpPort}. Verifique que el servidor y puerto sean correctos, y que no haya firewall bloqueando la conexión.`);
+          throw new Error(`No se pudo conectar al servidor SMTP ${configData.smtpHost}:${configData.smtpPort}. Verifique que el servidor y puerto sean correctos, y que no haya firewall bloqueando la conexiÃ³n.`);
         } else if (verifyError.code === 'EAUTH') {
-          throw new Error('Error de autenticación: Verifique su usuario y contraseña SMTP.');
+          throw new Error('Error de autenticaciÃ³n: Verifique su usuario y contraseÃ±a SMTP.');
         } else if (verifyError.code === 'ECONNREFUSED') {
-          throw new Error(`Conexión rechazada al servidor ${configData.smtpHost}:${configData.smtpPort}. Verifique que el servidor esté activo y el puerto sea correcto.`);
+          throw new Error(`ConexiÃ³n rechazada al servidor ${configData.smtpHost}:${configData.smtpPort}. Verifique que el servidor estÃ© activo y el puerto sea correcto.`);
         } else {
-          throw new Error(`Error de conexión SMTP: ${verifyError.message}`);
+          throw new Error(`Error de conexiÃ³n SMTP: ${verifyError.message}`);
         }
       }
 
@@ -2371,16 +2371,16 @@ export class DatabaseStorage implements IStorage {
       const mailOptions = {
         from: `"${configData.fromName}" <${configData.fromEmail}>`,
         to: testEmailAddress,
-        subject: '✅ Prueba de Configuración SMTP - Directorio ANPR',
+        subject: 'âœ… Prueba de ConfiguraciÃ³n SMTP - Directorio ANPR',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #22c55e; margin: 0; font-size: 28px;">✅ ¡Configuración Exitosa!</h1>
-              <p style="color: #6b7280; margin: 5px 0 0 0;">Prueba de conexión SMTP realizada correctamente</p>
+              <h1 style="color: #22c55e; margin: 0; font-size: 28px;">âœ… Â¡ConfiguraciÃ³n Exitosa!</h1>
+              <p style="color: #6b7280; margin: 5px 0 0 0;">Prueba de conexiÃ³n SMTP realizada correctamente</p>
             </div>
             
             <div style="background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); padding: 25px; border-radius: 12px; border-left: 4px solid #22c55e; margin: 20px 0;">
-              <h2 style="color: #16a34a; margin: 0 0 15px 0; font-size: 20px;">🔧 Detalles de la Configuración</h2>
+              <h2 style="color: #16a34a; margin: 0 0 15px 0; font-size: 20px;">ðŸ”§ Detalles de la ConfiguraciÃ³n</h2>
               <div style="background-color: white; padding: 15px; border-radius: 8px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr><td style="padding: 8px 0; color: #374151; font-weight: bold;">Proveedor:</td><td style="padding: 8px 0; color: #1f2937;">${configData.provider.toUpperCase()}</td></tr>
@@ -2394,14 +2394,14 @@ export class DatabaseStorage implements IStorage {
             </div>
 
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin: 0 0 10px 0;">📧 Sistema de Correos Activo</h3>
+              <h3 style="color: #1e40af; margin: 0 0 10px 0;">ðŸ“§ Sistema de Correos Activo</h3>
               <p style="color: #374151; margin: 0; line-height: 1.6;">
-                El sistema de correos transaccionales está configurado correctamente y listo para:
+                El sistema de correos transaccionales estÃ¡ configurado correctamente y listo para:
               </p>
               <ul style="color: #374151; margin: 10px 0 0 0; padding-left: 20px;">
                 <li>Enviar notificaciones de bienvenida a nuevos usuarios</li>
-                <li>Notificar sobre vencimientos de membresías</li>
-                <li>Confirmar pagos y renovaciones automáticas</li>
+                <li>Notificar sobre vencimientos de membresÃ­as</li>
+                <li>Confirmar pagos y renovaciones automÃ¡ticas</li>
                 <li>Enviar recordatorios y alertas del sistema</li>
               </ul>
             </div>
@@ -2409,7 +2409,7 @@ export class DatabaseStorage implements IStorage {
             <div style="border-top: 2px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
               <p style="color: #6b7280; font-size: 14px; margin: 0;">
                 <strong>Directorio de Proveedores de Equipamiento Urbano</strong><br>
-                ANPR México - Sistema de Gestión Empresarial
+                ANPR MÃ©xico - Sistema de GestiÃ³n Empresarial
               </p>
             </div>
           </div>
@@ -2420,13 +2420,13 @@ export class DatabaseStorage implements IStorage {
 
       return {
         success: true,
-        message: `Configuración válida y email de prueba enviado a ${testEmailAddress}`
+        message: `ConfiguraciÃ³n vÃ¡lida y email de prueba enviado a ${testEmailAddress}`
       };
     } catch (error: any) {
       console.error("Email test failed:", error);
       return {
         success: false,
-        message: `Error al probar configuración: ${error.message}`
+        message: `Error al probar configuraciÃ³n: ${error.message}`
       };
     }
   }
@@ -2496,7 +2496,7 @@ export class DatabaseStorage implements IStorage {
     try {
       return {
         success: true,
-        message: "Conexión exitosa con Stripe",
+        message: "ConexiÃ³n exitosa con Stripe",
         details: {
           accountId: "acct_test_123",
           businessName: "Test Business",
@@ -2533,7 +2533,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Registra un evento de Stripe como procesado. Devuelve true si es NUEVO
-  // (se insertó) y false si ya existía (reintento/duplicado → no reprocesar).
+  // (se insertÃ³) y false si ya existÃ­a (reintento/duplicado â†’ no reprocesar).
   // La atomicidad la garantiza la PK (event_id): dos inserciones del mismo
   // evento no pueden coexistir, evitando doble procesamiento por concurrencia.
   async markStripeEventProcessed(eventId: string, type: string): Promise<boolean> {
@@ -2546,7 +2546,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Elimina el registro de un evento para permitir su reprocesamiento. Se usa
-  // cuando la lógica del webhook falla DESPUÉS de marcarlo: así el reintento de
+  // cuando la lÃ³gica del webhook falla DESPUÃ‰S de marcarlo: asÃ­ el reintento de
   // Stripe no se descarta como duplicado y el efecto no se pierde para siempre.
   async unmarkStripeEventProcessed(eventId: string): Promise<void> {
     await db
@@ -2580,9 +2580,9 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  // ───────────────────────────────────────────────────────────────────────────
-  // Password reset tokens (tabla aislada — no toca `users` ni la autenticación)
-  // ───────────────────────────────────────────────────────────────────────────
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Password reset tokens (tabla aislada â€” no toca `users` ni la autenticaciÃ³n)
+  // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   async createPasswordResetToken(
     data: InsertPasswordResetToken
@@ -2591,7 +2591,7 @@ export class DatabaseStorage implements IStorage {
     return token;
   }
 
-  /** Devuelve un token válido (no usado y no expirado) por su hash, o undefined. */
+  /** Devuelve un token vÃ¡lido (no usado y no expirado) por su hash, o undefined. */
   async getValidPasswordResetToken(
     tokenHash: string
   ): Promise<PasswordResetToken | undefined> {
@@ -2609,7 +2609,7 @@ export class DatabaseStorage implements IStorage {
     return token || undefined;
   }
 
-  /** Marca un token como usado (invalidación tras el restablecimiento). */
+  /** Marca un token como usado (invalidaciÃ³n tras el restablecimiento). */
   async markPasswordResetTokenUsed(id: number): Promise<void> {
     await db
       .update(passwordResetTokens)
@@ -2617,7 +2617,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(passwordResetTokens.id, id));
   }
 
-  /** Invalida todos los tokens activos de un email (al cambiar la contraseña). */
+  /** Invalida todos los tokens activos de un email (al cambiar la contraseÃ±a). */
   async invalidatePasswordResetTokensForEmail(email: string): Promise<void> {
     await db
       .update(passwordResetTokens)
@@ -2649,3 +2649,4 @@ export class DatabaseStorage implements IStorage {
 }
 
 export const storage = new DatabaseStorage();
+

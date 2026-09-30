@@ -1,4 +1,4 @@
-import type { Express } from "express";
+﻿import type { Express } from "express";
 import express from "express";
 import { createServer, type Server } from "http";
 import Stripe from "stripe";
@@ -6,8 +6,8 @@ import {
   RepresentativeCompanyLimitError,
   RepresentativeCompanyRoleError,
   storage,
-} from "./storage";
-import { sendWelcomeEmail, sendCancellationEmail, sendRenewalEmail, checkAndSendExpirationNotifications, sendActivationEmail, sendNewReviewNotificationToAdmins } from "./email-service";
+} from "./storage.js";
+import { sendWelcomeEmail, sendCancellationEmail, sendRenewalEmail, checkAndSendExpirationNotifications, sendActivationEmail, sendNewReviewNotificationToAdmins } from "./email-service.js";
 import multer from "multer";
 import {
   IMAGE_MAX_BYTES,
@@ -26,14 +26,14 @@ import * as nodeCrypto from "crypto";
 import { v4 as uuidv4 } from "uuid";
 import { insertUserSchema, insertCompanySchema, insertCategorySchema, insertTagSchema, insertMembershipTypeSchema, insertCertificateSchema, insertRoleSchema, insertOpinionSchema, insertMembershipPaymentSchema, insertProjectSchema, insertIntegrationSettingsSchema, insertPdfSettingsSchema, insertEmailConfigurationSchema, insertEmailTemplateSchema, insertFrontendConfigurationSchema, insertCompanyLocationSchema } from "@shared/schema";
 import { z } from "zod";
-import { uploadFromBuffer, deleteFile as deleteCloudinaryFile } from "./cloudinary";
+import { uploadFromBuffer, deleteFile as deleteCloudinaryFile } from "./cloudinary.js";
 import bcrypt from "bcrypt";
 import {
   generateResetToken,
   hashToken,
   sendPasswordResetEmail,
   RESET_TOKEN_TTL_MINUTES,
-} from "./password-reset-service";
+} from "./password-reset-service.js";
 import {
   updateFirebasePasswordByEmail,
   findFirebaseUserByEmail,
@@ -42,34 +42,34 @@ import {
   verifyFirebaseAdminConnection,
   getFirebaseAdminError,
   getFirebaseAdmin,
-} from "./firebase-admin";
-import { getStripe, getStripeContext, invalidateStripeCache, getOrCreateRecurringPrice, getInvoiceSubscriptionId, getInvoiceSubscriptionMetadata, getSubscriptionPeriodEnd, getSubscriptionPeriodStart } from "./stripe";
+} from "./firebase-admin.js";
+import { getStripe, getStripeContext, invalidateStripeCache, getOrCreateRecurringPrice, getInvoiceSubscriptionId, getInvoiceSubscriptionMetadata, getSubscriptionPeriodEnd, getSubscriptionPeriodStart } from "./stripe.js";
 import {
   signAdminSession,
   verifyAdminSession,
   parseCookie,
   ADMIN_SESSION_COOKIE,
   ADMIN_SESSION_TTL_MS,
-} from "./adminSession";
+} from "./adminSession.js";
 import {
   signWordPressSessionToken,
   verifyWordPressSessionToken,
   WP_SESSION_TTL_SECONDS,
   verifyWordPressJwt,
   isWordPressJwtConfigured,
-} from "./services/wordpress";
-import { generateSqlDump, buildDumpFilename } from "./services/db-export";
+} from "./services/wordpress.js";
+import { generateSqlDump, buildDumpFilename } from "./services/db-export.js";
 import {
   streamFullExport,
   buildPackageFilename,
   collectProjectFiles,
   resolveProjectRoot,
-} from "./services/project-export";
-import { pool } from "./db";
+} from "./services/project-export.js";
+import { pool } from "./db.js";
 
 const BCRYPT_ROUNDS = 12;
 
-// Elimina campos sensibles (contraseña temporal) antes de enviar un usuario al
+// Elimina campos sensibles (contraseÃ±a temporal) antes de enviar un usuario al
 // cliente. Nunca debe salir `tempPassword` (hash bcrypt o texto plano legacy).
 function sanitizeUser<T extends Record<string, any> | null | undefined>(user: T): T {
   if (!user) return user;
@@ -78,12 +78,12 @@ function sanitizeUser<T extends Record<string, any> | null | undefined>(user: T)
 }
 
 // Permiso que, marcado en la pantalla de Roles, concede a un rol personalizado
-// acceso completo al panel de administración (igual que el rol clásico "admin").
+// acceso completo al panel de administraciÃ³n (igual que el rol clÃ¡sico "admin").
 const ADMIN_DASHBOARD_PERMISSION = "admin.dashboard";
 
-// Determina si un usuario es administrador. Además del rol clásico "admin"
+// Determina si un usuario es administrador. AdemÃ¡s del rol clÃ¡sico "admin"
 // (o roleId 1), acepta cualquier rol personalizado que tenga marcado el permiso
-// "Acceso al Dashboard de Administración". Los flags accesoAdmin/permisos los
+// "Acceso al Dashboard de AdministraciÃ³n". Los flags accesoAdmin/permisos los
 // adjunta attachRoleInfo() a partir de la tabla `roles`.
 function isAdminUser(user: any): boolean {
   if (!user) return false;
@@ -97,7 +97,7 @@ function isAdminUser(user: any): boolean {
 // la tabla `roles` para adjuntar sus permisos y derivar el flag `accesoAdmin`.
 // Es lo que permite que un rol personalizado (p. ej. "Administrador") habilite el
 // dashboard sin depender del texto exacto "admin". El emparejamiento es por
-// nombre, insensible a mayúsculas (users.role guarda el nombre en minúsculas).
+// nombre, insensible a mayÃºsculas (users.role guarda el nombre en minÃºsculas).
 async function attachRoleInfo<T extends Record<string, any> | null | undefined>(user: T): Promise<T> {
   if (!user) return user;
   try {
@@ -117,14 +117,14 @@ async function attachRoleInfo<T extends Record<string, any> | null | undefined>(
   }
 }
 
-// Monedas admitidas (coinciden con el selector del panel de administración).
+// Monedas admitidas (coinciden con el selector del panel de administraciÃ³n).
 const SUPPORTED_CURRENCIES = new Set([
   "usd", "eur", "mxn", "cop", "ars", "clp", "pen", "brl", "cad", "gbp", "jpy", "cny",
 ]);
 
 // Devuelve la moneda configurada por el administrador (System Settings) en el
-// formato que exige Stripe: código ISO en minúsculas (p.ej. "mxn", "usd").
-// Se valida contra una lista permitida; si el valor es inválido o falta, usa
+// formato que exige Stripe: cÃ³digo ISO en minÃºsculas (p.ej. "mxn", "usd").
+// Se valida contra una lista permitida; si el valor es invÃ¡lido o falta, usa
 // "usd" como respaldo seguro para no provocar errores en Stripe.
 async function getConfiguredCurrency(): Promise<string> {
   try {
@@ -137,9 +137,9 @@ async function getConfiguredCurrency(): Promise<string> {
   }
 }
 
-// Normaliza un límite de plan: NULL/undefined/-1 significan "ilimitado" y se
-// devuelven como -1. Cualquier otro número se devuelve tal cual. Se usa para
-// recortar el contenido en el directorio público (nunca se borra nada).
+// Normaliza un lÃ­mite de plan: NULL/undefined/-1 significan "ilimitado" y se
+// devuelven como -1. Cualquier otro nÃºmero se devuelve tal cual. Se usa para
+// recortar el contenido en el directorio pÃºblico (nunca se borra nada).
 function normalizePlanLimit(value: number | null | undefined): number {
   if (value === null || value === undefined || value === -1) return -1;
   if (!Number.isInteger(value) || value < -1) return 0;
@@ -157,10 +157,10 @@ function isRepresentativeRole(role: unknown): boolean {
   return normalizedRole === "representante" || normalizedRole === "representative";
 }
 
-// Middleware: solo administradores pueden modificar la configuración de Stripe.
+// Middleware: solo administradores pueden modificar la configuraciÃ³n de Stripe.
 // Acepta dos formas de identidad: (1) un ID token de Firebase verificable, o
 // (2) la identidad normal de la app (x-user-info), confirmando SIEMPRE el rol
-// de administrador contra la base de datos (no se confía en el rol del cliente).
+// de administrador contra la base de datos (no se confÃ­a en el rol del cliente).
 async function requireStripeAdmin(req: any, res: any, next: any) {
   try {
     // Modo 1: token de Firebase verificable (admins que entran por Firebase).
@@ -176,13 +176,13 @@ async function requireStripeAdmin(req: any, res: any, next: any) {
             return next();
           }
         } catch {
-          /* token inválido: se intenta con la identidad de la app abajo */
+          /* token invÃ¡lido: se intenta con la identidad de la app abajo */
         }
       }
     }
 
-    // Modo 2: cookie de sesión FIRMADA por el servidor, emitida al iniciar
-    // sesión con contraseña válida (/api/login-temp). Prueba fuerte y verificable.
+    // Modo 2: cookie de sesiÃ³n FIRMADA por el servidor, emitida al iniciar
+    // sesiÃ³n con contraseÃ±a vÃ¡lida (/api/login-temp). Prueba fuerte y verificable.
     const cookieToken = parseCookie(req.headers.cookie, ADMIN_SESSION_COOKIE);
     if (cookieToken) {
       const userId = verifyAdminSession(cookieToken);
@@ -194,10 +194,10 @@ async function requireStripeAdmin(req: any, res: any, next: any) {
       }
     }
 
-    // Modo 3: identidad estándar de la app (header x-user-info). Es el MISMO
-    // mecanismo con el que el resto del panel de administración autoriza sus
+    // Modo 3: identidad estÃ¡ndar de la app (header x-user-info). Es el MISMO
+    // mecanismo con el que el resto del panel de administraciÃ³n autoriza sus
     // acciones (editar usuarios, empresas, etc.). Se refuerza confirmando el rol
-    // 'admin' directamente en la base de datos: no se confía en el rol enviado
+    // 'admin' directamente en la base de datos: no se confÃ­a en el rol enviado
     // por el cliente, sino en el guardado en la BD para el id indicado.
     const claimed = req.user;
     if (claimed?.id) {
@@ -207,14 +207,14 @@ async function requireStripeAdmin(req: any, res: any, next: any) {
       }
     }
 
-    return res.status(401).json({ error: "Se requiere una cuenta de administrador para esta acción" });
+    return res.status(401).json({ error: "Se requiere una cuenta de administrador para esta acciÃ³n" });
   } catch (error) {
-    console.error("Error verificando administrador para configuración de Stripe:", error);
+    console.error("Error verificando administrador para configuraciÃ³n de Stripe:", error);
     return res.status(401).json({ error: "No se pudo verificar la cuenta de administrador" });
   }
 }
 
-// Variante estricta para cambios de asociación/propiedad. A diferencia de la
+// Variante estricta para cambios de asociaciÃ³n/propiedad. A diferencia de la
 // compatibilidad heredada de requireStripeAdmin, NO acepta x-user-info porque
 // ese header puede ser construido por el navegador.
 async function isStronglyVerifiedAdminRequest(req: any): Promise<boolean> {
@@ -228,7 +228,7 @@ async function isStronglyVerifiedAdminRequest(req: any): Promise<boolean> {
         const fbUser = await storage.getUserByFirebaseUid(decoded.uid);
         if (fbUser && isAdminUser(await attachRoleInfo(fbUser))) return true;
       } catch {
-        // Token inválido: todavía puede existir una sesión temporal firmada.
+        // Token invÃ¡lido: todavÃ­a puede existir una sesiÃ³n temporal firmada.
       }
     }
   }
@@ -245,9 +245,9 @@ async function isStronglyVerifiedAdminRequest(req: any): Promise<boolean> {
   return false;
 }
 
-// Resuelve la identidad real del solicitante desde una prueba criptográfica:
-// Firebase, sesión WordPress firmada o cookie administrativa firmada. El header
-// x-user-info queda únicamente como contexto visual y nunca autentica.
+// Resuelve la identidad real del solicitante desde una prueba criptogrÃ¡fica:
+// Firebase, sesiÃ³n WordPress firmada o cookie administrativa firmada. El header
+// x-user-info queda Ãºnicamente como contexto visual y nunca autentica.
 export async function getVerifiedRequestUser(req: any): Promise<any | null> {
   const authHeader = (req.headers["authorization"] as string) || "";
   const firebaseToken = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
@@ -292,36 +292,36 @@ export async function getVerifiedRequestUser(req: any): Promise<any | null> {
   return null;
 }
 
-// Autorización de las herramientas del panel de administración (exportaciones).
+// AutorizaciÃ³n de las herramientas del panel de administraciÃ³n (exportaciones).
 //
-// Es la MISMA puerta que usa el panel en el cliente: cualquier identidad válida
-// cuyo rol sea administrador. La diferencia con el cliente es que aquí la
+// Es la MISMA puerta que usa el panel en el cliente: cualquier identidad vÃ¡lida
+// cuyo rol sea administrador. La diferencia con el cliente es que aquÃ­ la
 // identidad se resuelve con getVerifiedRequestUser, que solo acepta pruebas
-// firmadas —Firebase, sesión de WordPress o cookie de administrador— y nunca el
+// firmadas â€”Firebase, sesiÃ³n de WordPress o cookie de administradorâ€” y nunca el
 // header x-user-info, que cualquiera puede fabricar desde el navegador.
 //
-// Devuelve el usuario verificado, o null si no hay identidad válida de admin.
+// Devuelve el usuario verificado, o null si no hay identidad vÃ¡lida de admin.
 export async function getAdminPanelUser(req: any): Promise<any | null> {
   const user = await getVerifiedRequestUser(req);
   if (!user) return null;
   return isAdminUser(user) ? user : null;
 }
 
-// Explica en el error POR QUÉ falló, para que un administrador legítimo sepa
-// qué hacer en vez de recibir un 401 mudo.
+// Explica en el error POR QUÃ‰ fallÃ³, para que un administrador legÃ­timo sepa
+// quÃ© hacer en vez de recibir un 401 mudo.
 function describeMissingAdminIdentity(req: any): string {
   const hasFirebase = String(req.headers["authorization"] || "").startsWith("Bearer ");
   const hasWordPress = Boolean(req.headers["x-wordpress-session"]);
   const hasCookie = Boolean(parseCookie(req.headers.cookie, ADMIN_SESSION_COOKIE));
 
   if (!hasFirebase && !hasWordPress && !hasCookie) {
-    return "No se recibió ninguna sesión verificable. Vuelve a iniciar sesión en el panel e inténtalo de nuevo.";
+    return "No se recibiÃ³ ninguna sesiÃ³n verificable. Vuelve a iniciar sesiÃ³n en el panel e intÃ©ntalo de nuevo.";
   }
-  return "Tu sesión es válida pero la cuenta no tiene rol de administrador, o la sesión expiró. Vuelve a iniciar sesión.";
+  return "Tu sesiÃ³n es vÃ¡lida pero la cuenta no tiene rol de administrador, o la sesiÃ³n expirÃ³. Vuelve a iniciar sesiÃ³n.";
 }
 
-// Configuración de multer - usa memoria para Cloudinary, disco para local
-// Verificar que Cloudinary esté correctamente configurado (no solo que exista el nombre)
+// ConfiguraciÃ³n de multer - usa memoria para Cloudinary, disco para local
+// Verificar que Cloudinary estÃ© correctamente configurado (no solo que exista el nombre)
 const cloudinaryConfigured = !!(
   process.env.CLOUDINARY_CLOUD_NAME && 
   process.env.CLOUDINARY_API_KEY && 
@@ -330,13 +330,13 @@ const cloudinaryConfigured = !!(
   !process.env.CLOUDINARY_CLOUD_NAME.includes(' ')
 );
 
-// Usar Cloudinary cuando esté configurado para persistencia en producción
+// Usar Cloudinary cuando estÃ© configurado para persistencia en producciÃ³n
 const useCloudinary = cloudinaryConfigured;
 console.log(`Storage mode: ${useCloudinary ? 'Cloudinary' : 'Local disk storage'}`);
 
 const imageStorage = multer.memoryStorage();
 
-// Configuración de multer para documentos
+// ConfiguraciÃ³n de multer para documentos
 const documentStorage = useCloudinary 
   ? multer.memoryStorage()
   : multer.diskStorage({
@@ -367,7 +367,7 @@ const uploadImage = multer({
   }
 });
 
-// Configuración específica para logotipos PDF
+// ConfiguraciÃ³n especÃ­fica para logotipos PDF
 const pdfLogoStorage = multer.memoryStorage();
 
 const uploadPdfLogo = multer({
@@ -406,12 +406,12 @@ const uploadDocument = multer({
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Solo se permiten archivos PDF, Word o imágenes'));
+      cb(new Error('Solo se permiten archivos PDF, Word o imÃ¡genes'));
     }
   }
 });
 
-// Configuración mixta para creación de empresas (imágenes + documentos)
+// ConfiguraciÃ³n mixta para creaciÃ³n de empresas (imÃ¡genes + documentos)
 const uploadCompanyFiles = multer({
   // Validate every company image in memory before persisting any member of
   // the multipart request. Catalog/doc files retain their larger limit.
@@ -420,7 +420,7 @@ const uploadCompanyFiles = multer({
     fileSize: 20 * 1024 * 1024, // 20MB
   },
   fileFilter: (req, file, cb) => {
-    // Para catálogos: permitir PDF, Word e imágenes
+    // Para catÃ¡logos: permitir PDF, Word e imÃ¡genes
     if (file.fieldname === 'catalogoFile') {
       const allowedTypes = [
         'application/pdf',
@@ -435,10 +435,10 @@ const uploadCompanyFiles = multer({
       if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
-        cb(new Error('Para el catálogo solo se permiten archivos PDF, Word o imágenes'));
+        cb(new Error('Para el catÃ¡logo solo se permiten archivos PDF, Word o imÃ¡genes'));
       }
     } 
-    // Para logos, fotos de portada y galería: solo imágenes
+    // Para logos, fotos de portada y galerÃ­a: solo imÃ¡genes
     else if (['logoFile', 'fotoPortadaFile', 'galeriaFiles'].includes(file.fieldname)) {
       if (file.mimetype.startsWith('image/')) {
         cb(null, true);
@@ -578,17 +578,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
-  // Servir archivos estáticos desde la carpeta uploads
+  // Servir archivos estÃ¡ticos desde la carpeta uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
   
-  // Servir archivos estáticos desde la carpeta attached_assets
+  // Servir archivos estÃ¡ticos desde la carpeta attached_assets
   app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 
   // Ruta para subir una sola imagen
   app.post("/api/upload-image", uploadImage.single('image'), validateUploadedImages, async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No se recibió ningún archivo" });
+        return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
       
       let imageUrl: string;
@@ -612,7 +612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Ruta para subir múltiples imágenes
+  // Ruta para subir mÃºltiples imÃ¡genes
   app.post("/api/upload-images", uploadImage.array('images', 10), validateUploadedImages, async (req, res) => {
     try {
       if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
@@ -634,8 +634,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images: imageUrls
       });
     } catch (error) {
-      console.error("Error al subir imágenes:", error);
-      res.status(500).json({ error: "Error al procesar las imágenes" });
+      console.error("Error al subir imÃ¡genes:", error);
+      res.status(500).json({ error: "Error al procesar las imÃ¡genes" });
     }
   });
 
@@ -643,7 +643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/upload-document", uploadDocument.single('document'), async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No se recibió ningún archivo" });
+        return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
       if (req.file.buffer.byteLength > IMAGE_MAX_BYTES &&
         (isImageBytes(req.file.buffer) || !isSupportedDocumentBytes(req.file.buffer))) {
@@ -676,11 +676,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Ruta para subir imagen de perfil (usado por configuración de cuenta)
+  // Ruta para subir imagen de perfil (usado por configuraciÃ³n de cuenta)
   app.post("/api/upload", uploadImage.single('file'), validateUploadedImages, async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No se recibió ningún archivo" });
+        return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
       
       let imageUrl: string;
@@ -709,7 +709,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { filename } = req.params;
       
-      // Eliminación de archivo local
+      // EliminaciÃ³n de archivo local
       const filePath = path.join(process.cwd(), 'uploads', 'images', filename);
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);
@@ -735,7 +735,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/users/:id", async (req, res, next) => {
-    // "/api/users/me" debe ser atendido por su handler dedicado (definido más
+    // "/api/users/me" debe ser atendido por su handler dedicado (definido mÃ¡s
     // abajo). Sin esto, ":id" lo captura y parseInt("me")=NaN rompe la consulta.
     if (req.params.id === "me") return next();
     try {
@@ -815,7 +815,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // El rol y sus asociaciones cambian en una sola transacción. Para
+      // El rol y sus asociaciones cambian en una sola transacciÃ³n. Para
       // representantes, companyId solo agrega y nunca reemplaza.
       const user = await storage.updateUserAndRepresentativeCompanies(
         id,
@@ -833,7 +833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (error?.code === "REPRESENTATIVE_COMPANY_LIMIT") {
         return res.status(409).json({
-          error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+          error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
           code: error.code,
           maxCompanies: 3,
         });
@@ -877,7 +877,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userId = Number(req.params.userId);
       if (!Number.isInteger(userId) || userId <= 0) {
-        return res.status(400).json({ error: "ID de usuario inválido" });
+        return res.status(400).json({ error: "ID de usuario invÃ¡lido" });
       }
 
       const targetUser = await storage.getUser(userId);
@@ -909,7 +909,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = Number(req.params.userId);
       const companyId = Number(req.body?.companyId);
       if (!Number.isInteger(userId) || userId <= 0 || !Number.isInteger(companyId) || companyId <= 0) {
-        return res.status(400).json({ error: "Usuario o empresa inválidos" });
+        return res.status(400).json({ error: "Usuario o empresa invÃ¡lidos" });
       }
 
       const targetUser = await storage.getUser(userId);
@@ -930,7 +930,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       if (error?.code === "REPRESENTATIVE_COMPANY_LIMIT") {
         return res.status(409).json({
-          error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+          error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
           code: error.code,
           maxCompanies: 3,
         });
@@ -955,7 +955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = Number(req.params.userId);
       const companyId = Number(req.params.companyId);
       if (!Number.isInteger(userId) || userId <= 0 || !Number.isInteger(companyId) || companyId <= 0) {
-        return res.status(400).json({ error: "Usuario o empresa inválidos" });
+        return res.status(400).json({ error: "Usuario o empresa invÃ¡lidos" });
       }
 
       const targetUser = await storage.getUser(userId);
@@ -976,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       if ((error as any)?.code === "REPRESENTATIVE_COMPANY_LAST_ASSOCIATION") {
         return res.status(409).json({
-          error: "Un representante debe conservar al menos una empresa. Para retirar la última, cambia primero su rol.",
+          error: "Un representante debe conservar al menos una empresa. Para retirar la Ãºltima, cambia primero su rol.",
           code: (error as any).code,
         });
       }
@@ -993,7 +993,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ error: "ID de usuario inválido" });
+        return res.status(400).json({ error: "ID de usuario invÃ¡lido" });
       }
 
       const user = await storage.getUser(id);
@@ -1003,19 +1003,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 1) Eliminar primero de Firebase Authentication (el "portero" del login).
       //    Es idempotente: si el email no existe en Firebase, no es error.
-      //    Si Firebase no está operativo (excepción o Admin no disponible),
-      //    abortamos ANTES de tocar la BD: así no se elimina nada y no se deja
-      //    una cuenta que aún podría iniciar sesión en el proveedor.
+      //    Si Firebase no estÃ¡ operativo (excepciÃ³n o Admin no disponible),
+      //    abortamos ANTES de tocar la BD: asÃ­ no se elimina nada y no se deja
+      //    una cuenta que aÃºn podrÃ­a iniciar sesiÃ³n en el proveedor.
       let firebaseDeleted = false;
       if (user.email) {
         try {
           const fb = await deleteFirebaseUserByEmail(user.email);
           if (fb.error) {
-            // Firebase Admin no está disponible/configurado: bloqueamos.
+            // Firebase Admin no estÃ¡ disponible/configurado: bloqueamos.
             console.error("Firebase Admin no disponible al eliminar usuario:", fb.error);
             return res.status(502).json({
               error:
-                "El proveedor de autenticación (Firebase) no está disponible, por lo que no se puede eliminar la cuenta de forma segura. No se eliminó nada; inténtalo más tarde.",
+                "El proveedor de autenticaciÃ³n (Firebase) no estÃ¡ disponible, por lo que no se puede eliminar la cuenta de forma segura. No se eliminÃ³ nada; intÃ©ntalo mÃ¡s tarde.",
             });
           }
           firebaseDeleted = fb.found;
@@ -1023,12 +1023,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("Error eliminando de Firebase Authentication:", fbError);
           return res.status(502).json({
             error:
-              "No se pudo eliminar la cuenta del proveedor de autenticación (Firebase). No se eliminó nada; inténtalo de nuevo.",
+              "No se pudo eliminar la cuenta del proveedor de autenticaciÃ³n (Firebase). No se eliminÃ³ nada; intÃ©ntalo de nuevo.",
           });
         }
       }
 
-      // 2) Eliminar de la base de datos de forma atómica (transacción):
+      // 2) Eliminar de la base de datos de forma atÃ³mica (transacciÃ³n):
       //    desvincula empresas (sin borrarlas), limpia representantesVentas y
       //    borra el usuario (opiniones y pagos se eliminan por CASCADE).
       const deleted = await storage.deleteUser(id);
@@ -1224,10 +1224,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Company not found" });
       }
 
-      // Directorio PÚBLICO (solo cuando ?view=public): recortar la galería de
-      // productos al límite del plan ACTIVO sin borrar datos. El excedente solo se
+      // Directorio PÃšBLICO (solo cuando ?view=public): recortar la galerÃ­a de
+      // productos al lÃ­mite del plan ACTIVO sin borrar datos. El excedente solo se
       // oculta y reaparece si el plan vuelve a permitirlo. Los flujos privados
-      // (dashboard/administración) NO pasan ese parámetro y siguen viendo todo.
+      // (dashboard/administraciÃ³n) NO pasan ese parÃ¡metro y siguen viendo todo.
       if (req.query.view === "public") {
         const membershipType = company.membershipTypeId
           ? await storage.getMembershipType(company.membershipTypeId)
@@ -1319,8 +1319,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const statuses = [...new Set(transactions.map((t: any) => t.status))];
       console.log(`[User Transactions] Statuses found: ${statuses.join(', ')}`);
 
-      // Filtrar transacciones - incluir más estados válidos
-      // Estados válidos: complete, confirmed, pending (para mostrar), active
+      // Filtrar transacciones - incluir mÃ¡s estados vÃ¡lidos
+      // Estados vÃ¡lidos: complete, confirmed, pending (para mostrar), active
       const validStatuses = includeAll 
         ? ['complete', 'confirmed', 'pending', 'active', 'refunded', 'failed']
         : ['complete', 'confirmed', 'active'];
@@ -1328,7 +1328,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validTransactions = transactions
         .filter((t: any) => validStatuses.includes(t.status))
         .sort((a: any, b: any) => {
-          // Ordenar por fecha de vencimiento primero (más reciente primero)
+          // Ordenar por fecha de vencimiento primero (mÃ¡s reciente primero)
           if (a.expires_at && b.expires_at) {
             return new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime();
           }
@@ -1436,7 +1436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // TODO: Restaurar validación de administrador una vez que se arregle el header
+      // TODO: Restaurar validaciÃ³n de administrador una vez que se arregle el header
       // console.log("Debug - req.user:", JSON.stringify(req.user, null, 2));
       // const isAdmin = req.user?.role === 'admin' || req.user?.roleId === 1;
       // console.log("Debug - isAdmin check:", isAdmin, "role:", req.user?.role, "roleId:", req.user?.roleId);
@@ -1466,7 +1466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               });
             }
           } catch {
-            // Si no es JSON válido, usar como string
+            // Si no es JSON vÃ¡lido, usar como string
             companyData[key] = value;
             // DEBUG: Log failed JSON parsing for ubicacionGeografica
             if (key === 'ubicacionGeografica') {
@@ -1486,7 +1486,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const fileBuffer = fs.readFileSync(files.logoFile[0].path);
           const result = await uploadFromBuffer(fileBuffer, 'anpr/logos', 'image');
           companyData.logotipoUrl = result.url;
-          fs.unlinkSync(files.logoFile[0].path); // Eliminar archivo local después de subir
+          fs.unlinkSync(files.logoFile[0].path); // Eliminar archivo local despuÃ©s de subir
         } else {
           companyData.logotipoUrl = `/uploads/images/${files.logoFile[0].filename}`;
         }
@@ -1504,7 +1504,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Procesar archivos de catálogo
+      // Procesar archivos de catÃ¡logo
       if (files?.catalogoFile?.[0]) {
         if (useCloudinary) {
           const fileBuffer = fs.readFileSync(files.catalogoFile[0].path);
@@ -1516,7 +1516,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Procesar archivos de galería
+      // Procesar archivos de galerÃ­a
       if (files?.galeriaFiles?.length > 0) {
         if (useCloudinary) {
           const uploadPromises = files.galeriaFiles.map(async (file) => {
@@ -1533,7 +1533,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { wordpressUser, ...companyDataToSave } = companyData;
 
-      // Asegurar que telefono1 y telefono2 sean strings (pueden venir como números del FormData)
+      // Asegurar que telefono1 y telefono2 sean strings (pueden venir como nÃºmeros del FormData)
       if (companyDataToSave.telefono1 !== undefined && companyDataToSave.telefono1 !== null) {
         companyDataToSave.telefono1 = String(companyDataToSave.telefono1);
       }
@@ -1548,10 +1548,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let newUserInfo: { email: string; tempPassword: string; displayName: string } | null = null;
       let existingRepresentativeCompanyCount = 0;
 
-      // Si se seleccionó un usuario de WordPress, crear/obtener usuario representante
+      // Si se seleccionÃ³ un usuario de WordPress, crear/obtener usuario representante
       if (wordpressUser && wordpressUser.email && wordpressUser.username) {
         try {
-          // Obtener fecha de caducidad de transacción desde WordPress
+          // Obtener fecha de caducidad de transacciÃ³n desde WordPress
           if (wordpressUser.id) {
             transactionExpirationDate = await getTransactionExpirationDate(wordpressUser.id.toString());
           }
@@ -1560,14 +1560,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
           
           if (!existingUser) {
-            // Generar contraseña temporal criptográficamente segura
+            // Generar contraseÃ±a temporal criptogrÃ¡ficamente segura
             const crypto = nodeCrypto;
             const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
             
             // Crear nuevo usuario representante con datos de WordPress
             // NOTA DE SEGURIDAD: tempPassword se almacena en texto plano por limitaciones del sistema actual
-            // Esta es una limitación conocida - idealmente debería hashearse antes de almacenar
-            // La contraseña DEBE cambiarse en el primer inicio de sesión (requirePasswordChange: true)
+            // Esta es una limitaciÃ³n conocida - idealmente deberÃ­a hashearse antes de almacenar
+            // La contraseÃ±a DEBE cambiarse en el primer inicio de sesiÃ³n (requirePasswordChange: true)
             const newUserData = {
               firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`,
               email: wordpressUser.email,
@@ -1583,15 +1583,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             existingUser = await storage.createUser(newUserData);
             
-            // Guardar información del nuevo usuario para incluirla en la respuesta
-            // Esta es la ÚNICA vez que la contraseña se envía - el admin debe comunicarla al usuario
+            // Guardar informaciÃ³n del nuevo usuario para incluirla en la respuesta
+            // Esta es la ÃšNICA vez que la contraseÃ±a se envÃ­a - el admin debe comunicarla al usuario
             newUserInfo = {
               email: wordpressUser.email,
               tempPassword: tempPassword,
               displayName: wordpressUser.name || wordpressUser.username
             };
             
-            // Enviar email de activación al usuario
+            // Enviar email de activaciÃ³n al usuario
             try {
               const baseUrl = process.env.REPLIT_DEV_DOMAIN 
                 ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
@@ -1611,7 +1611,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`[WordPress User Creation] New representative account created for ${wordpressUser.email}`);
             console.log(`[WordPress User Creation] User must activate account on first login`);
             
-            // Descargar y guardar imagen de perfil de WordPress/PeepSo si está disponible
+            // Descargar y guardar imagen de perfil de WordPress/PeepSo si estÃ¡ disponible
             if (wordpressUser.avatar_urls) {
               try {
                 const avatarUrl = wordpressUser.avatar_urls['96'] || wordpressUser.avatar_urls['48'] || wordpressUser.avatar_urls['24'];
@@ -1679,7 +1679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId
       };
 
-      // Si se obtuvo una fecha de caducidad de transacción, actualizar las fechas de vencimiento del plan
+      // Si se obtuvo una fecha de caducidad de transacciÃ³n, actualizar las fechas de vencimiento del plan
       if (transactionExpirationDate) {
         try {
           const expirationDate = new Date(transactionExpirationDate);
@@ -1693,7 +1693,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Lógica automática para empresas con ubicación: asegurar que aparezcan en el mapa
+      // LÃ³gica automÃ¡tica para empresas con ubicaciÃ³n: asegurar que aparezcan en el mapa
       if (companyWithUser.ubicacionGeografica && (!companyWithUser.fechaFinMembresia || companyWithUser.fechaFinMembresia === '')) {
         const today = new Date();
         const oneYearFromNow = new Date(today);
@@ -1711,10 +1711,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (requestHasOversizedDataUrlImage(companyWithUser)) return rejectOversizedImage(res);
       const company = await storage.createCompany(companyWithUser);
 
-      // La creación de empresa también debe proyectar el vínculo normalizado.
-      // Si una carrera alcanza el límite entre la prevalidación y este punto,
-      // se revierte la empresa recién creada para no dejar un cuarto vínculo
-      // únicamente en companies.userId.
+      // La creaciÃ³n de empresa tambiÃ©n debe proyectar el vÃ­nculo normalizado.
+      // Si una carrera alcanza el lÃ­mite entre la prevalidaciÃ³n y este punto,
+      // se revierte la empresa reciÃ©n creada para no dejar un cuarto vÃ­nculo
+      // Ãºnicamente en companies.userId.
       if (userId != null) {
         try {
           await storage.addRepresentativeCompany(company.id, userId);
@@ -1724,7 +1724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Asignar certificados automáticamente si la empresa tiene un membershipTypeId
+      // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
@@ -1734,7 +1734,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.assignCertificateToCompany(company.id, cert.id, {
               fechaObtencion: new Date().toISOString().split('T')[0],
               asignadoPorAdmin: false,
-              observaciones: 'Asignado automáticamente al crear la empresa'
+              observaciones: 'Asignado automÃ¡ticamente al crear la empresa'
             });
             console.log(`[Auto-Certificate] Assigned certificate ${cert.nombreCertificado} (ID: ${cert.id}) to company ${company.id}`);
           }
@@ -1743,7 +1743,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Si se creó un nuevo usuario, incluir su información en la respuesta
+      // Si se creÃ³ un nuevo usuario, incluir su informaciÃ³n en la respuesta
       if (newUserInfo) {
         res.status(201).json({
           ...company,
@@ -1759,7 +1759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (error instanceof RepresentativeCompanyLimitError) {
         return res.status(409).json({
-          error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+          error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
           code: error.code,
           maxCompanies: 3,
         });
@@ -1783,7 +1783,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // TODO: Restaurar validación de administrador una vez que se arregle el header
+      // TODO: Restaurar validaciÃ³n de administrador una vez que se arregle el header
       // console.log("Debug - req.user:", JSON.stringify(req.user, null, 2));
       // const isAdmin = req.user?.role === 'admin' || req.user?.roleId === 1;
       // console.log("Debug - isAdmin check:", isAdmin, "role:", req.user?.role, "roleId:", req.user?.roleId);
@@ -1801,10 +1801,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let transactionExpirationDate = null;
 
-      // Si se seleccionó un usuario de WordPress, crear/obtener usuario representante
+      // Si se seleccionÃ³ un usuario de WordPress, crear/obtener usuario representante
       if (wordpressUser && wordpressUser.email && wordpressUser.username) {
         try {
-          // Obtener fecha de caducidad de transacción desde WordPress
+          // Obtener fecha de caducidad de transacciÃ³n desde WordPress
           if (wordpressUser.id) {
             transactionExpirationDate = await getTransactionExpirationDate(wordpressUser.id.toString());
           }
@@ -1813,13 +1813,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
           
           if (!existingUser) {
-            // Generar contraseña temporal única
+            // Generar contraseÃ±a temporal Ãºnica
             const crypto = nodeCrypto;
             const tempPassword = crypto.randomBytes(8).toString('base64').slice(0, 12);
             
             // Crear nuevo usuario representante con datos de WordPress
             const newUserData = {
-              firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`, // UID único temporal para WordPress
+              firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`, // UID Ãºnico temporal para WordPress
               email: wordpressUser.email,
               displayName: wordpressUser.name || wordpressUser.username,
               role: "representante",
@@ -1833,7 +1833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             existingUser = await storage.createUser(newUserData);
             
-            // Enviar email de activación al usuario
+            // Enviar email de activaciÃ³n al usuario
             try {
               const baseUrl = process.env.REPLIT_DEV_DOMAIN 
                 ? `https://${process.env.REPLIT_DEV_DOMAIN}` 
@@ -1853,7 +1853,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log(`[WordPress User Creation] New representative account created for ${wordpressUser.email}`);
             console.log(`[WordPress User Creation] User must activate account on first login`);
             
-            // Descargar y guardar imagen de perfil de WordPress/PeepSo si está disponible
+            // Descargar y guardar imagen de perfil de WordPress/PeepSo si estÃ¡ disponible
             if (wordpressUser.avatar_urls) {
               try {
                 const avatarUrl = wordpressUser.avatar_urls['96'] || wordpressUser.avatar_urls['48'] || wordpressUser.avatar_urls['24'];
@@ -1870,7 +1870,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                     }
                     const avatarFileName = `avatar_${existingUser.id}_${Date.now()}.jpg`;
                     
-                    // Guardar imagen usando fs (fs y path ya están importados a nivel de módulo)
+                    // Guardar imagen usando fs (fs y path ya estÃ¡n importados a nivel de mÃ³dulo)
                     const uploadsDir = path.join(process.cwd(), 'uploads', 'images');
                     if (!fs.existsSync(uploadsDir)) {
                       fs.mkdirSync(uploadsDir, { recursive: true });
@@ -1891,7 +1891,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               }
             }
             
-            // TODO: Implementar creación automática en Firebase con contraseña por defecto
+            // TODO: Implementar creaciÃ³n automÃ¡tica en Firebase con contraseÃ±a por defecto
             // await createFirebaseUserWithPassword(wordpressUser.email, '12345678');
           } else if (existingUser && !isRepresentativeRole(existingUser.role)) {
             throw new RepresentativeCompanyRoleError();
@@ -1917,14 +1917,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Si NO se seleccionó un usuario de WordPress pero la empresa tiene email1, crear usuario automáticamente
+      // Si NO se seleccionÃ³ un usuario de WordPress pero la empresa tiene email1, crear usuario automÃ¡ticamente
       if (!userId && parsedCompanyData.email1) {
         try {
           // Verificar si ya existe un usuario con ese email
           let existingUser = await storage.getUserByEmail(parsedCompanyData.email1);
           
           if (!existingUser) {
-            // Crear nuevo usuario representante automáticamente
+            // Crear nuevo usuario representante automÃ¡ticamente
             const newUserData = {
               firebaseUid: `pending_${Date.now()}_${parsedCompanyData.email1}`,
               email: parsedCompanyData.email1,
@@ -1973,13 +1973,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: userId
       };
 
-      // Si se obtuvo una fecha de caducidad de transacción, actualizar las fechas de vencimiento del plan
+      // Si se obtuvo una fecha de caducidad de transacciÃ³n, actualizar las fechas de vencimiento del plan
       if (transactionExpirationDate) {
         try {
           // Convertir la fecha de WordPress a formato que acepta nuestra base de datos
           const expirationDate = new Date(transactionExpirationDate);
           
-          // Calcular fecha de inicio (un año antes de la caducidad)
+          // Calcular fecha de inicio (un aÃ±o antes de la caducidad)
           const startDate = new Date(expirationDate);
           startDate.setFullYear(startDate.getFullYear() - 1);
           
@@ -1997,7 +1997,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Lógica automática para empresas con ubicación: asegurar que aparezcan en el mapa
+      // LÃ³gica automÃ¡tica para empresas con ubicaciÃ³n: asegurar que aparezcan en el mapa
       if (companyWithUser.ubicacionGeografica && (!companyWithUser.fechaFinMembresia || companyWithUser.fechaFinMembresia === '')) {
         const today = new Date();
         const oneYearFromNow = new Date(today);
@@ -2023,7 +2023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Asignar certificados automáticamente si la empresa tiene un membershipTypeId
+      // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
@@ -2033,7 +2033,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await storage.assignCertificateToCompany(company.id, cert.id, {
               fechaObtencion: new Date().toISOString().split('T')[0],
               asignadoPorAdmin: false,
-              observaciones: 'Asignado automáticamente al crear la empresa'
+              observaciones: 'Asignado automÃ¡ticamente al crear la empresa'
             });
             console.log(`[Auto-Certificate] Assigned certificate ${cert.nombreCertificado} (ID: ${cert.id}) to company ${company.id}`);
           }
@@ -2049,7 +2049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (error instanceof RepresentativeCompanyLimitError) {
         return res.status(409).json({
-          error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+          error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
           code: error.code,
           maxCompanies: 3,
         });
@@ -2066,8 +2066,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ============================================================================
-  // PATCH /api/companies/:id - Actualización segura de empresas
-  // Esta implementación protege datos existentes y maneja errores de forma robusta
+  // PATCH /api/companies/:id - ActualizaciÃ³n segura de empresas
+  // Esta implementaciÃ³n protege datos existentes y maneja errores de forma robusta
   // ============================================================================
   app.patch("/api/companies/:id", uploadCompanyFiles.fields([
     { name: 'logoFile', maxCount: 1 },
@@ -2107,7 +2107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           continue;
         }
         
-        // Mantener campos de teléfono como strings
+        // Mantener campos de telÃ©fono como strings
         if (key === 'telefono1' || key === 'telefono2') {
           updateData[key] = value;
         } else {
@@ -2120,14 +2120,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ========================================
-      // PASO 1.5: Vincular usuario de WordPress como representante (si se seleccionó)
+      // PASO 1.5: Vincular usuario de WordPress como representante (si se seleccionÃ³)
       // wordpressUser no es un campo de la tabla companies: se extrae del payload,
       // se crea/obtiene el usuario representante local y se asigna su userId a la empresa.
       // ========================================
       const wordpressUser = updateData.wordpressUser;
       delete updateData.wordpressUser;
-      // Los vínculos de representantes solo se modifican mediante el flujo
-      // normalizado y validado; nunca desde campos genéricos de la empresa.
+      // Los vÃ­nculos de representantes solo se modifican mediante el flujo
+      // normalizado y validado; nunca desde campos genÃ©ricos de la empresa.
       delete updateData.userId;
       delete updateData.representantesVentas;
       let representativeAssignment: Awaited<ReturnType<typeof storage.addRepresentativeCompany>> | null = null;
@@ -2142,7 +2142,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Obtener fecha de caducidad de transacción desde WordPress
+          // Obtener fecha de caducidad de transacciÃ³n desde WordPress
           let transactionExpirationDate: string | null = null;
           if (wordpressUser.id) {
             transactionExpirationDate = await getTransactionExpirationDate(wordpressUser.id.toString());
@@ -2152,7 +2152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
 
           if (!existingUser) {
-            // Generar contraseña temporal criptográficamente segura
+            // Generar contraseÃ±a temporal criptogrÃ¡ficamente segura
             const crypto = nodeCrypto;
             const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
 
@@ -2172,7 +2172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             existingUser = await storage.createUser(newUserData);
             console.log(`[PATCH /api/companies/:id] Created new representative user from WordPress: ${existingUser.email}`);
 
-            // Enviar email de activación al usuario
+            // Enviar email de activaciÃ³n al usuario
             try {
               const baseUrl = process.env.REPLIT_DEV_DOMAIN
                 ? `https://${process.env.REPLIT_DEV_DOMAIN}`
@@ -2194,13 +2194,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          // La asignación de WordPress es acumulativa: no modifica userId ni
+          // La asignaciÃ³n de WordPress es acumulativa: no modifica userId ni
           // reemplaza las otras empresas del representante.
           if (existingUser) {
             representativeAssignment = await storage.addRepresentativeCompany(id, existingUser.id);
           }
 
-          // Actualizar fechas de membresía desde la transacción de WordPress
+          // Actualizar fechas de membresÃ­a desde la transacciÃ³n de WordPress
           if (transactionExpirationDate) {
             try {
               const expirationDate = new Date(transactionExpirationDate);
@@ -2216,7 +2216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("[PATCH /api/companies/:id] Error linking WordPress representative:", userError);
           if (userError?.code === "REPRESENTATIVE_COMPANY_LIMIT") {
             return res.status(409).json({
-              error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+              error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
               code: userError.code,
               maxCompanies: 3,
             });
@@ -2273,7 +2273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Catálogo
+      // CatÃ¡logo
       if (files?.catalogoFile?.[0]) {
         try {
           if (useCloudinary) {
@@ -2290,11 +2290,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try { fs.unlinkSync(files.catalogoFile[0].path); } catch {}
         }
       } else if (updateData.catalogoDigitalUrl === "") {
-        // Borrar catálogo explícitamente
+        // Borrar catÃ¡logo explÃ­citamente
         updateData.catalogoDigitalUrl = null;
       }
 
-      // Galería
+      // GalerÃ­a
       if (files?.galeriaFiles?.length > 0) {
         try {
           let newImages: string[] = [];
@@ -2331,7 +2331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // PASO 3: Limpiar payload - Proteger datos existentes
       // ========================================
       
-      // Convertir cadenas vacías a null para campos específicos
+      // Convertir cadenas vacÃ­as a null para campos especÃ­ficos
       if (updateData.membershipPeriodicidad === "") {
         updateData.membershipPeriodicidad = null;
       }
@@ -2339,7 +2339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         updateData.formaPago = null;
       }
 
-      // PROTECCIÓN DE COORDENADAS: No sobrescribir ubicacionGeografica si no hay coordenadas válidas
+      // PROTECCIÃ“N DE COORDENADAS: No sobrescribir ubicacionGeografica si no hay coordenadas vÃ¡lidas
       if ('ubicacionGeografica' in updateData) {
         const ubicacion = updateData.ubicacionGeografica;
         const hasValidCoordinates = ubicacion && 
@@ -2355,12 +2355,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // PROTECCIÓN DE URLs DE IMÁGENES: No sobrescribir si vienen vacías o inválidas
+      // PROTECCIÃ“N DE URLs DE IMÃGENES: No sobrescribir si vienen vacÃ­as o invÃ¡lidas
       const urlFields = ['logotipoUrl', 'fotoPortadaUrl'];
       for (const field of urlFields) {
         if (field in updateData) {
           const value = updateData[field];
-          // Si es string vacío, null, undefined o no es una URL válida, eliminar del update
+          // Si es string vacÃ­o, null, undefined o no es una URL vÃ¡lida, eliminar del update
           if (!value || value === '' || value === 'null' || value === 'undefined') {
             delete updateData[field];
             console.log(`[PATCH /api/companies/:id] Preserved existing ${field} - empty/invalid value`);
@@ -2368,7 +2368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // PROTECCIÓN DE ARRAYS: No sobrescribir si vienen vacíos cuando no deberían
+      // PROTECCIÃ“N DE ARRAYS: No sobrescribir si vienen vacÃ­os cuando no deberÃ­an
       const arrayFields = ['galeriaProductosUrls', 'videosUrls', 'redesSociales'];
       for (const field of arrayFields) {
         if (field in updateData) {
@@ -2425,7 +2425,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ========================================
-      // PASO 6: Asignar certificados automáticamente (opcional)
+      // PASO 6: Asignar certificados automÃ¡ticamente (opcional)
       // ========================================
       if (company.membershipTypeId) {
         try {
@@ -2437,7 +2437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               await storage.assignCertificateToCompany(company.id, cert.id, {
                 fechaObtencion: new Date().toISOString().split('T')[0],
                 asignadoPorAdmin: false,
-                observaciones: 'Asignado automáticamente al actualizar la empresa'
+                observaciones: 'Asignado automÃ¡ticamente al actualizar la empresa'
               });
             }
           }
@@ -2511,7 +2511,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         try {
-          // Obtener fecha de caducidad de transacción desde WordPress
+          // Obtener fecha de caducidad de transacciÃ³n desde WordPress
           if (wordpressUser.id) {
             transactionExpirationDate = await getTransactionExpirationDate(wordpressUser.id.toString());
           }
@@ -2522,7 +2522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (!existingUser) {
             // Crear nuevo usuario representante con datos de WordPress
             const newUserData = {
-              firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`, // UID único temporal para WordPress
+              firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`, // UID Ãºnico temporal para WordPress
               email: wordpressUser.email,
               displayName: wordpressUser.name || wordpressUser.username,
               role: "representante",
@@ -2550,7 +2550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error("[Update Company] Error creating/updating representative user:", userError);
           if (userError instanceof RepresentativeCompanyLimitError) {
             return res.status(409).json({
-              error: "Este representante ya tiene el máximo de 3 empresas asignadas",
+              error: "Este representante ya tiene el mÃ¡ximo de 3 empresas asignadas",
               code: userError.code,
               maxCompanies: 3,
             });
@@ -2559,13 +2559,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Si se obtuvo una fecha de caducidad de transacción, actualizar las fechas de vencimiento del plan
+      // Si se obtuvo una fecha de caducidad de transacciÃ³n, actualizar las fechas de vencimiento del plan
       if (transactionExpirationDate) {
         try {
           // Convertir la fecha de WordPress a formato que acepta nuestra base de datos
           const expirationDate = new Date(transactionExpirationDate);
           
-          // Calcular fecha de inicio (un año antes de la caducidad)
+          // Calcular fecha de inicio (un aÃ±o antes de la caducidad)
           const startDate = new Date(expirationDate);
           startDate.setFullYear(startDate.getFullYear() - 1);
           
@@ -2588,7 +2588,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Company not found" });
       }
       
-      // Asignar certificados automáticamente si la empresa tiene un membershipTypeId
+      // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
@@ -2598,12 +2598,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const currentCertIds = (company.certificateIds as number[]) || [];
           
           for (const cert of autoCertificates) {
-            // Solo asignar si no está ya asignado
+            // Solo asignar si no estÃ¡ ya asignado
             if (!currentCertIds.includes(cert.id)) {
               await storage.assignCertificateToCompany(company.id, cert.id, {
                 fechaObtencion: new Date().toISOString().split('T')[0],
                 asignadoPorAdmin: false,
-                observaciones: 'Asignado automáticamente al actualizar la empresa'
+                observaciones: 'Asignado automÃ¡ticamente al actualizar la empresa'
               });
               console.log(`[Auto-Certificate] Assigned certificate ${cert.nombreCertificado} (ID: ${cert.id}) to company ${company.id}`);
             }
@@ -2750,7 +2750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <head><title>Recibo no encontrado</title></head>
             <body style="font-family: Arial; text-align: center; padding: 50px;">
               <h1>Empresa no encontrada</h1>
-              <p>El enlace de recibo no es válido.</p>
+              <p>El enlace de recibo no es vÃ¡lido.</p>
               <a href="/">Ir al inicio</a>
             </body>
           </html>
@@ -2766,7 +2766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           <head><title>Error</title></head>
           <body style="font-family: Arial; text-align: center; padding: 50px;">
             <h1>Error al procesar el recibo</h1>
-            <p>Por favor, intenta nuevamente más tarde.</p>
+            <p>Por favor, intenta nuevamente mÃ¡s tarde.</p>
             <a href="/">Ir al inicio</a>
           </body>
         </html>
@@ -2939,11 +2939,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para obtener solo membresías públicas (para usuarios no administradores)
+  // Endpoint para obtener solo membresÃ­as pÃºblicas (para usuarios no administradores)
   app.get("/api/membership-types/public", async (req, res) => {
     try {
       const membershipTypes = await storage.getAllMembershipTypes();
-      // Filtrar solo las membresías públicas
+      // Filtrar solo las membresÃ­as pÃºblicas
       const publicMemberships = membershipTypes.filter((membership: any) => 
         !membership.visibilidad || membership.visibilidad === "publica"
       );
@@ -2973,7 +2973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (!isValidConfiguredProjectLimit(req.body?.cantidadProyectosAdmitidos)) {
         return res.status(400).json({
-          error: "El límite de proyectos debe ser un entero mayor o igual a 0, -1 o null para ilimitado",
+          error: "El lÃ­mite de proyectos debe ser un entero mayor o igual a 0, -1 o null para ilimitado",
         });
       }
       const membershipTypeData = insertMembershipTypeSchema.parse(req.body);
@@ -2994,7 +2994,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       if (!isValidConfiguredProjectLimit(req.body?.cantidadProyectosAdmitidos)) {
         return res.status(400).json({
-          error: "El límite de proyectos debe ser un entero mayor o igual a 0, -1 o null para ilimitado",
+          error: "El lÃ­mite de proyectos debe ser un entero mayor o igual a 0, -1 o null para ilimitado",
         });
       }
       const id = parseInt(req.params.id);
@@ -3035,10 +3035,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Certificates API
-  // Determina si el solicitante es administrador y a qué empresa está delimitado.
+  // Determina si el solicitante es administrador y a quÃ© empresa estÃ¡ delimitado.
   // El aislamiento de certificados por empresa se basa en la empresa del usuario
   // autenticado (companyId de su identidad), no en datos enviados libremente en el
-  // cuerpo de la petición.
+  // cuerpo de la peticiÃ³n.
   type CertificateRequesterScope = {
     requester: any;
     isAdmin: boolean;
@@ -3066,8 +3066,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Igual que getCertificateRequesterScope, pero si la identidad del
   // representante NO trae companyId (p. ej. login normal con Firebase, cuya
   // identidad de usuario no incluye empresa), la empresa se resuelve en el
-  // servidor por sus vínculos reales (dueño por userId, representantesVentas
-  // o email de la empresa). Así el representante original tiene el mismo
+  // servidor por sus vÃ­nculos reales (dueÃ±o por userId, representantesVentas
+  // o email de la empresa). AsÃ­ el representante original tiene el mismo
   // alcance que cuando el admin lo impersona.
   const resolveCertificateRequesterScope = async (
     req: any,
@@ -3119,9 +3119,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return base;
   };
 
-  // Verifica en el servidor que una empresa está dentro del alcance resuelto
-  // para el solicitante. Storage aplica asociaciones normalizadas como única
-  // autoridad y solo usa vínculos heredados si todavía no existe ninguna.
+  // Verifica en el servidor que una empresa estÃ¡ dentro del alcance resuelto
+  // para el solicitante. Storage aplica asociaciones normalizadas como Ãºnica
+  // autoridad y solo usa vÃ­nculos heredados si todavÃ­a no existe ninguna.
   const companyBelongsToRequester = async (company: any, requester: any): Promise<boolean> => {
     if (!company || requester?.id == null) return false;
     const associatedCompanies = await storage.getCompaniesForRepresentative(
@@ -3143,7 +3143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Representante autenticado con empresa: SOLO los certificados de SU empresa
-      // (más los reconocimientos globales del administrador, que son compartidos).
+      // (mÃ¡s los reconocimientos globales del administrador, que son compartidos).
       if (requester && scopedCompanyId != null) {
         const filtered = certificates.filter(
           (cert) =>
@@ -3154,7 +3154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json(filtered);
       }
 
-      // Sin sesión válida: solo certificados globales del administrador (nunca los
+      // Sin sesiÃ³n vÃ¡lida: solo certificados globales del administrador (nunca los
       // de empresas concretas), para no filtrar datos entre empresas.
       const publicOnly = certificates.filter(
         (cert) => (cert as any).creadoPorAdmin === true
@@ -3179,7 +3179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdminCert = (certificate as any).creadoPorAdmin === true;
 
       // Admin: acceso total. Certificados globales del admin: visibles para todos.
-      // Certificados de empresa: solo la empresa dueña.
+      // Certificados de empresa: solo la empresa dueÃ±a.
       if (
         isAdmin ||
         isAdminCert ||
@@ -3208,7 +3208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         certificateData.imagenUrl = `/uploads/images/${req.file.filename}`;
       }
       
-      // Procesar los demás campos del formulario
+      // Procesar los demÃ¡s campos del formulario
       Object.entries(req.body).forEach(([key, value]) => {
         if (key !== 'imageFile' && key !== 'companyId') {
           if (key === 'membershipPlanIds' || key === 'planesMembresia') {
@@ -3237,18 +3237,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } =
         await resolveCertificateRequesterScope(req as any);
 
-      // Se requiere sesión: sin usuario no se puede determinar la empresa dueña.
+      // Se requiere sesiÃ³n: sin usuario no se puede determinar la empresa dueÃ±a.
       if (!requester?.id && !isAdmin) {
         return res.status(401).json({ error: "No autenticado" });
       }
 
-      // Determinar la empresa DUEÑA del certificado.
+      // Determinar la empresa DUEÃ‘A del certificado.
       // - Representante: SIEMPRE su propia empresa (tomada de su identidad
-      //   autenticada). Nunca se acepta un companyId enviado por el cliente, así
+      //   autenticada). Nunca se acepta un companyId enviado por el cliente, asÃ­
       //   un certificado no puede asociarse a una empresa ajena.
       // - Administrador: puede crear certificados globales (companyId nulo, p.ej.
-      //   reconocimientos ANPR con asignación automática) o específicos de una
-      //   empresa si envía companyId.
+      //   reconocimientos ANPR con asignaciÃ³n automÃ¡tica) o especÃ­ficos de una
+      //   empresa si envÃ­a companyId.
       let ownerCompanyId: number | null = null;
 
       if (isAdmin) {
@@ -3267,8 +3267,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             error: "No autorizado para crear certificados en esta empresa.",
           });
         }
-        // Representante: la empresa se obtiene de la sesión y se valida que exista
-        // y que realmente le pertenezca (dueño por userId o delimitado por su
+        // Representante: la empresa se obtiene de la sesiÃ³n y se valida que exista
+        // y que realmente le pertenezca (dueÃ±o por userId o delimitado por su
         // identidad de empresa). Se ignora cualquier companyId del cuerpo.
         if (resolvedCompanyId == null) {
           return res.status(403).json({
@@ -3283,8 +3283,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         ownerCompanyId = resolvedCompanyId;
 
-        // Un representante nunca crea certificados globales ni de asignación
-        // automática: se fuerzan aislados a su propia empresa.
+        // Un representante nunca crea certificados globales ni de asignaciÃ³n
+        // automÃ¡tica: se fuerzan aislados a su propia empresa.
         certificateData.creadoPorAdmin = false;
         certificateData.asignacionAutomatica = false;
         certificateData.membershipPlanIds = [];
@@ -3296,8 +3296,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const certificate = await storage.createCertificate(validatedData, ownerCompanyId);
 
-      // Vincular el certificado a su empresa dueña mediante el arreglo
-      // `certificateIds` para que aparezca en su panel y perfil público. Los
+      // Vincular el certificado a su empresa dueÃ±a mediante el arreglo
+      // `certificateIds` para que aparezca en su panel y perfil pÃºblico. Los
       // certificados globales del admin (sin empresa) se asignan por otros flujos.
       if (ownerCompanyId != null) {
         try {
@@ -3314,7 +3314,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error al crear certificado:", error);
       if (error instanceof z.ZodError) {
-        console.error("Errores de validación:", error.errors);
+        console.error("Errores de validaciÃ³n:", error.errors);
         return res.status(400).json({ 
           error: "Validation error", 
           details: error.errors,
@@ -3331,7 +3331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Autoriza operaciones de escritura (editar/eliminar) sobre un certificado.
   // Admin: siempre. Representante: solo si el certificado pertenece a SU empresa
   // y no es un certificado global del administrador. Devuelve el certificado si
-  // está autorizado, o un objeto con el código de error a responder.
+  // estÃ¡ autorizado, o un objeto con el cÃ³digo de error a responder.
   const authorizeCertificateWrite = async (
     req: any,
     id: number,
@@ -3459,7 +3459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(authz.status).json({ error: authz.error });
       }
 
-      // Desvincular el certificado de su empresa dueña para no dejar referencias
+      // Desvincular el certificado de su empresa dueÃ±a para no dejar referencias
       // colgadas en `certificateIds`.
       const certCompanyId = (authz.certificate as any).companyId as number | null;
       if (certCompanyId != null) {
@@ -3613,19 +3613,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Neither company nor platform review creation can self-approve.
       opinionData.estado = "pendiente";
 
-      // Las reseñas de plataforma requieren un usuario autenticado real.
+      // Las reseÃ±as de plataforma requieren un usuario autenticado real.
       // La identidad se toma del servidor (header procesado por el middleware),
-      // NUNCA de los campos que envía el cliente, y se limita a una reseña por
-      // usuario para evitar abuso del correo de notificación a los admins.
+      // NUNCA de los campos que envÃ­a el cliente, y se limita a una reseÃ±a por
+      // usuario para evitar abuso del correo de notificaciÃ³n a los admins.
       if (opinionData.tipo === "plataforma") {
         const verifiedUser = await getVerifiedRequestUser(req);
         const requesterId = Number(verifiedUser?.id);
         if (!requesterId || isNaN(requesterId)) {
-          return res.status(401).json({ error: "Debes iniciar sesión para enviar una reseña" });
+          return res.status(401).json({ error: "Debes iniciar sesiÃ³n para enviar una reseÃ±a" });
         }
         const dbUser = await storage.getUser(requesterId);
         if (!dbUser) {
-          return res.status(401).json({ error: "Usuario no válido" });
+          return res.status(401).json({ error: "Usuario no vÃ¡lido" });
         }
         const existing = await storage.getAllOpinions({
           tipo: "plataforma",
@@ -3634,7 +3634,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           limit: 1,
         });
         if (existing.total > 0) {
-          return res.status(409).json({ error: "Ya tienes una reseña registrada. Edita la existente." });
+          return res.status(409).json({ error: "Ya tienes una reseÃ±a registrada. Edita la existente." });
         }
         opinionData.userId = dbUser.id;
         opinionData.nombre = dbUser.displayName || dbUser.email;
@@ -3644,8 +3644,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const opinion = await storage.createOpinion(opinionData);
 
-      // Notificar a los administradores por correo cuando llega una reseña de
-      // plataforma pendiente de moderación (sin bloquear la respuesta).
+      // Notificar a los administradores por correo cuando llega una reseÃ±a de
+      // plataforma pendiente de moderaciÃ³n (sin bloquear la respuesta).
       if (opinion.tipo === "plataforma" && opinion.estado === "pendiente") {
         sendNewReviewNotificationToAdmins({
           nombre: opinion.nombre,
@@ -3664,8 +3664,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Solo el dueño de una reseña de plataforma (o un admin) puede modificarla
-  // o borrarla. Devuelve el error a responder, o null si está permitido.
+  // Solo el dueÃ±o de una reseÃ±a de plataforma (o un admin) puede modificarla
+  // o borrarla. Devuelve el error a responder, o null si estÃ¡ permitido.
   const opinionWriteGuard = async (req: any, id: number) => {
     const existing = await storage.getOpinion(id);
     if (!existing) return { status: 404, error: "Opinion not found" };
@@ -3679,7 +3679,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       || isNaN(requesterId)
       || Number(existing.userId) !== requesterId
     ) {
-      return { status: 403, error: "No tienes permiso sobre esta reseña" };
+      return { status: 403, error: "No tienes permiso sobre esta reseÃ±a" };
     }
     return null;
   };
@@ -3692,8 +3692,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(guardError.status).json({ error: guardError.error });
       }
       const opinionData = insertOpinionSchema.partial().parse(req.body);
-      // El cliente no puede reasignar la reseña ni cambiar su tipo o estado
-      // de aprobación al editar: una edición siempre vuelve a moderación.
+      // El cliente no puede reasignar la reseÃ±a ni cambiar su tipo o estado
+      // de aprobaciÃ³n al editar: una ediciÃ³n siempre vuelve a moderaciÃ³n.
       delete (opinionData as any).userId;
       delete (opinionData as any).tipo;
       delete (opinionData as any).companyId;
@@ -3903,10 +3903,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Webhook endpoint for Stripe events
-  // Aplica el cambio de plan PROGRAMADO de una empresa: mueve el próximo plan a
-  // plan activo, actualiza las fechas del nuevo período, registra el pago y
-  // limpia los campos del cambio pendiente. Se usa tanto en la renovación pagada
-  // de Stripe (webhook) como en la tarea diaria para empresas sin suscripción.
+  // Aplica el cambio de plan PROGRAMADO de una empresa: mueve el prÃ³ximo plan a
+  // plan activo, actualiza las fechas del nuevo perÃ­odo, registra el pago y
+  // limpia los campos del cambio pendiente. Se usa tanto en la renovaciÃ³n pagada
+  // de Stripe (webhook) como en la tarea diaria para empresas sin suscripciÃ³n.
   async function applyPendingPlanChange(
     company: any,
     opts: {
@@ -3924,8 +3924,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       company.membershipPeriodicidad ||
       "anual") as "mensual" | "anual";
 
-    // Fecha de inicio = hoy. Fecha fin = período de Stripe si viene, si no se
-    // calcula según la periodicidad del nuevo plan.
+    // Fecha de inicio = hoy. Fecha fin = perÃ­odo de Stripe si viene, si no se
+    // calcula segÃºn la periodicidad del nuevo plan.
     const startDate = new Date();
     let endDate = new Date(startDate);
     if (opts.periodEndUnix) {
@@ -3941,7 +3941,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       membershipPeriodicidad: periodicidad,
       fechaInicioMembresia: startDate.toISOString().split("T")[0],
       fechaFinMembresia: endDate.toISOString().split("T")[0],
-      // El cambio se aplicó tras pago confirmado: limpiar el pendiente y sus estados.
+      // El cambio se aplicÃ³ tras pago confirmado: limpiar el pendiente y sus estados.
       pendingMembershipTypeId: null,
       pendingMembershipPeriodicidad: null,
       pendingMembershipPrice: null,
@@ -3957,7 +3957,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           userId: company.userId,
           companyId: company.id,
           membershipTypeId: newPlanId,
-          // Debe ser único; si no hay pago de Stripe usamos un id sintético.
+          // Debe ser Ãºnico; si no hay pago de Stripe usamos un id sintÃ©tico.
           stripePaymentIntentId:
             opts.stripePaymentIntentId ||
             `manual-renewal-${company.id}-${Date.now()}`,
@@ -3969,7 +3969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           status: "succeeded",
         });
       } catch (paymentError) {
-        console.error("Error registrando pago de renovación:", paymentError);
+        console.error("Error registrando pago de renovaciÃ³n:", paymentError);
       }
     }
 
@@ -4000,7 +4000,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // IDEMPOTENCIA: registrar el event.id ANTES de procesar. Si ya existe
       // (reintento de Stripe o entrega duplicada), respondemos 200 sin volver a
       // aplicar cobros/cambios. La atomicidad la garantiza la PK de la tabla.
-      // Si la lógica posterior falla, el catch libera este id para reintento.
+      // Si la lÃ³gica posterior falla, el catch libera este id para reintento.
       const isNewEvent = await storage.markStripeEventProcessed(event.id, event.type);
       if (!isNewEvent) {
         console.log(`Evento de Stripe duplicado ignorado: ${event.id} (${event.type})`);
@@ -4008,7 +4008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       processedEventId = event.id;
 
-      // Helper: registrar un pago sin violar la restricción unique (idempotente).
+      // Helper: registrar un pago sin violar la restricciÃ³n unique (idempotente).
       const recordPaymentSafe = async (payment: {
         userId: number;
         companyId: number;
@@ -4023,9 +4023,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.createMembershipPayment(payment as any);
       };
 
-      // Helper: resolver la empresa objetivo de una factura/suscripción.
-      // Prioriza subscription.metadata.companyId; si no, usa la única empresa
-      // del usuario dueño del customer (si tiene exactamente una).
+      // Helper: resolver la empresa objetivo de una factura/suscripciÃ³n.
+      // Prioriza subscription.metadata.companyId; si no, usa la Ãºnica empresa
+      // del usuario dueÃ±o del customer (si tiene exactamente una).
       const resolveTargetCompany = async (
         subscription: any,
         customerId: string | undefined
@@ -4053,10 +4053,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const paymentIntent = event.data.object as Stripe.PaymentIntent;
 
           // Los PaymentIntents ligados a una factura (invoice) los maneja el
-          // flujo de suscripción (invoice.payment_succeeded). Aquí solo tratamos
-          // cobros ÚNICOS independientes para no duplicar registros/fechas.
+          // flujo de suscripciÃ³n (invoice.payment_succeeded). AquÃ­ solo tratamos
+          // cobros ÃšNICOS independientes para no duplicar registros/fechas.
           if ((paymentIntent as any).invoice) {
-            console.log('PaymentIntent de suscripción (tiene invoice); manejado por invoice.payment_succeeded.');
+            console.log('PaymentIntent de suscripciÃ³n (tiene invoice); manejado por invoice.payment_succeeded.');
             break;
           }
 
@@ -4096,7 +4096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
 
             // Update company's membership type. Un pago exitoso confirmado
-            // también reactiva la empresa si estaba inactiva por falta de pago.
+            // tambiÃ©n reactiva la empresa si estaba inactiva por falta de pago.
             await storage.updateCompany(companyId, {
               membershipTypeId,
               estado: 'activo',
@@ -4119,10 +4119,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log('PaymentIntent failed.');
           break;
         case 'invoice.payment_succeeded': {
-          // Factura de suscripción pagada. Dos casos:
-          //  - subscription_create: PRIMERA factura → activar membresía y fijar fechas.
-          //  - subscription_cycle: RENOVACIÓN → extender fecha fin (y aplicar cambio
-          //    de plan programado si corresponde a esta suscripción).
+          // Factura de suscripciÃ³n pagada. Dos casos:
+          //  - subscription_create: PRIMERA factura â†’ activar membresÃ­a y fijar fechas.
+          //  - subscription_cycle: RENOVACIÃ“N â†’ extender fecha fin (y aplicar cambio
+          //    de plan programado si corresponde a esta suscripciÃ³n).
           const invoice = event.data.object as Stripe.Invoice;
           const billingReason = invoice.billing_reason || '';
 
@@ -4132,9 +4132,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const invoiceSubscriptionId = getInvoiceSubscriptionId(invoice);
 
-          // Solo procesamos facturas de SUSCRIPCIÓN aquí.
+          // Solo procesamos facturas de SUSCRIPCIÃ“N aquÃ­.
           if (!invoiceSubscriptionId) {
-            console.log(`Invoice ${invoice.id} sin suscripción; se ignora en este handler.`);
+            console.log(`Invoice ${invoice.id} sin suscripciÃ³n; se ignora en este handler.`);
             break;
           }
 
@@ -4142,10 +4142,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           try {
             subscription = await stripe.subscriptions.retrieve(invoiceSubscriptionId);
           } catch (subErr) {
-            console.warn('No se pudo recuperar la suscripción de la factura:', subErr);
+            console.warn('No se pudo recuperar la suscripciÃ³n de la factura:', subErr);
           }
 
-          // Metadata de la suscripción. Si la recuperación falló (o viene vacía),
+          // Metadata de la suscripciÃ³n. Si la recuperaciÃ³n fallÃ³ (o viene vacÃ­a),
           // usamos la metadata embebida en la factura (basil la expone en
           // invoice.parent.subscription_details.metadata) para no perder el mapeo.
           const subMetadata: Record<string, string> =
@@ -4167,11 +4167,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? (invoice as any).payment_intent
             : (invoice as any).payment_intent?.id || `invoice-${invoice.id}`;
 
-          // --- PRIMERA factura (alta): activar la membresía y fijar fechas. ---
+          // --- PRIMERA factura (alta): activar la membresÃ­a y fijar fechas. ---
           if (billingReason === 'subscription_create') {
             const company = await resolveTargetCompany({ metadata: subMetadata }, customerId);
             if (!company) {
-              console.log(`Invoice ${invoice.id} (create): empresa aún no localizable; la activa complete-registration.`);
+              console.log(`Invoice ${invoice.id} (create): empresa aÃºn no localizable; la activa complete-registration.`);
               break;
             }
             await storage.updateCompany(company.id, {
@@ -4199,11 +4199,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           }
 
-          // --- RENOVACIÓN (subscription_cycle) o cualquier factura recurrente. ---
+          // --- RENOVACIÃ“N (subscription_cycle) o cualquier factura recurrente. ---
           const invoiceUser = customerId ? await storage.getUserByStripeCustomerId(customerId) : null;
           const userCompanies = invoiceUser ? await storage.getCompaniesByUser(invoiceUser.id) : [];
 
-          // 1) Empresas con cambio de plan programado que coincide con esta suscripción.
+          // 1) Empresas con cambio de plan programado que coincide con esta suscripciÃ³n.
           const pendingCompanies = invoiceScheduleId
             ? userCompanies.filter((c) => c.pendingMembershipTypeId && c.pendingStripeScheduleId === invoiceScheduleId)
             : [];
@@ -4218,14 +4218,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          // 2) Renovación normal SIN cambio programado: extender la fecha fin de la
+          // 2) RenovaciÃ³n normal SIN cambio programado: extender la fecha fin de la
           //    empresa objetivo (para que el dashboard refleje el nuevo periodo).
           const pendingIds = new Set(pendingCompanies.map((c) => c.id));
           const targetCompany = await resolveTargetCompany({ metadata: subMetadata }, customerId);
           if (targetCompany && !pendingIds.has(targetCompany.id)) {
             if (periodEndDate) {
-              // Pago de renovación confirmado: reactivar la empresa si estaba
-              // inactiva por falta de pago y limpiar motivo/fecha de inactivación.
+              // Pago de renovaciÃ³n confirmado: reactivar la empresa si estaba
+              // inactiva por falta de pago y limpiar motivo/fecha de inactivaciÃ³n.
               await storage.updateCompany(targetCompany.id, {
                 estado: 'activo',
                 fechaFinMembresia: periodEndDate,
@@ -4244,7 +4244,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: 'succeeded',
             });
 
-            // Notificar por correo al representante que su membresía se renovó.
+            // Notificar por correo al representante que su membresÃ­a se renovÃ³.
             try {
               const renewalUser = targetCompany.userId ? await storage.getUser(targetCompany.userId) : invoiceUser;
               const planName = targetCompany.membershipType?.nombrePlan
@@ -4256,7 +4256,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   renewalUser.email,
                   renewalUser.displayName || renewalUser.email,
                   targetCompany.nombreEmpresa,
-                  planName || 'Membresía',
+                  planName || 'MembresÃ­a',
                   new Date(`${periodEndDate}T12:00:00`)
                 );
               }
@@ -4266,14 +4266,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           console.log(
-            `Invoice payment succeeded (renovación: ${pendingCompanies.length} con cambio, ` +
-            `${targetCompany && !pendingIds.has(targetCompany.id) ? 1 : 0} extensión normal).`
+            `Invoice payment succeeded (renovaciÃ³n: ${pendingCompanies.length} con cambio, ` +
+            `${targetCompany && !pendingIds.has(targetCompany.id) ? 1 : 0} extensiÃ³n normal).`
           );
           break;
         }
         case 'customer.subscription.updated': {
-          // Cambios de estado de la suscripción (p.ej. cancelación programada o
-          // reanudación). Sincronizamos autoRenewal (usuario) y membershipCancelled.
+          // Cambios de estado de la suscripciÃ³n (p.ej. cancelaciÃ³n programada o
+          // reanudaciÃ³n). Sincronizamos autoRenewal (usuario) y membershipCancelled.
           const subscription = event.data.object as any;
           const customerId = typeof subscription.customer === 'string'
             ? subscription.customer
@@ -4298,8 +4298,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         }
         case 'customer.subscription.deleted': {
-          // La suscripción terminó definitivamente: sin renovación automática y la
-          // membresía queda marcada como cancelada/inactiva.
+          // La suscripciÃ³n terminÃ³ definitivamente: sin renovaciÃ³n automÃ¡tica y la
+          // membresÃ­a queda marcada como cancelada/inactiva.
           const subscription = event.data.object as any;
           const customerId = typeof subscription.customer === 'string'
             ? subscription.customer
@@ -4313,16 +4313,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           const targetCompany = await resolveTargetCompany(subscription, customerId);
           if (targetCompany) {
-            // Solo inactivar si el periodo YA pagado terminó. Si aún quedan días
-            // vigentes (p. ej. cancelación inmediata en Stripe), la empresa sigue
-            // activa hasta fechaFinMembresia y el job diario la inactivará después.
+            // Solo inactivar si el periodo YA pagado terminÃ³. Si aÃºn quedan dÃ­as
+            // vigentes (p. ej. cancelaciÃ³n inmediata en Stripe), la empresa sigue
+            // activa hasta fechaFinMembresia y el job diario la inactivarÃ¡ despuÃ©s.
             const todayStr = new Date().toISOString().split('T')[0];
             const stillVigente = targetCompany.fechaFinMembresia && targetCompany.fechaFinMembresia >= todayStr;
             await storage.updateCompany(targetCompany.id, {
               membershipCancelled: true,
               ...(stillVigente ? {} : {
                 estado: 'inactivo',
-                inactiveReason: 'Membresía vencida sin renovación pagada (suscripción finalizada)',
+                inactiveReason: 'MembresÃ­a vencida sin renovaciÃ³n pagada (suscripciÃ³n finalizada)',
                 inactivatedAt: new Date(),
               }),
             });
@@ -4337,14 +4337,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         case 'checkout.session.completed': {
           // No usamos Checkout Sessions (usamos PaymentElement + suscripciones),
-          // así que solo lo registramos para trazabilidad.
+          // asÃ­ que solo lo registramos para trazabilidad.
           console.log('checkout.session.completed recibido (no-op).');
           break;
         }
         case 'invoice.payment_failed': {
-          // El pago de la renovación falló: NO activar el plan pendiente. El plan
+          // El pago de la renovaciÃ³n fallÃ³: NO activar el plan pendiente. El plan
           // actual se conserva EXACTAMENTE igual; el cambio programado permanece y
-          // se marca su estado de pago como "fallido" (Stripe reintentará el cobro).
+          // se marca su estado de pago como "fallido" (Stripe reintentarÃ¡ el cobro).
           const failedInvoice = event.data.object as Stripe.Invoice;
 
           try {
@@ -4358,7 +4358,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ? (sub as any).schedule
                   : (sub as any).schedule?.id || null;
               } catch (subErr) {
-                console.warn('No se pudo recuperar la suscripción de la factura fallida:', subErr);
+                console.warn('No se pudo recuperar la suscripciÃ³n de la factura fallida:', subErr);
               }
             }
 
@@ -4396,9 +4396,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ received: true });
     } catch (error: any) {
       console.error("Webhook error:", error);
-      // La lógica falló DESPUÉS de marcar el evento como procesado. Liberamos el
+      // La lÃ³gica fallÃ³ DESPUÃ‰S de marcar el evento como procesado. Liberamos el
       // registro para que el reintento de Stripe (por el 500) NO se descarte como
-      // duplicado y el efecto (cobro/renovación/estado) no se pierda para siempre.
+      // duplicado y el efecto (cobro/renovaciÃ³n/estado) no se pierda para siempre.
       if (processedEventId) {
         try {
           await storage.unmarkStripeEventProcessed(processedEventId);
@@ -4415,7 +4415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
 
-      // Autorización: solo el propio usuario o un admin (rol confirmado en BD).
+      // AutorizaciÃ³n: solo el propio usuario o un admin (rol confirmado en BD).
       const claimed = req.user;
       if (!claimed?.id) {
         return res.status(401).json({ error: "No autenticado" });
@@ -4474,13 +4474,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Crea una SUSCRIPCIÓN RECURRENTE real de Stripe (renovación automática).
-  // Reemplaza al cobro único (PaymentIntent) para membresías. Devuelve el
+  // Crea una SUSCRIPCIÃ“N RECURRENTE real de Stripe (renovaciÃ³n automÃ¡tica).
+  // Reemplaza al cobro Ãºnico (PaymentIntent) para membresÃ­as. Devuelve el
   // clientSecret de la PRIMERA factura para confirmar el pago con PaymentElement.
   // Soporta:
   //  - Empresa existente (companyId) o usuario logueado (userId): vincula la
-  //    suscripción al usuario en la BD de inmediato.
-  //  - Alta nueva (email/name, sin usuario todavía): crea el customer y devuelve
+  //    suscripciÃ³n al usuario en la BD de inmediato.
+  //  - Alta nueva (email/name, sin usuario todavÃ­a): crea el customer y devuelve
   //    subscriptionId + customerId para vincularlos luego en complete-registration.
   app.post("/api/create-subscription", async (req, res) => {
     try {
@@ -4563,7 +4563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.updateUserStripeCustomerId(localUser.id, customer.id);
         }
       } else {
-        // Alta nueva: aún no existe el usuario en la BD; solo se necesita el email.
+        // Alta nueva: aÃºn no existe el usuario en la BD; solo se necesita el email.
         if (!email) {
           return res.status(400).json({ error: "Missing email for new subscription" });
         }
@@ -4596,7 +4596,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...(autoRenewal === false ? { cancel_at_period_end: true } : {}),
       });
 
-      // Si el usuario ya existe, vincular la suscripción de inmediato.
+      // Si el usuario ya existe, vincular la suscripciÃ³n de inmediato.
       if (localUser) {
         await storage.updateUserStripeInfo(localUser.id, customerId!, subscription.id);
         await storage.updateUser(localUser.id, { autoRenewal: autoRenewal !== false });
@@ -4606,8 +4606,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const clientSecret = latestInvoice?.payment_intent?.client_secret || null;
 
       if (!clientSecret) {
-        console.error("Suscripción creada sin client_secret de la primera factura:", subscription.id);
-        return res.status(500).json({ error: "No se pudo inicializar el pago de la suscripción." });
+        console.error("SuscripciÃ³n creada sin client_secret de la primera factura:", subscription.id);
+        return res.status(500).json({ error: "No se pudo inicializar el pago de la suscripciÃ³n." });
       }
 
       res.json({
@@ -4621,8 +4621,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Resumen de lo que contendría la exportación. Lo usa la pantalla
-  // "Exportar Directorio" para mostrar el tamaño y el contenido antes de
+  // Resumen de lo que contendrÃ­a la exportaciÃ³n. Lo usa la pantalla
+  // "Exportar Directorio" para mostrar el tamaÃ±o y el contenido antes de
   // iniciar una descarga que puede tardar.
   app.get("/api/admin/session", async (req, res) => {
     try {
@@ -4632,12 +4632,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ error: describeMissingAdminIdentity(req) });
       }
       if (!isAdminUser(user)) {
-        return res.status(403).json({ error: "Se requiere una cuenta de administrador para esta acción" });
+        return res.status(403).json({ error: "Se requiere una cuenta de administrador para esta acciÃ³n" });
       }
       return res.json({ user: sanitizeUser(user) });
     } catch (error) {
-      console.error("Error restaurando sesión de administrador:", error);
-      return res.status(500).json({ error: "No se pudo restaurar la sesión de administrador" });
+      console.error("Error restaurando sesiÃ³n de administrador:", error);
+      return res.status(500).json({ error: "No se pudo restaurar la sesiÃ³n de administrador" });
     }
   });
 
@@ -4662,8 +4662,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sourceBytes = files.reduce((total, file) => total + file.size, 0);
 
       // Conteo EXACTO por tabla. No se usa pg_stat_user_tables.n_live_tup porque
-      // depende de que el recolector de estadísticas haya pasado: en una base
-      // recién creada o recién restaurada devuelve 0 y el resumen mentiría.
+      // depende de que el recolector de estadÃ­sticas haya pasado: en una base
+      // reciÃ©n creada o reciÃ©n restaurada devuelve 0 y el resumen mentirÃ­a.
       const { rows: tableRows } = await pool.query(`
         SELECT c.relname AS table_name
         FROM pg_class c
@@ -4692,16 +4692,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })),
       });
     } catch (error: any) {
-      console.error("Error obteniendo el resumen de exportación:", error);
+      console.error("Error obteniendo el resumen de exportaciÃ³n:", error);
       res.status(500).json({ error: error?.message || "No se pudo obtener el resumen" });
     }
   });
 
-  // Exportación completa de la base de datos a un archivo .sql descargable.
+  // ExportaciÃ³n completa de la base de datos a un archivo .sql descargable.
   //
-  // El volcado contiene TODOS los datos (hashes de contraseña, correos y
-  // configuración de pasarelas de pago), así que la identidad debe venir
-  // firmada. Se acepta cualquiera de las tres sesiones válidas del panel
+  // El volcado contiene TODOS los datos (hashes de contraseÃ±a, correos y
+  // configuraciÃ³n de pasarelas de pago), asÃ­ que la identidad debe venir
+  // firmada. Se acepta cualquiera de las tres sesiones vÃ¡lidas del panel
   // (Firebase, WordPress o cookie), nunca el header x-user-info.
   app.get("/api/admin/database-export", async (req, res) => {
     try {
@@ -4731,8 +4731,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Exportación del proyecto completo en un ZIP: código fuente + respaldo de la
-  // base de datos + .env.example + guía de instalación. Es el paquete que se
+  // ExportaciÃ³n del proyecto completo en un ZIP: cÃ³digo fuente + respaldo de la
+  // base de datos + .env.example + guÃ­a de instalaciÃ³n. Es el paquete que se
   // sube a GitHub/Vercel y se restaura contra un PostgreSQL propio.
   app.get("/api/admin/project-export", async (req, res) => {
     try {
@@ -4746,7 +4746,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const includeSource = req.query.includeSource !== "false";
       if (!includeDatabase && !includeSource) {
         return res.status(400).json({
-          error: "Debes incluir al menos el código fuente o la base de datos",
+          error: "Debes incluir al menos el cÃ³digo fuente o la base de datos",
         });
       }
 
@@ -4761,8 +4761,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await streamFullExport(res, pool, filename, { includeDatabase, includeSource });
     } catch (error: any) {
       console.error("Error exportando el proyecto:", error);
-      // Si el stream ya comenzó, las cabeceras están enviadas y streamFullExport
-      // se encarga de cortar la conexión.
+      // Si el stream ya comenzÃ³, las cabeceras estÃ¡n enviadas y streamFullExport
+      // se encarga de cortar la conexiÃ³n.
       if (!res.headersSent) {
         res.status(500).json({ error: error?.message || "No se pudo exportar el proyecto" });
       }
@@ -4853,9 +4853,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const companyId = parseInt(req.params.companyId);
       let projects = await storage.getProjectsByCompany(companyId);
 
-      // Directorio PÚBLICO (?view=public): recortar proyectos al límite del plan
-      // ACTIVO y las fotos de cada proyecto al límite por proyecto, sin borrar
-      // datos. El dashboard privado (sin este parámetro) sigue viendo todo.
+      // Directorio PÃšBLICO (?view=public): recortar proyectos al lÃ­mite del plan
+      // ACTIVO y las fotos de cada proyecto al lÃ­mite por proyecto, sin borrar
+      // datos. El dashboard privado (sin este parÃ¡metro) sigue viendo todo.
       if (req.query.view === "public") {
         const company = await storage.getCompany(companyId);
         const membershipType = company?.membershipTypeId
@@ -4894,12 +4894,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!company.membershipTypeId) {
-        return res.status(400).json({ error: "La empresa no tiene un plan de membresía asignado" });
+        return res.status(400).json({ error: "La empresa no tiene un plan de membresÃ­a asignado" });
       }
 
       const membershipType = await storage.getMembershipType(company.membershipTypeId);
       if (!membershipType) {
-        return res.status(404).json({ error: "Plan de membresía no encontrado" });
+        return res.status(404).json({ error: "Plan de membresÃ­a no encontrado" });
       }
 
       // Get current usage
@@ -4910,7 +4910,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : 0;
 
       // "Ilimitado" se representa con NULL (nuevo) o -1 (legacy). En ambos casos
-      // devolvemos -1, que es lo que el frontend interpreta como "Sin límite".
+      // devolvemos -1, que es lo que el frontend interpreta como "Sin lÃ­mite".
       const projectLimit = normalizePlanLimit(membershipType.cantidadProyectosAdmitidos);
       const productLimit = (membershipType.cantidadProductosAdmitidos === null || membershipType.cantidadProductosAdmitidos === undefined)
         ? -1
@@ -4936,9 +4936,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Sube las imágenes de proyecto al almacenamiento activo y devuelve sus URLs.
+  // Sube las imÃ¡genes de proyecto al almacenamiento activo y devuelve sus URLs.
   // Con Cloudinary configurado multer usa memoria (file.filename NO existe),
-  // por eso hay que subir el buffer; en disco local sí hay filename.
+  // por eso hay que subir el buffer; en disco local sÃ­ hay filename.
   async function uploadProjectImages(files: Express.Multer.File[] | undefined): Promise<string[]> {
     if (!files || files.length === 0) return [];
     const urls: string[] = [];
@@ -4959,36 +4959,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Request files:", req.files);
       console.log("Content-Type:", req.headers['content-type']);
 
-      // Validar que companyId esté presente y sea válido
+      // Validar que companyId estÃ© presente y sea vÃ¡lido
       if (!req.body.companyId || isNaN(parseInt(req.body.companyId))) {
-        return res.status(400).json({ error: "Company ID es requerido y debe ser un número válido" });
+        return res.status(400).json({ error: "Company ID es requerido y debe ser un nÃºmero vÃ¡lido" });
       }
 
       const companyId = parseInt(req.body.companyId);
 
-      // Empresa inactiva (membresía vencida sin pago): no puede usar funciones
+      // Empresa inactiva (membresÃ­a vencida sin pago): no puede usar funciones
       // protegidas como crear proyectos. Debe renovar/pagar primero.
       const projectCompany = await storage.getCompany(companyId);
       if (!projectCompany) {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
-      // Solo admin o el dueño/representante vinculado a ESTA empresa puede
+      // Solo admin o el dueÃ±o/representante vinculado a ESTA empresa puede
       // crear proyectos (verificado contra la BD, no contra el header).
       if (!(await verifyCompanyAccess(req, res, projectCompany))) {
         return;
       }
       if (projectCompany.estado === "inactivo") {
         return res.status(403).json({
-          error: "Tu empresa está inactiva por falta de pago o membresía vencida. Renueva tu membresía para volver a crear proyectos.",
+          error: "Tu empresa estÃ¡ inactiva por falta de pago o membresÃ­a vencida. Renueva tu membresÃ­a para volver a crear proyectos.",
           code: "COMPANY_INACTIVE",
         });
       }
 
-      // Comprobación temprana para no subir archivos cuando el límite ya está
-      // agotado. createProject repite la validación de forma atómica.
+      // ComprobaciÃ³n temprana para no subir archivos cuando el lÃ­mite ya estÃ¡
+      // agotado. createProject repite la validaciÃ³n de forma atÃ³mica.
       await storage.validateProjectLimits(companyId);
 
-      // Procesar imágenes subidas (Cloudinary en producción, disco en dev)
+      // Procesar imÃ¡genes subidas (Cloudinary en producciÃ³n, disco en dev)
       const files = req.files as Express.Multer.File[];
       const imageUrls = await uploadProjectImages(files);
 
@@ -5023,7 +5023,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Project creation error:", error);
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       if (error.code === "PROJECT_LIMIT_REACHED" || error.code === "INVALID_PROJECT_LIMIT_CONFIG") {
         return res.status(409).json({
@@ -5044,7 +5044,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
 
-      // Solo admin o el dueño/representante vinculado a la empresa del proyecto
+      // Solo admin o el dueÃ±o/representante vinculado a la empresa del proyecto
       // puede editarlo (verificado contra la BD, no contra el header).
       const projectCompany = await storage.getCompany(existingProject.companyId);
       if (!projectCompany) {
@@ -5056,14 +5056,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let updateData: Record<string, any> = { ...req.body };
 
-      // El proyecto no se puede mover de empresa. Además, el formulario puede
+      // El proyecto no se puede mover de empresa. AdemÃ¡s, el formulario puede
       // enviar companyId duplicado (llega como array) o como string; se ignora.
       delete updateData.companyId;
       delete updateData.existingImages;
 
-      // Galería: conservar las imágenes existentes que el usuario mantuvo
-      // (existingImages) y agregar las nuevas subidas. Si no se envía
-      // existingImages ni archivos, la galería no se toca.
+      // GalerÃ­a: conservar las imÃ¡genes existentes que el usuario mantuvo
+      // (existingImages) y agregar las nuevas subidas. Si no se envÃ­a
+      // existingImages ni archivos, la galerÃ­a no se toca.
       const files = req.files as Express.Multer.File[];
       const hasFiles = !!files && files.length > 0;
       const currentImages: string[] = Array.isArray(existingProject.galeriaImagenes)
@@ -5079,7 +5079,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             keptImages = parsed.filter((url: any) => typeof url === 'string' && currentImages.includes(url));
           }
         } catch {
-          return res.status(400).json({ error: "existingImages debe ser un arreglo JSON válido" });
+          return res.status(400).json({ error: "existingImages debe ser un arreglo JSON vÃ¡lido" });
         }
       }
 
@@ -5088,14 +5088,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const newImageUrls = await uploadProjectImages(files);
         const finalImages = [...base, ...newImageUrls];
 
-        // Respetar el límite de fotos por proyecto del plan (NULL o -1 = ilimitado).
+        // Respetar el lÃ­mite de fotos por proyecto del plan (NULL o -1 = ilimitado).
         const membershipType = projectCompany.membershipTypeId
           ? await storage.getMembershipType(projectCompany.membershipTypeId)
           : null;
         const photoLimit = membershipType?.cantidadFotosPorProyecto;
         if (photoLimit != null && photoLimit > 0 && finalImages.length > photoLimit) {
           return res.status(400).json({
-            error: `Tu plan permite un máximo de ${photoLimit} imágenes por proyecto (intentaste guardar ${finalImages.length}).`,
+            error: `Tu plan permite un mÃ¡ximo de ${photoLimit} imÃ¡genes por proyecto (intentaste guardar ${finalImages.length}).`,
           });
         }
 
@@ -5112,7 +5112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(project);
     } catch (error: any) {
       if (error.name === 'ZodError') {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       res.status(500).json({ error: error.message });
     }
@@ -5125,7 +5125,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!projectToDelete) {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
-      // Solo admin o el dueño/representante vinculado a la empresa del proyecto.
+      // Solo admin o el dueÃ±o/representante vinculado a la empresa del proyecto.
       const delCompany = await storage.getCompany(projectToDelete.companyId);
       if (!delCompany) {
         return res.status(404).json({ error: "Empresa no encontrada" });
@@ -5168,7 +5168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { estadoModeracion } = req.body;
       
       if (!['pendiente', 'aprobado', 'rechazado'].includes(estadoModeracion)) {
-        return res.status(400).json({ error: "Estado de moderación inválido" });
+        return res.status(400).json({ error: "Estado de moderaciÃ³n invÃ¡lido" });
       }
 
       const project = await storage.moderateProject(id, estadoModeracion);
@@ -5202,7 +5202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       res.status(500).json({ error: error.message });
     }
@@ -5229,7 +5229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       res.status(500).json({ error: error.message });
     }
@@ -5242,13 +5242,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.updateIntegrationSettings(id, validatedData);
       
       if (!settings) {
-        return res.status(404).json({ error: "Configuración no encontrada" });
+        return res.status(404).json({ error: "ConfiguraciÃ³n no encontrada" });
       }
       
       res.json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       res.status(500).json({ error: error.message });
     }
@@ -5302,7 +5302,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const settings = await storage.getIntegrationSettings();
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.json({ error: "Configuración de WordPress incompleta" });
+        return res.json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const urls = [
@@ -5347,8 +5347,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para obtener información detallada de membresía de un usuario específico de WordPress
-  // Endpoint para obtener transacciones de un usuario específico
+  // Endpoint para obtener informaciÃ³n detallada de membresÃ­a de un usuario especÃ­fico de WordPress
+  // Endpoint para obtener transacciones de un usuario especÃ­fico
   app.get("/api/wordpress-user-transactions/:userId", async (req, res) => {
     try {
       const userId = req.params.userId;
@@ -5357,11 +5357,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Mapear gateways a nombres legibles
       const gatewayNames: Record<string, string> = {
-        'stripe': 'Stripe (Tarjeta de crédito/débito)',
+        'stripe': 'Stripe (Tarjeta de crÃ©dito/dÃ©bito)',
         'paypal': 'PayPal',
         'manual': 'Pago manual',
-        'free': 'Membresía gratuita',
-        'offline': 'Pago fuera de línea',
+        'free': 'MembresÃ­a gratuita',
+        'offline': 'Pago fuera de lÃ­nea',
         'bank_transfer': 'Transferencia bancaria',
         'cash': 'Efectivo',
         'check': 'Cheque',
@@ -5370,21 +5370,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'spei': 'SPEI',
       };
 
-      // Procesar transacciones con información más completa
+      // Procesar transacciones con informaciÃ³n mÃ¡s completa
       const processedTransactions = transactions.map(t => {
-        // Determinar fecha de inicio de membresía
-        // Primero intentar con created_at de la transacción
+        // Determinar fecha de inicio de membresÃ­a
+        // Primero intentar con created_at de la transacciÃ³n
         // Si hay subscription, usar subscription.created_at
         let startDate = t.created_at;
         if (t.subscription && t.subscription.created_at) {
           startDate = t.subscription.created_at;
         }
         
-        // Determinar el método de pago
+        // Determinar el mÃ©todo de pago
         const gateway = t.gateway || t.payment_method || 'unknown';
         const paymentMethodName = gatewayNames[gateway.toLowerCase()] || gateway;
         
-        // Verificar si la transacción está activa (no expirada)
+        // Verificar si la transacciÃ³n estÃ¡ activa (no expirada)
         const now = new Date();
         const expiresAt = t.expires_at ? new Date(t.expires_at) : null;
         const isActive = expiresAt ? expiresAt > now : false;
@@ -5412,7 +5412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       });
       
-      // Encontrar la transacción activa más relevante
+      // Encontrar la transacciÃ³n activa mÃ¡s relevante
       const activeTransaction = processedTransactions.find(t => t.is_active && t.expires_at);
       
       if (transactions.length === 0) {
@@ -5446,13 +5446,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Obtener información básica del usuario
+      // Obtener informaciÃ³n bÃ¡sica del usuario
       const userResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users/${userId}?context=edit`, {
         headers: {
           'Authorization': `Basic ${authString}`,
@@ -5466,7 +5466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const userData = await userResponse.json();
 
-      // Endpoints específicos de MemberPress
+      // Endpoints especÃ­ficos de MemberPress
       const memberPressEndpoints = [
         // MemberPress API endpoints principales
         `${baseUrl}/wp-json/mp/v1/members/${userId}`,
@@ -5525,14 +5525,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Verificar roles y capabilities del usuario que podrían indicar membresía
+      // Verificar roles y capabilities del usuario que podrÃ­an indicar membresÃ­a
       const userRoles = userData.roles || [];
       const userCapabilities = userData.capabilities || {};
       
-      // Analizar metadatos específicos de MemberPress
+      // Analizar metadatos especÃ­ficos de MemberPress
       const membershipMetaFields = userData.meta || {};
       
-      // Campos específicos de MemberPress
+      // Campos especÃ­ficos de MemberPress
       const memberPressFields = Object.keys(membershipMetaFields).filter(key => 
         key.includes('mepr') || 
         key.includes('memberpress') ||
@@ -5540,7 +5540,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key.startsWith('_mepr')
       );
       
-      // Campos generales de membresía
+      // Campos generales de membresÃ­a
       const generalMembershipFields = Object.keys(membershipMetaFields).filter(key => 
         key.includes('member') || 
         key.includes('subscription') || 
@@ -5550,7 +5550,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key.includes('status')
       );
       
-      // Extraer información específica de MemberPress
+      // Extraer informaciÃ³n especÃ­fica de MemberPress
       const memberPressAnalysis = {
         active_memberships: membershipMetaFields['_mepr_active_memberships'] || [],
         inactive_memberships: membershipMetaFields['_mepr_inactive_memberships'] || [],
@@ -5597,11 +5597,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           api_endpoints_working: Object.values(membershipData).filter((response: any) => response.status === 200).length
         },
         recommendations: {
-          note: "Este análisis está optimizado para MemberPress. Los datos mostrados incluyen información específica de membresías activas, expiradas y suscripciones.",
+          note: "Este anÃ¡lisis estÃ¡ optimizado para MemberPress. Los datos mostrados incluyen informaciÃ³n especÃ­fica de membresÃ­as activas, expiradas y suscripciones.",
           next_steps: [
             "Verificar las respuestas de la API de MemberPress para obtener datos detallados",
-            "Analizar los metadatos del usuario para encontrar información de membresías",
-            "Usar los subscription_ids y transaction_ids para obtener más detalles si es necesario"
+            "Analizar los metadatos del usuario para encontrar informaciÃ³n de membresÃ­as",
+            "Usar los subscription_ids y transaction_ids para obtener mÃ¡s detalles si es necesario"
           ]
         }
       });
@@ -5611,14 +5611,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para buscar usuario por username y obtener su información de membresía
+  // Endpoint para buscar usuario por username y obtener su informaciÃ³n de membresÃ­a
   app.get("/api/find-user-membership/:username", async (req, res) => {
     try {
       const { username } = req.params;
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
@@ -5652,7 +5652,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       users = await searchResponse.json();
       
-      // Si es búsqueda por email y no encontramos exacto, filtrar por email exacto
+      // Si es bÃºsqueda por email y no encontramos exacto, filtrar por email exacto
       if (username.includes('@') && Array.isArray(users)) {
         users = users.filter((user: any) => user.email === username);
       }
@@ -5664,7 +5664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = users[0]; // Tomar el primer usuario encontrado
       const meta = userData.meta || {};
 
-      // Extraer información específica de MemberPress
+      // Extraer informaciÃ³n especÃ­fica de MemberPress
       const membershipStatus = {
         user_id: userData.id,
         username: userData.username,
@@ -5681,7 +5681,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         has_active_membership: Array.isArray(meta['_mepr_active_memberships']) && meta['_mepr_active_memberships'].length > 0,
         is_member: userData.roles?.includes('member') || false,
         roles: userData.roles || [],
-        // Información adicional de MemberPress
+        // InformaciÃ³n adicional de MemberPress
         memberpress_meta: Object.keys(meta).filter(key => 
           key.includes('mepr') || key.includes('memberpress') || key.startsWith('_mepr')
         ).reduce((acc, key) => {
@@ -5697,19 +5697,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para obtener usuarios con membresías activas en MemberPress
+  // Endpoint para obtener usuarios con membresÃ­as activas en MemberPress
   app.get("/api/users-with-memberships", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Obtener usuarios con metadatos específicos de MemberPress
+      // Obtener usuarios con metadatos especÃ­ficos de MemberPress
       const response = await fetch(`${baseUrl}/wp-json/wp/v2/users?per_page=50&context=edit&meta_key=_mepr_active_memberships`, {
         headers: {
           'Authorization': `Basic ${authString}`,
@@ -5761,7 +5761,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
@@ -5781,7 +5781,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const users = await response.json();
       
-      // Mapear información básica de usuarios para ejemplos
+      // Mapear informaciÃ³n bÃ¡sica de usuarios para ejemplos
       const sampleUsers = users.map((user: any) => ({
         user_id: user.id,
         username: user.username,
@@ -5800,20 +5800,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint simplificado para obtener solo el estado de membresía de MemberPress
+  // Endpoint simplificado para obtener solo el estado de membresÃ­a de MemberPress
   app.get("/api/memberpress-status/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Obtener información del usuario con metadatos
+      // Obtener informaciÃ³n del usuario con metadatos
       const userResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users/${userId}?context=edit`, {
         headers: {
           'Authorization': `Basic ${authString}`,
@@ -5828,7 +5828,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = await userResponse.json();
       const meta = userData.meta || {};
 
-      // Extraer información específica de MemberPress del metadatos
+      // Extraer informaciÃ³n especÃ­fica de MemberPress del metadatos
       const membershipStatus = {
         user_id: userData.id,
         username: userData.username,
@@ -5868,7 +5868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!firebaseUid) {
         return res.status(400).json({ 
           error: "Firebase UID requerido",
-          userMessage: "Error de autenticación. Por favor, recarga la página e intenta nuevamente."
+          userMessage: "Error de autenticaciÃ³n. Por favor, recarga la pÃ¡gina e intenta nuevamente."
         });
       }
 
@@ -5880,8 +5880,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
         return res.status(400).json({ 
-          error: "El correo electrónico ya está registrado",
-          userMessage: "Ya existe una cuenta con este correo electrónico. Si ya tienes una cuenta, inicia sesión en lugar de registrarte nuevamente. Si necesitas ayuda, contacta a soporte."
+          error: "El correo electrÃ³nico ya estÃ¡ registrado",
+          userMessage: "Ya existe una cuenta con este correo electrÃ³nico. Si ya tienes una cuenta, inicia sesiÃ³n en lugar de registrarte nuevamente. Si necesitas ayuda, contacta a soporte."
         });
       }
 
@@ -5894,9 +5894,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         role: 'representante',
       });
 
-      // Vincular la suscripción de Stripe al usuario recién creado y, si es
-      // posible, calcular la fecha fin EXACTA desde el ciclo de la suscripción
-      // (current_period_end) en vez de sumar días manualmente.
+      // Vincular la suscripciÃ³n de Stripe al usuario reciÃ©n creado y, si es
+      // posible, calcular la fecha fin EXACTA desde el ciclo de la suscripciÃ³n
+      // (current_period_end) en vez de sumar dÃ­as manualmente.
       let subscriptionPeriodEnd: Date | null = null;
       if (subscriptionId && stripeCustomerId) {
         try {
@@ -5909,8 +5909,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             subscriptionPeriodEnd = new Date(periodEnd * 1000);
           }
         } catch (subErr) {
-          console.error("Error vinculando suscripción en complete-registration:", subErr);
-          // No abortamos el registro: el webhook corregirá fechas si es necesario.
+          console.error("Error vinculando suscripciÃ³n en complete-registration:", subErr);
+          // No abortamos el registro: el webhook corregirÃ¡ fechas si es necesario.
         }
       }
 
@@ -5938,7 +5938,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         estado: "activo"
       });
 
-      // Grabar companyId/userId en la metadata de la suscripción para que el
+      // Grabar companyId/userId en la metadata de la suscripciÃ³n para que el
       // webhook (renovaciones, cancelaciones) pueda localizar la empresa exacta.
       if (subscriptionId) {
         try {
@@ -5952,7 +5952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             },
           });
         } catch (metaErr) {
-          console.error("Error actualizando metadata de la suscripción:", metaErr);
+          console.error("Error actualizando metadata de la suscripciÃ³n:", metaErr);
         }
       }
 
@@ -5997,10 +5997,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Automatically assign ANPR certificate for business memberships
       try {
-        // Find the "Miembro Oficial ANPR México 2025" certificate
+        // Find the "Miembro Oficial ANPR MÃ©xico 2025" certificate
         const certificates = await storage.getAllCertificates();
         const anprCertificate = certificates.find((cert: any) => 
-          cert.nombreCertificado === "Miembro Oficial ANPR México 2025"
+          cert.nombreCertificado === "Miembro Oficial ANPR MÃ©xico 2025"
         );
 
         if (anprCertificate) {
@@ -6008,7 +6008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await storage.assignCertificateToCompany(company.id, anprCertificate.id, {
             fechaObtencion: new Date().toISOString().split('T')[0],
             asignadoPorAdmin: true,
-            observaciones: `Certificado asignado automáticamente por membresía ${membershipType.nombrePlan}`
+            observaciones: `Certificado asignado automÃ¡ticamente por membresÃ­a ${membershipType.nombrePlan}`
           });
           
           console.log(`ANPR certificate automatically assigned to company ${company.id}`);
@@ -6054,21 +6054,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const htmlContent = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #0f2161; border-bottom: 2px solid #bcce16; padding-bottom: 10px;">
-                  🎉 Nueva Empresa Registrada
+                  ðŸŽ‰ Nueva Empresa Registrada
                 </h2>
                 <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
                   <h3 style="color: #333; margin-top: 0;">Datos de la Empresa</h3>
                   <p><strong>Nombre:</strong> ${company.nombreEmpresa}</p>
                   <p><strong>Email:</strong> ${companyData.email1}</p>
-                  <p><strong>Teléfono:</strong> ${companyData.telefono1 || 'No proporcionado'}</p>
-                  <p><strong>Dirección:</strong> ${companyData.direccionFisica || 'No proporcionada'}</p>
+                  <p><strong>TelÃ©fono:</strong> ${companyData.telefono1 || 'No proporcionado'}</p>
+                  <p><strong>DirecciÃ³n:</strong> ${companyData.direccionFisica || 'No proporcionada'}</p>
                 </div>
                 <div style="background-color: #e6f7e6; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #28a745;">
-                  <h3 style="color: #333; margin-top: 0;">💳 Información del Pago</h3>
+                  <h3 style="color: #333; margin-top: 0;">ðŸ’³ InformaciÃ³n del Pago</h3>
                   <p><strong>Plan contratado:</strong> ${membershipType.nombrePlan}</p>
                   <p><strong>Periodicidad:</strong> ${selectedPeriod === 'anual' ? 'Anual (12 meses)' : selectedPeriod === 'mensual' ? 'Mensual' : selectedPeriod}</p>
                   <p><strong>Monto pagado:</strong> $${amount.toLocaleString('es-MX', { minimumFractionDigits: 2 })} ${(await getConfiguredCurrency()).toUpperCase()}</p>
-                  <p><strong>Forma de pago:</strong> Tarjeta de crédito/débito</p>
+                  <p><strong>Forma de pago:</strong> Tarjeta de crÃ©dito/dÃ©bito</p>
                   <p><strong>Vigencia:</strong> ${new Date().toLocaleDateString('es-MX')} - ${new Date(Date.now() + (selectedPeriod === 'anual' ? 365 : 30) * 24 * 60 * 60 * 1000).toLocaleDateString('es-MX')}</p>
                 </div>
                 <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
@@ -6077,7 +6077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   <p><strong>Email:</strong> ${userData.email}</p>
                 </div>
                 <p style="color: #666; font-size: 12px; text-align: center; margin-top: 30px;">
-                  Este es un correo automático generado por el sistema de registro de ANPR México.
+                  Este es un correo automÃ¡tico generado por el sistema de registro de ANPR MÃ©xico.
                 </p>
               </div>
             `;
@@ -6138,14 +6138,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (error.code === '23505') { // Unique constraint violation
         if (error.constraint === 'users_email_unique') {
-          userMessage = "Ya existe una cuenta con este correo electrónico. Si ya tienes una cuenta, inicia sesión en lugar de registrarte nuevamente.";
+          userMessage = "Ya existe una cuenta con este correo electrÃ³nico. Si ya tienes una cuenta, inicia sesiÃ³n en lugar de registrarte nuevamente.";
           statusCode = 400;
         } else if (error.constraint === 'companies_nombre_empresa_unique') {
           userMessage = "Ya existe una empresa registrada con este nombre. Por favor, utiliza un nombre diferente.";
           statusCode = 400;
         }
       } else if (error.code === '23503') { // Foreign key constraint
-        userMessage = "Algunos datos seleccionados no son válidos. Por favor, verifica tu información e intenta nuevamente.";
+        userMessage = "Algunos datos seleccionados no son vÃ¡lidos. Por favor, verifica tu informaciÃ³n e intenta nuevamente.";
         statusCode = 400;
       } else if (error.message?.includes('payment')) {
         userMessage = "Hubo un problema al procesar el pago. Por favor, verifica los datos de tu tarjeta e intenta nuevamente.";
@@ -6178,7 +6178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Found user:", user ? { id: user.id, email: user.email, firebaseUid: user.firebaseUid, role: user.role } : null);
       
       if (!user) {
-        return res.status(401).json({ error: "Credenciales inválidas" });
+        return res.status(401).json({ error: "Credenciales invÃ¡lidas" });
       }
 
       // Only allow this endpoint for manually-created accounts
@@ -6192,7 +6192,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Please use Firebase login" });
       }
 
-      // Manual users MUST have a stored password — never allow access without one
+      // Manual users MUST have a stored password â€” never allow access without one
       if (!user.tempPassword) {
         console.log("Login blocked: manual user has no stored password");
         return res.status(401).json({ error: "Cuenta no activada. Contacte al administrador." });
@@ -6211,12 +6211,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!passwordValid) {
         console.log("Login blocked: invalid password for user", user.id);
-        return res.status(401).json({ error: "Credenciales inválidas" });
+        return res.status(401).json({ error: "Credenciales invÃ¡lidas" });
       }
 
-      // Emitir cookie de sesión firmada (HttpOnly): prueba verificable por el
-      // servidor de que este usuario se autenticó con credenciales válidas.
-      // Se usa para autorizar acciones sensibles (p. ej. configuración de Stripe).
+      // Emitir cookie de sesiÃ³n firmada (HttpOnly): prueba verificable por el
+      // servidor de que este usuario se autenticÃ³ con credenciales vÃ¡lidas.
+      // Se usa para autorizar acciones sensibles (p. ej. configuraciÃ³n de Stripe).
       res.cookie(ADMIN_SESSION_COOKIE, signAdminSession(user.id), {
         httpOnly: true,
         sameSite: "lax",
@@ -6227,7 +6227,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Return user data for successful login (never expose the stored password).
       // Se adjuntan permisos/roleId/accesoAdmin desde la tabla `roles` para que un
-      // rol personalizado con "Acceso al Dashboard de Administración" habilite el panel.
+      // rol personalizado con "Acceso al Dashboard de AdministraciÃ³n" habilite el panel.
       console.log("Login successful for user:", user.id);
       const roleInfo = await attachRoleInfo(user as any);
       return res.json({
@@ -6258,8 +6258,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // El antiguo intercambio de id/email de WordPress no demostraba que el
-  // solicitante fuera dueño de esa sesión. Se conserva la ruta para que clientes
-  // anteriores fallen explícitamente y migren al SSO JWT firmado.
+  // solicitante fuera dueÃ±o de esa sesiÃ³n. Se conserva la ruta para que clientes
+  // anteriores fallen explÃ­citamente y migren al SSO JWT firmado.
   app.post("/api/auth/wordpress-session", (_req, res) => {
     return res.status(401).json({
       authenticated: false,
@@ -6271,9 +6271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SSO por JWT firmado desde WordPress (?wp_token=).
   // ---------------------------------------------------------------------------
   // WordPress firma un JWT (HS256 con WP_SSO_SECRET) cuando un miembro logueado
-  // llega al directorio. Aquí lo verificamos y derivamos la sesión de
+  // llega al directorio. AquÃ­ lo verificamos y derivamos la sesiÃ³n de
   // representante desde la BD LOCAL (users/companies). SOLO LECTURA: no se crea
-  // ni modifica ningún registro.
+  // ni modifica ningÃºn registro.
   app.post("/api/auth/wordpress-sso", async (req, res) => {
     try {
       const { token } = req.body ?? {};
@@ -6289,7 +6289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(200).json({ authenticated: false, reason: "error" });
       }
 
-      // Paso 1: verificar firma y expiración del JWT, y extraer el email.
+      // Paso 1: verificar firma y expiraciÃ³n del JWT, y extraer el email.
       const payload = verifyWordPressJwt(token.trim());
       if (!payload) {
         return res
@@ -6316,7 +6316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .json({ authenticated: false, reason: "no_company" });
       }
 
-      // Paso 4: verificar que la membresía siga vigente (fechaFinMembresia > hoy).
+      // Paso 4: verificar que la membresÃ­a siga vigente (fechaFinMembresia > hoy).
       // fechaFinMembresia es texto "YYYY-MM-DD"; comparamos como fechas.
       const today = new Date().toISOString().split("T")[0];
       const fin = company.fechaFinMembresia;
@@ -6339,7 +6339,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WP_SESSION_TTL_SECONDS,
       );
 
-      // Todo válido → sesión de representante verificable.
+      // Todo vÃ¡lido â†’ sesiÃ³n de representante verificable.
       return res.status(200).json({
         authenticated: true,
         token: sessionToken,
@@ -6361,7 +6361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Public endpoint to self-register an administrator account.
-  // NOTE: This is intentionally unprotected per product request — anyone who can
+  // NOTE: This is intentionally unprotected per product request â€” anyone who can
   // reach this endpoint can create an admin account. Consider gating it behind a
   // secret code or a "bootstrap-only" check before going to production.
   app.post("/api/register-admin", async (req, res) => {
@@ -6369,17 +6369,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { email, password, displayName } = req.body;
 
       if (!email || !password) {
-        return res.status(400).json({ error: "Email y contraseña son requeridos" });
+        return res.status(400).json({ error: "Email y contraseÃ±a son requeridos" });
       }
 
       const normalizedEmail = String(email).trim().toLowerCase();
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(normalizedEmail)) {
-        return res.status(400).json({ error: "Email inválido" });
+        return res.status(400).json({ error: "Email invÃ¡lido" });
       }
 
       if (String(password).length < 6) {
-        return res.status(400).json({ error: "La contraseña debe tener al menos 6 caracteres" });
+        return res.status(400).json({ error: "La contraseÃ±a debe tener al menos 6 caracteres" });
       }
 
       // Reject if an account with this email already exists
@@ -6438,19 +6438,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "User not found" });
       }
 
-      // La contraseña actual es OBLIGATORIA para cuentas con contraseña temporal.
-      // Sin esto, cualquiera podía cambiar la contraseña de otra cuenta enviando
+      // La contraseÃ±a actual es OBLIGATORIA para cuentas con contraseÃ±a temporal.
+      // Sin esto, cualquiera podÃ­a cambiar la contraseÃ±a de otra cuenta enviando
       // solo { userId, newPassword } (toma de cuentas).
       if (user.tempPassword) {
         if (!currentPassword) {
-          return res.status(400).json({ error: "La contraseña actual es requerida" });
+          return res.status(400).json({ error: "La contraseÃ±a actual es requerida" });
         }
         const isBcryptHash = user.tempPassword.startsWith("$2b$") || user.tempPassword.startsWith("$2a$");
         const currentPasswordValid = isBcryptHash
           ? await bcrypt.compare(currentPassword, user.tempPassword)
           : user.tempPassword === currentPassword;
         if (!currentPasswordValid) {
-          return res.status(401).json({ error: "Contraseña actual incorrecta" });
+          return res.status(401).json({ error: "ContraseÃ±a actual incorrecta" });
         }
       }
 
@@ -6470,7 +6470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("Password changed successfully for user:", userId);
       return res.json({ 
         success: true, 
-        message: "Contraseña actualizada exitosamente",
+        message: "ContraseÃ±a actualizada exitosamente",
         user: {
           id: updatedUser.id,
           email: updatedUser.email,
@@ -6486,16 +6486,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // RECUPERACIÓN DE CONTRASEÑA (vía Firebase Admin + SMTP fijo Sistemas@anpr.org.mx)
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+  // RECUPERACIÃ“N DE CONTRASEÃ‘A (vÃ­a Firebase Admin + SMTP fijo Sistemas@anpr.org.mx)
   // No modifica el flujo de login ni la tabla users. Usa una tabla aislada de tokens.
-  // ═══════════════════════════════════════════════════════════════════════════
+  // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-  // Rate limiting en memoria por IP (complementa el límite por correo en BD).
+  // Rate limiting en memoria por IP (complementa el lÃ­mite por correo en BD).
   const RESET_IP_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
-  const RESET_IP_MAX = 10; // máx. solicitudes por IP en la ventana
+  const RESET_IP_MAX = 10; // mÃ¡x. solicitudes por IP en la ventana
   const RESET_EMAIL_WINDOW_MS = 15 * 60 * 1000; // 15 minutos
-  const RESET_EMAIL_MAX = 3; // máx. correos por dirección en la ventana
+  const RESET_EMAIL_MAX = 3; // mÃ¡x. correos por direcciÃ³n en la ventana
   const resetIpHits = new Map<string, number[]>();
 
   function ipRateLimited(ip: string): boolean {
@@ -6525,29 +6525,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return "https://directorio.anpr.org.mx";
   }
 
-  // Política de contraseñas existente del sistema (mínimo 8 caracteres).
+  // PolÃ­tica de contraseÃ±as existente del sistema (mÃ­nimo 8 caracteres).
   const resetPasswordSchema = z
     .object({
-      token: z.string().min(20, "Token inválido"),
-      password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres"),
-      confirmPassword: z.string().min(8, "Confirma tu contraseña"),
+      token: z.string().min(20, "Token invÃ¡lido"),
+      password: z.string().min(8, "La contraseÃ±a debe tener al menos 8 caracteres"),
+      confirmPassword: z.string().min(8, "Confirma tu contraseÃ±a"),
     })
     .refine((d) => d.password === d.confirmPassword, {
-      message: "Las contraseñas no coinciden",
+      message: "Las contraseÃ±as no coinciden",
       path: ["confirmPassword"],
     });
 
-  // ── Paso 1: solicitar recuperación ────────────────────────────────────────
+  // â”€â”€ Paso 1: solicitar recuperaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   app.post("/api/forgot-password", async (req, res) => {
     const ip = getClientIp(req);
     try {
       const emailRaw = (req.body?.email || "").toString().trim().toLowerCase();
-      console.log(`[password-reset] Solicitud de recuperación para "${emailRaw}" desde ${ip}`);
+      console.log(`[password-reset] Solicitud de recuperaciÃ³n para "${emailRaw}" desde ${ip}`);
 
-      // Validación de formato.
+      // ValidaciÃ³n de formato.
       const emailValid = z.string().email().safeParse(emailRaw).success;
       if (!emailValid) {
-        return res.status(400).json({ success: false, error: "Email inválido" });
+        return res.status(400).json({ success: false, error: "Email invÃ¡lido" });
       }
 
       // Rate limit por IP.
@@ -6555,7 +6555,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn(`[password-reset] Rate limit por IP alcanzado: ${ip}`);
         return res.status(429).json({
           success: false,
-          error: "Demasiados intentos. Espera unos minutos e inténtalo de nuevo.",
+          error: "Demasiados intentos. Espera unos minutos e intÃ©ntalo de nuevo.",
         });
       }
 
@@ -6566,11 +6566,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.warn(`[password-reset] Rate limit por correo alcanzado: ${emailRaw}`);
         return res.status(429).json({
           success: false,
-          error: "Demasiados intentos para este correo. Espera unos minutos e inténtalo de nuevo.",
+          error: "Demasiados intentos para este correo. Espera unos minutos e intÃ©ntalo de nuevo.",
         });
       }
 
-      // Buscar el usuario en Firebase (fuente de verdad). Si Admin no está
+      // Buscar el usuario en Firebase (fuente de verdad). Si Admin no estÃ¡
       // disponible, intentamos resolver el nombre desde la BD como respaldo.
       let exists = false;
       let uid: string | undefined;
@@ -6589,9 +6589,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Respaldo en BD: las cuentas creadas manualmente (administradores y
       // representantes con firebaseUid "admin-created-*" / "manual_*") NO viven
-      // en Firebase, sino en la base de datos local. Si Firebase no las encontró
-      // (o Admin no está disponible), buscarlas en la BD para que también
-      // reciban su correo de recuperación.
+      // en Firebase, sino en la base de datos local. Si Firebase no las encontrÃ³
+      // (o Admin no estÃ¡ disponible), buscarlas en la BD para que tambiÃ©n
+      // reciban su correo de recuperaciÃ³n.
       if (!exists) {
         const dbUser = await storage.getUserByEmail(emailRaw);
         if (dbUser) {
@@ -6605,17 +6605,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       if (!exists) {
-        // Avisar explícitamente que el correo no está registrado (a petición del
-        // negocio). NOTA: esto permite enumerar qué correos existen en el sistema.
+        // Avisar explÃ­citamente que el correo no estÃ¡ registrado (a peticiÃ³n del
+        // negocio). NOTA: esto permite enumerar quÃ© correos existen en el sistema.
         console.log(`[password-reset] Email NO registrado: ${emailRaw}`);
         return res.status(404).json({
           success: false,
           notFound: true,
-          error: "Correo no encontrado. Verifica que esté escrito correctamente o regístrate.",
+          error: "Correo no encontrado. Verifica que estÃ© escrito correctamente o regÃ­strate.",
         });
       }
 
-      // Generar token firmado + guardar su hash con expiración de 60 min.
+      // Generar token firmado + guardar su hash con expiraciÃ³n de 60 min.
       const { rawToken, tokenHash } = generateResetToken();
       const expiresAt = new Date(Date.now() + RESET_TOKEN_TTL_MINUTES * 60 * 1000);
       await storage.createPasswordResetToken({
@@ -6630,31 +6630,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const sendResult = await sendPasswordResetEmail(emailRaw, resetLink, displayName);
 
       if (sendResult.success) {
-        console.log(`[password-reset] Correo de recuperación ENVIADO a ${emailRaw}`);
+        console.log(`[password-reset] Correo de recuperaciÃ³n ENVIADO a ${emailRaw}`);
         return res.json({
           success: true,
           message:
-            "Te enviamos un correo con un enlace para restablecer tu contraseña. Revisa tu bandeja de entrada (y spam). El enlace caduca en 60 minutos.",
+            "Te enviamos un correo con un enlace para restablecer tu contraseÃ±a. Revisa tu bandeja de entrada (y spam). El enlace caduca en 60 minutos.",
         });
       }
 
-      // El correo existe pero el envío SMTP falló: avisar del error real.
-      console.error(`[password-reset] ERROR de envío a ${emailRaw}: ${sendResult.message}`);
+      // El correo existe pero el envÃ­o SMTP fallÃ³: avisar del error real.
+      console.error(`[password-reset] ERROR de envÃ­o a ${emailRaw}: ${sendResult.message}`);
       return res.status(502).json({
         success: false,
         error:
-          "No pudimos enviar el correo en este momento. Inténtalo de nuevo en unos minutos o contacta a soporte.",
+          "No pudimos enviar el correo en este momento. IntÃ©ntalo de nuevo en unos minutos o contacta a soporte.",
       });
     } catch (error: any) {
       console.error("[password-reset] Error en /api/forgot-password:", error?.message || error);
       return res.status(500).json({
         success: false,
-        error: "Ocurrió un error al procesar la solicitud. Inténtalo más tarde.",
+        error: "OcurriÃ³ un error al procesar la solicitud. IntÃ©ntalo mÃ¡s tarde.",
       });
     }
   });
 
-  // ── Validar token (para que la UI muestre el formulario o "enlace expirado") ─
+  // â”€â”€ Validar token (para que la UI muestre el formulario o "enlace expirado") â”€
   app.get("/api/reset-password/validate", async (req, res) => {
     try {
       const token = (req.query?.token || "").toString();
@@ -6669,30 +6669,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ── Paso 2: restablecer la contraseña ──────────────────────────────────────
+  // â”€â”€ Paso 2: restablecer la contraseÃ±a â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   app.post("/api/reset-password", async (req, res) => {
     try {
       const parsed = resetPasswordSchema.safeParse(req.body);
       if (!parsed.success) {
-        const msg = parsed.error.errors[0]?.message || "Datos inválidos";
+        const msg = parsed.error.errors[0]?.message || "Datos invÃ¡lidos";
         return res.status(400).json({ error: msg });
       }
       const { token, password } = parsed.data;
 
-      // Buscar token válido (no usado y no expirado).
+      // Buscar token vÃ¡lido (no usado y no expirado).
       const tokenRecord = await storage.getValidPasswordResetToken(hashToken(token));
       if (!tokenRecord) {
-        console.warn("[password-reset] Token inválido o expirado en /api/reset-password");
+        console.warn("[password-reset] Token invÃ¡lido o expirado en /api/reset-password");
         return res.status(400).json({
-          error: "El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.",
+          error: "El enlace de recuperaciÃ³n es invÃ¡lido o ha expirado. Solicita uno nuevo.",
         });
       }
 
-      // ¿Dónde vive la contraseña de este usuario? Las cuentas creadas
+      // Â¿DÃ³nde vive la contraseÃ±a de este usuario? Las cuentas creadas
       // manualmente (administradores y representantes con firebaseUid
-      // "admin-created-*" / "manual_*") guardan su contraseña en la BD local
-      // (tempPassword, hash bcrypt), no en Firebase. Misma lógica que usa
-      // /api/login-temp para decidir cómo validar el acceso.
+      // "admin-created-*" / "manual_*") guardan su contraseÃ±a en la BD local
+      // (tempPassword, hash bcrypt), no en Firebase. Misma lÃ³gica que usa
+      // /api/login-temp para decidir cÃ³mo validar el acceso.
       const dbUser = await storage.getUserByEmail(tokenRecord.email);
       const isManualAccount =
         !!dbUser?.firebaseUid &&
@@ -6700,8 +6700,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           dbUser.firebaseUid.startsWith("admin-created-"));
 
       if (isManualAccount) {
-        // Actualizar la contraseña en la BD (hash bcrypt) y limpiar el flag de
-        // cambio obligatorio: el usuario acaba de definir su propia contraseña.
+        // Actualizar la contraseÃ±a en la BD (hash bcrypt) y limpiar el flag de
+        // cambio obligatorio: el usuario acaba de definir su propia contraseÃ±a.
         const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
         await storage.updateUser(dbUser!.id, {
           tempPassword: hashedPassword,
@@ -6717,36 +6717,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         return res.json({
           success: true,
-          message: "Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión.",
+          message: "Tu contraseÃ±a ha sido actualizada correctamente. Ya puedes iniciar sesiÃ³n.",
         });
       }
 
-      // Firebase Admin es obligatorio para aplicar el cambio donde vive la contraseña.
+      // Firebase Admin es obligatorio para aplicar el cambio donde vive la contraseÃ±a.
       if (!isFirebaseAdminAvailable()) {
         const detail = getFirebaseAdminError();
         console.error(`[password-reset] Firebase Admin no disponible al restablecer: ${detail}`);
         return res.status(503).json({
           error:
-            "El servicio de recuperación no está disponible temporalmente. Intenta más tarde o contacta a soporte.",
+            "El servicio de recuperaciÃ³n no estÃ¡ disponible temporalmente. Intenta mÃ¡s tarde o contacta a soporte.",
         });
       }
 
-      // Cambiar la contraseña en Firebase Authentication.
+      // Cambiar la contraseÃ±a en Firebase Authentication.
       const result = await updateFirebasePasswordByEmail(tokenRecord.email, password);
       if (!result.found) {
         if (result.error) {
           console.error(`[password-reset] Error al actualizar en Firebase: ${result.error}`);
           return res.status(503).json({
-            error: "No se pudo actualizar la contraseña en este momento. Intenta más tarde.",
+            error: "No se pudo actualizar la contraseÃ±a en este momento. Intenta mÃ¡s tarde.",
           });
         }
-        // El usuario ya no existe en Firebase: invalidar token y mensaje genérico.
+        // El usuario ya no existe en Firebase: invalidar token y mensaje genÃ©rico.
         await storage.markPasswordResetTokenUsed(tokenRecord.id);
         console.warn(
           `[password-reset] Usuario ${tokenRecord.email} no encontrado en Firebase al restablecer`
         );
         return res.status(400).json({
-          error: "El enlace de recuperación es inválido o ha expirado. Solicita uno nuevo.",
+          error: "El enlace de recuperaciÃ³n es invÃ¡lido o ha expirado. Solicita uno nuevo.",
         });
       }
 
@@ -6760,15 +6760,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       return res.json({
         success: true,
-        message: "Tu contraseña ha sido actualizada correctamente. Ya puedes iniciar sesión.",
+        message: "Tu contraseÃ±a ha sido actualizada correctamente. Ya puedes iniciar sesiÃ³n.",
       });
     } catch (error: any) {
       console.error("[password-reset] Error en /api/reset-password:", error?.message || error);
-      return res.status(500).json({ error: "No se pudo restablecer la contraseña. Intenta más tarde." });
+      return res.status(500).json({ error: "No se pudo restablecer la contraseÃ±a. Intenta mÃ¡s tarde." });
     }
   });
 
-  // ── Diagnóstico: verificar conexión con Firebase Admin (solo lectura) ───────
+  // â”€â”€ DiagnÃ³stico: verificar conexiÃ³n con Firebase Admin (solo lectura) â”€â”€â”€â”€â”€â”€â”€
   app.get("/api/password-reset/health", async (_req, res) => {
     const result = await verifyFirebaseAdminConnection();
     res.status(result.ok ? 200 : 503).json(result);
@@ -6810,7 +6810,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       console.log("Password reset successfully for user:", userId);
-      return res.json({ success: true, message: "Contraseña restablecida exitosamente" });
+      return res.json({ success: true, message: "ContraseÃ±a restablecida exitosamente" });
     } catch (error: any) {
       console.error("Error resetting password:", error);
       res.status(500).json({ error: "Failed to reset password" });
@@ -6818,8 +6818,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Admin endpoint to create a user with company (free membership).
-  // Autorización: cualquier administrador verificado (rol confirmado en BD)
-  // puede crear usuarios; se usa el mismo middleware de verificación de admin
+  // AutorizaciÃ³n: cualquier administrador verificado (rol confirmado en BD)
+  // puede crear usuarios; se usa el mismo middleware de verificaciÃ³n de admin
   // que el resto del panel (Firebase token, cookie firmada o x-user-info + BD).
   app.post("/api/admin/create-user-with-company", requireStripeAdmin, async (req, res) => {
     let createdUserId: number | null = null;
@@ -6841,7 +6841,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Check if user already exists
       const existingUser = await storage.getUserByEmail(userData.email);
       if (existingUser) {
-        return res.status(400).json({ error: "Ya existe un usuario con este correo electrónico" });
+        return res.status(400).json({ error: "Ya existe un usuario con este correo electrÃ³nico" });
       }
 
       // Generate a unique Firebase UID for admin-created users
@@ -6862,7 +6862,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         requirePasswordChange: true,
       });
       if (user.firebaseUid !== generatedFirebaseUid) {
-        return res.status(409).json({ error: "Ya existe un usuario con este correo electrónico" });
+        return res.status(409).json({ error: "Ya existe un usuario con este correo electrÃ³nico" });
       }
       createdUserId = user.id;
 
@@ -7095,8 +7095,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = parseInt(req.params.userId);
 
-      // Autorización: solo el propio usuario o un admin (rol confirmado en BD,
-      // no se confía en los claims del header del cliente).
+      // AutorizaciÃ³n: solo el propio usuario o un admin (rol confirmado en BD,
+      // no se confÃ­a en los claims del header del cliente).
       const verifiedRequester = await getVerifiedRequestUser(req);
       if (!verifiedRequester?.id) {
         return res.status(401).json({ error: "No autenticado" });
@@ -7169,7 +7169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Datos inválidos", details: error.errors });
+        return res.status(400).json({ error: "Datos invÃ¡lidos", details: error.errors });
       }
       res.status(500).json({ error: error.message });
     }
@@ -7179,7 +7179,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/pdf-settings/upload-logo", uploadPdfLogo.single('logo'), validateUploadedImages, async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No se seleccionó ningún archivo" });
+        return res.status(400).json({ error: "No se seleccionÃ³ ningÃºn archivo" });
       }
 
       // Validate file exists and is accessible
@@ -7229,7 +7229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/system-settings/upload-image", uploadSystemImages.single('file'), validateUploadedImages, async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "No se recibió ningún archivo" });
+        return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
 
       // Validate file exists and is accessible
@@ -7296,7 +7296,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (notificationEmails.length === 0) {
         return res.status(400).json({ 
           success: false, 
-          error: "No hay correos de notificación configurados. Agrega al menos un correo y guarda la configuración antes de probar." 
+          error: "No hay correos de notificaciÃ³n configurados. Agrega al menos un correo y guarda la configuraciÃ³n antes de probar." 
         });
       }
       
@@ -7305,7 +7305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!emailConfig) {
         return res.status(400).json({ 
           success: false, 
-          error: "No hay configuración de correo SMTP. Configura el servidor de correo primero en la sección de Email." 
+          error: "No hay configuraciÃ³n de correo SMTP. Configura el servidor de correo primero en la secciÃ³n de Email." 
         });
       }
       
@@ -7334,28 +7334,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #0f2161; border-bottom: 2px solid #bcce16; padding-bottom: 10px;">
-            🧪 Correo de Prueba - Notificaciones de Registro
+            ðŸ§ª Correo de Prueba - Notificaciones de Registro
           </h2>
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h3 style="color: #333; margin-top: 0;">¡La configuración funciona!</h3>
-            <p>Este es un correo de prueba para verificar que las notificaciones de nuevos registros están funcionando correctamente.</p>
+            <h3 style="color: #333; margin-top: 0;">Â¡La configuraciÃ³n funciona!</h3>
+            <p>Este es un correo de prueba para verificar que las notificaciones de nuevos registros estÃ¡n funcionando correctamente.</p>
             <p><strong>Fecha de prueba:</strong> ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })}</p>
           </div>
           <div style="background-color: #e8f4fd; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #333; margin-top: 0;">Ejemplo de Datos de Empresa</h3>
             <p><strong>Nombre:</strong> Empresa de Prueba S.A. de C.V.</p>
             <p><strong>Email:</strong> prueba@empresa.com</p>
-            <p><strong>Teléfono:</strong> +52 55 1234 5678</p>
-            <p><strong>Plan:</strong> Membresía Empresarial</p>
+            <p><strong>TelÃ©fono:</strong> +52 55 1234 5678</p>
+            <p><strong>Plan:</strong> MembresÃ­a Empresarial</p>
             <p><strong>Periodicidad:</strong> Anual</p>
           </div>
           <div style="background-color: #f0fdf4; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #333; margin-top: 0;">Ejemplo de Representante</h3>
-            <p><strong>Nombre:</strong> Juan Pérez García</p>
+            <p><strong>Nombre:</strong> Juan PÃ©rez GarcÃ­a</p>
             <p><strong>Email:</strong> juan.perez@empresa.com</p>
           </div>
           <p style="color: #666; font-size: 12px; text-align: center; margin-top: 30px;">
-            Este es un correo de prueba generado desde la configuración del sistema ANPR México.
+            Este es un correo de prueba generado desde la configuraciÃ³n del sistema ANPR MÃ©xico.
           </p>
         </div>
       `;
@@ -7368,7 +7368,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           await transporter.sendMail({
             from: `"${emailConfig.fromName}" <${emailConfig.fromEmail}>`,
             to: email,
-            subject: `🧪 Prueba de Notificación - ANPR México`,
+            subject: `ðŸ§ª Prueba de NotificaciÃ³n - ANPR MÃ©xico`,
             html: htmlContent,
           });
           console.log(`Test notification sent to ${email}`);
@@ -7385,14 +7385,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (successCount === 0) {
         // All failed - likely SMTP configuration issue
         const firstError = results[0]?.error || "Error desconocido";
-        let userFriendlyError = "Error de conexión SMTP. ";
+        let userFriendlyError = "Error de conexiÃ³n SMTP. ";
         
         if (firstError.includes('ETIMEDOUT') || firstError.includes('Greeting never received')) {
-          userFriendlyError += `No se pudo conectar al servidor de correo (${emailConfig.smtpHost}:${emailConfig.smtpPort}). Verifica que el host, puerto y tipo de encriptación sean correctos en la configuración de Email.`;
+          userFriendlyError += `No se pudo conectar al servidor de correo (${emailConfig.smtpHost}:${emailConfig.smtpPort}). Verifica que el host, puerto y tipo de encriptaciÃ³n sean correctos en la configuraciÃ³n de Email.`;
         } else if (firstError.includes('AUTH') || firstError.includes('authentication')) {
-          userFriendlyError += "Las credenciales de autenticación son incorrectas. Verifica el usuario y contraseña SMTP.";
+          userFriendlyError += "Las credenciales de autenticaciÃ³n son incorrectas. Verifica el usuario y contraseÃ±a SMTP.";
         } else if (firstError.includes('certificate') || firstError.includes('SSL')) {
-          userFriendlyError += "Error de certificado SSL/TLS. Intenta cambiar el tipo de encriptación en la configuración.";
+          userFriendlyError += "Error de certificado SSL/TLS. Intenta cambiar el tipo de encriptaciÃ³n en la configuraciÃ³n.";
         } else {
           userFriendlyError += firstError;
         }
@@ -7469,7 +7469,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!emailConfig) {
         return res.status(400).json({ 
           success: false, 
-          error: "No hay configuración de correo SMTP. Configura el servidor de correo primero." 
+          error: "No hay configuraciÃ³n de correo SMTP. Configura el servidor de correo primero." 
         });
       }
       
@@ -7482,10 +7482,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Template names and sample data
       const templateNames: Record<string, string> = {
         welcome: "Bienvenida",
-        renewal: "Renovación",
-        cancellation: "Cancelación",
-        notification: "Notificación de Vencimiento",
-        admin_notification: "Notificación de Nuevo Registro"
+        renewal: "RenovaciÃ³n",
+        cancellation: "CancelaciÃ³n",
+        notification: "NotificaciÃ³n de Vencimiento",
+        admin_notification: "NotificaciÃ³n de Nuevo Registro"
       };
       
       // Sample data for testing
@@ -7502,12 +7502,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fecha_vencimiento: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString('es-MX'),
         fecha_cancelacion: new Date().toLocaleDateString('es-MX'),
         dias_restantes: "30",
-        nombre_representante: "Juan Pérez García",
+        nombre_representante: "Juan PÃ©rez GarcÃ­a",
         email_representante: "juan.perez@empresademo.com"
       };
       
       // Use custom template or generate a default one
-      let subject = `🧪 Prueba de Plantilla: ${templateNames[type] || type}`;
+      let subject = `ðŸ§ª Prueba de Plantilla: ${templateNames[type] || type}`;
       let htmlContent = "";
       
       if (template) {
@@ -7524,19 +7524,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         htmlContent = `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <h1 style="color: #2563eb; margin: 0; font-size: 24px;">🧪 Correo de Prueba</h1>
+              <h1 style="color: #2563eb; margin: 0; font-size: 24px;">ðŸ§ª Correo de Prueba</h1>
               <p style="color: #6b7280; margin: 10px 0 0 0;">Plantilla: ${templateNames[type] || type}</p>
             </div>
             
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
               <p style="color: #92400e; margin: 0;">
-                <strong>⚠️ Plantilla no configurada</strong><br>
-                Esta plantilla aún no ha sido personalizada. Configure el contenido en la sección "Plantillas de Correo".
+                <strong>âš ï¸ Plantilla no configurada</strong><br>
+                Esta plantilla aÃºn no ha sido personalizada. Configure el contenido en la secciÃ³n "Plantillas de Correo".
               </p>
             </div>
             
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
-              <h3 style="color: #1e40af; margin: 0 0 15px 0;">📋 Datos de Ejemplo</h3>
+              <h3 style="color: #1e40af; margin: 0 0 15px 0;">ðŸ“‹ Datos de Ejemplo</h3>
               <table style="width: 100%; border-collapse: collapse;">
                 <tr><td style="padding: 6px 0; color: #374151;"><strong>Usuario:</strong></td><td style="color: #1f2937;">${sampleData.nombre_usuario}</td></tr>
                 <tr><td style="padding: 6px 0; color: #374151;"><strong>Empresa:</strong></td><td style="color: #1f2937;">${sampleData.nombre_empresa}</td></tr>
@@ -7549,7 +7549,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             <div style="border-top: 2px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
               <p style="color: #6b7280; font-size: 14px; margin: 0;">
                 <strong>Directorio de Proveedores de Equipamiento Urbano</strong><br>
-                ANPR México - Sistema de Gestión Empresarial
+                ANPR MÃ©xico - Sistema de GestiÃ³n Empresarial
               </p>
             </div>
           </div>
@@ -7581,7 +7581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await transporter.sendMail({
         from: `"${emailConfig.fromName}" <${emailConfig.fromEmail}>`,
         to: destinationEmail,
-        subject: `🧪 [PRUEBA] ${subject}`,
+        subject: `ðŸ§ª [PRUEBA] ${subject}`,
         html: htmlContent,
       });
       
@@ -7643,7 +7643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Llave pública de Stripe (segura para el frontend): usa la del panel si está
+  // Llave pÃºblica de Stripe (segura para el frontend): usa la del panel si estÃ¡
   // activa, con respaldo a la de los Secretos del proyecto.
   app.get("/api/stripe-public-key", async (req, res) => {
     try {
@@ -7683,7 +7683,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = configSchema.parse(req.body);
 
-      // Si el campo llega vacío, no sobrescribir el webhook secret guardado
+      // Si el campo llega vacÃ­o, no sobrescribir el webhook secret guardado
       if (!validatedData.webhookSecret) {
         delete validatedData.webhookSecret;
       }
@@ -7697,7 +7697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         config = await storage.createStripeConfiguration(validatedData);
       }
 
-      // Los cobros usan esta configuración: refrescar la instancia de Stripe
+      // Los cobros usan esta configuraciÃ³n: refrescar la instancia de Stripe
       invalidateStripeCache();
       
       // Nunca enviar secretos de vuelta al frontend
@@ -7731,7 +7731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         res.json({
           success: true,
-          message: "Conexión exitosa con Stripe",
+          message: "ConexiÃ³n exitosa con Stripe",
           details: {
             accountId: account.id,
             businessName: account.business_profile?.name || "N/A",
@@ -7877,11 +7877,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           footerBackgroundColor: "#1e3a8a",
           footerTextColor: "#ffffff",
           showFooterLogo: true,
-          companyName: "ANPR México",
+          companyName: "ANPR MÃ©xico",
           primaryColor: "#3B82F6",
           secondaryColor: "#10B981",
           accentColor: "#F59E0B",
-          copyrightText: "© 2025 Todos los derechos reservados",
+          copyrightText: "Â© 2025 Todos los derechos reservados",
           menuItems: [
             { id: "1", label: "Inicio", href: "/", icon: "Home", isVisible: true, order: 1 },
             { id: "2", label: "Directorio", href: "/directorio", icon: "Building2", isVisible: true, order: 2 },
@@ -7969,20 +7969,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para consultar transacciones específicas de MemberPress
+  // Endpoint para consultar transacciones especÃ­ficas de MemberPress
   app.get("/api/memberpress-transaction/:transactionId", async (req, res) => {
     try {
       const { transactionId } = req.params;
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Intentar obtener la transacción desde diferentes endpoints de MemberPress
+      // Intentar obtener la transacciÃ³n desde diferentes endpoints de MemberPress
       const endpoints = [
         `/wp-json/mp/v1/transactions/${transactionId}`,
         `/wp-json/wp/v2/mp_transaction/${transactionId}`,
@@ -8014,7 +8014,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!transactionData) {
         return res.status(404).json({ 
-          error: `Transacción ${transactionId} no encontrada`,
+          error: `TransacciÃ³n ${transactionId} no encontrada`,
           attempted_endpoints: endpoints
         });
       }
@@ -8037,7 +8037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
@@ -8087,20 +8087,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para obtener información completa de membresías incluyendo fechas de vencimiento
+  // Endpoint para obtener informaciÃ³n completa de membresÃ­as incluyendo fechas de vencimiento
   app.get("/api/memberpress-memberships/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Buscar membresías del usuario en diferentes endpoints de MemberPress
+      // Buscar membresÃ­as del usuario en diferentes endpoints de MemberPress
       const membershipEndpoints = [
         `/wp-json/mp/v1/members/${userId}`,
         `/wp-json/mp/v1/subscriptions?user=${userId}`,
@@ -8112,7 +8112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let subscriptions = [];
       let memberData = null;
 
-      // Intentar obtener datos de membresía desde diferentes endpoints
+      // Intentar obtener datos de membresÃ­a desde diferentes endpoints
       for (const endpoint of membershipEndpoints) {
         try {
           const response = await fetch(`${baseUrl}${endpoint}`, {
@@ -8140,7 +8140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // También obtener información de productos/niveles de membresía
+      // TambiÃ©n obtener informaciÃ³n de productos/niveles de membresÃ­a
       let membershipProducts = [];
       try {
         const productsResponse = await fetch(`${baseUrl}/wp-json/mp/v1/memberships`, {
@@ -8157,7 +8157,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continuar sin productos si falla
       }
 
-      // Obtener información del usuario con metadatos de MemberPress
+      // Obtener informaciÃ³n del usuario con metadatos de MemberPress
       let userWithMeta = null;
       try {
         const userResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users/${userId}?context=edit`, {
@@ -8174,7 +8174,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Continuar sin metadatos si falla
       }
 
-      // Procesar y estructurar la información de membresía
+      // Procesar y estructurar la informaciÃ³n de membresÃ­a
       const processedMembership = {
         user_id: userId,
         user_info: userWithMeta ? {
@@ -8183,7 +8183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: userWithMeta.username
         } : null,
         
-        // Información de membresía activa
+        // InformaciÃ³n de membresÃ­a activa
         active_memberships: [],
         expired_memberships: [],
         subscriptions: subscriptions,
@@ -8196,14 +8196,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return acc;
           }, {}) : {},
           
-        // Información de productos disponibles
+        // InformaciÃ³n de productos disponibles
         available_membership_products: membershipProducts,
         
         // Respuestas de endpoints consultados
         api_responses: membershipData
       };
 
-      // Procesar fechas de vencimiento si están disponibles en metadatos
+      // Procesar fechas de vencimiento si estÃ¡n disponibles en metadatos
       if (userWithMeta?.meta) {
         const meta = userWithMeta.meta;
         
@@ -8224,7 +8224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
         
-        // Buscar IDs de membresías activas y mapear con productos
+        // Buscar IDs de membresÃ­as activas y mapear con productos
         if (meta['_mepr_active_memberships']) {
           const activeMembershipIds = Array.isArray(meta['_mepr_active_memberships']) 
             ? meta['_mepr_active_memberships'] 
@@ -8247,13 +8247,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para listar todas las membresías/productos disponibles en MemberPress
+  // Endpoint para listar todas las membresÃ­as/productos disponibles en MemberPress
   app.get("/api/memberpress-products", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
@@ -8261,7 +8261,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log('[MemberPress Products] Consultando productos disponibles...');
 
-      // Endpoints para obtener productos de membresía
+      // Endpoints para obtener productos de membresÃ­a
       const productEndpoints = [
         '/wp-json/mp/v1/memberships',
         '/wp-json/mp/v1/products',
@@ -8287,7 +8287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (response.ok) {
             const data = await response.json();
-            console.log(`[MemberPress Products] Éxito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
+            console.log(`[MemberPress Products] Ã‰xito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
             
             allProducts[endpoint] = {
               status: response.status,
@@ -8295,7 +8295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               count: Array.isArray(data) ? data.length : 1
             };
 
-            // Consolidar productos únicos
+            // Consolidar productos Ãºnicos
             if (Array.isArray(data)) {
               consolidatedProducts = [...consolidatedProducts, ...data];
             } else if (data && typeof data === 'object') {
@@ -8309,14 +8309,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
         } catch (error: any) {
-          console.log(`[MemberPress Products] Excepción en ${endpoint}:`, error.message);
+          console.log(`[MemberPress Products] ExcepciÃ³n en ${endpoint}:`, error.message);
           allProducts[endpoint] = {
             error: error.message
           };
         }
       }
 
-      // También consultar transacciones para ver qué productos se han vendido
+      // TambiÃ©n consultar transacciones para ver quÃ© productos se han vendido
       let transactionProducts = [];
       try {
         console.log('[MemberPress Products] Consultando transacciones...');
@@ -8331,7 +8331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const transactions = await transResponse.json();
           console.log(`[MemberPress Products] Encontradas ${transactions.length} transacciones`);
           
-          // Extraer IDs de productos únicos de las transacciones
+          // Extraer IDs de productos Ãºnicos de las transacciones
           const productIds = [...new Set(transactions.map((t: any) => t.product_id || t.membership_id).filter(Boolean))];
           transactionProducts = productIds.map((id: any) => ({ 
             id, 
@@ -8349,13 +8349,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (existingIndex === -1) {
           acc.push(product);
         } else {
-          // Mergear información si el producto ya existe
+          // Mergear informaciÃ³n si el producto ya existe
           acc[existingIndex] = { ...acc[existingIndex], ...product };
         }
         return acc;
       }, []);
 
-      console.log(`[MemberPress Products] Total productos únicos encontrados: ${uniqueProducts.length}`);
+      console.log(`[MemberPress Products] Total productos Ãºnicos encontrados: ${uniqueProducts.length}`);
 
       const result = {
         summary: {
@@ -8378,22 +8378,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para acceder directamente a la API de MemberPress para membresías específicas de usuario
+  // Endpoint para acceder directamente a la API de MemberPress para membresÃ­as especÃ­ficas de usuario
   app.get("/api/memberpress-direct/:userId", async (req, res) => {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      console.log(`[MemberPress Direct] Consultando membresías directas para usuario ${userId}`);
+      console.log(`[MemberPress Direct] Consultando membresÃ­as directas para usuario ${userId}`);
 
-      // Endpoints específicos de MemberPress para membresías de usuario
+      // Endpoints especÃ­ficos de MemberPress para membresÃ­as de usuario
       const membershipEndpoints = [
         `/wp-json/mp/v1/members/${userId}`,
         `/wp-json/mp/v1/subscriptions?member=${userId}`,
@@ -8404,7 +8404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const results = {};
       
-      // Consultar cada endpoint específico de MemberPress
+      // Consultar cada endpoint especÃ­fico de MemberPress
       for (const endpoint of membershipEndpoints) {
         try {
           console.log(`[MemberPress Direct] Consultando: ${baseUrl}${endpoint}`);
@@ -8418,7 +8418,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (response.ok) {
             const data = await response.json();
-            console.log(`[MemberPress Direct] Éxito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
+            console.log(`[MemberPress Direct] Ã‰xito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
             
             results[endpoint] = {
               status: response.status,
@@ -8434,14 +8434,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
         } catch (error: any) {
-          console.log(`[MemberPress Direct] Excepción en ${endpoint}:`, error.message);
+          console.log(`[MemberPress Direct] ExcepciÃ³n en ${endpoint}:`, error.message);
           results[endpoint] = {
             error: error.message
           };
         }
       }
 
-      // También intentar obtener información de membresía a través de metadatos del usuario
+      // TambiÃ©n intentar obtener informaciÃ³n de membresÃ­a a travÃ©s de metadatos del usuario
       let userMetadata = null;
       try {
         console.log(`[MemberPress Direct] Obteniendo metadatos del usuario ${userId}`);
@@ -8474,12 +8474,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('[MemberPress Direct] Error obteniendo metadatos del usuario:', error.message);
       }
 
-      // Consolidar información de membresía encontrada
+      // Consolidar informaciÃ³n de membresÃ­a encontrada
       const consolidatedInfo = {
         user_id: userId,
         user_metadata: userMetadata,
         
-        // Información de membresía directa de MemberPress
+        // InformaciÃ³n de membresÃ­a directa de MemberPress
         member_info: results[`/wp-json/mp/v1/members/${userId}`]?.data || null,
         subscriptions: results[`/wp-json/mp/v1/subscriptions?member=${userId}`]?.data || [],
         transactions: results[`/wp-json/mp/v1/transactions?member=${userId}`]?.data || [],
@@ -8487,7 +8487,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Respuestas completas de todos los endpoints
         raw_responses: results,
         
-        // Análisis de datos encontrados
+        // AnÃ¡lisis de datos encontrados
         analysis: {
           has_member_record: !!results[`/wp-json/mp/v1/members/${userId}`]?.data,
           subscription_count: Array.isArray(results[`/wp-json/mp/v1/subscriptions?member=${userId}`]?.data) 
@@ -8499,7 +8499,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       };
 
-      // Extraer fechas de vencimiento de múltiples fuentes
+      // Extraer fechas de vencimiento de mÃºltiples fuentes
       if (consolidatedInfo.member_info) {
         const memberData = consolidatedInfo.member_info;
         if (memberData.expires_at) {
@@ -8523,7 +8523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Analizar transacciones para extraer información de productos y fechas
+      // Analizar transacciones para extraer informaciÃ³n de productos y fechas
       if (consolidatedInfo.transactions && consolidatedInfo.transactions.length > 0) {
         consolidatedInfo.analysis.transaction_analysis = consolidatedInfo.transactions.map((transaction: any) => {
           return {
@@ -8534,17 +8534,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             expires_at: transaction.expires_at,
             product_id: transaction.product_id,
             membership_id: transaction.membership_id,
-            // Extraer información del producto si está disponible
+            // Extraer informaciÃ³n del producto si estÃ¡ disponible
             product_title: transaction.product?.post_title || transaction.title || null,
             product_name: transaction.product?.post_name || transaction.name || null,
             product_content: transaction.product?.post_content || null,
-            // Información de fechas importantes
+            // InformaciÃ³n de fechas importantes
             gateway: transaction.gateway,
             subscription_id: transaction.subscription_id
           };
         });
 
-        // Encontrar la transacción más reciente exitosa para fecha de vencimiento
+        // Encontrar la transacciÃ³n mÃ¡s reciente exitosa para fecha de vencimiento
         const successfulTransactions = consolidatedInfo.transactions
           .filter((t: any) => t.status === 'complete' || t.status === 'confirmed')
           .sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -8559,7 +8559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
 
-        // Buscar todas las transacciones con fechas de vencimiento válidas
+        // Buscar todas las transacciones con fechas de vencimiento vÃ¡lidas
         const transactionsWithExpiration = consolidatedInfo.transactions
           .filter((t: any) => t.expires_at && (t.status === 'complete' || t.status === 'confirmed'))
           .sort((a: any, b: any) => new Date(b.expires_at).getTime() - new Date(a.expires_at).getTime());
@@ -8584,7 +8584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Buscar fechas en metadatos generales que podrían contener información de vencimiento
+      // Buscar fechas en metadatos generales que podrÃ­an contener informaciÃ³n de vencimiento
       if (userMetadata?.all_meta) {
         const allMeta = userMetadata.all_meta;
         const additionalExpirationFields = [
@@ -8599,7 +8599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      console.log(`[MemberPress Direct] Análisis completo para usuario ${userId}:`, consolidatedInfo.analysis);
+      console.log(`[MemberPress Direct] AnÃ¡lisis completo para usuario ${userId}:`, consolidatedInfo.analysis);
 
       res.json(consolidatedInfo);
 
@@ -8609,30 +8609,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint específico para buscar membresías por términos específicos
+  // Endpoint especÃ­fico para buscar membresÃ­as por tÃ©rminos especÃ­ficos
   app.get("/api/memberpress-search-memberships", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      console.log(`[MemberPress Search] Buscando membresías específicas...`);
+      console.log(`[MemberPress Search] Buscando membresÃ­as especÃ­ficas...`);
 
-      // Búsquedas específicas para encontrar las membresías que necesitamos
+      // BÃºsquedas especÃ­ficas para encontrar las membresÃ­as que necesitamos
       const searchQueries = [
         { term: "profesional", endpoint: "/wp-json/wp/v2/posts?search=profesional&per_page=100" },
         { term: "empresarial", endpoint: "/wp-json/wp/v2/posts?search=empresarial&per_page=100" },
         { term: "institucional", endpoint: "/wp-json/wp/v2/posts?search=institucional&per_page=100" },
-        { term: "membresía", endpoint: "/wp-json/wp/v2/posts?search=membresía&per_page=100" },
+        { term: "membresÃ­a", endpoint: "/wp-json/wp/v2/posts?search=membresÃ­a&per_page=100" },
         { term: "membership", endpoint: "/wp-json/wp/v2/posts?search=membership&per_page=100" },
       ];
 
-      // También buscar en tipos de post específicos
+      // TambiÃ©n buscar en tipos de post especÃ­ficos
       const postTypeEndpoints = [
         "/wp-json/wp/v2/posts?post_type=memberpressproduct&per_page=100",
         "/wp-json/wp/v2/posts?post_type=product&per_page=100", 
@@ -8643,7 +8643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const searchResults = {};
       const foundMemberships = [];
 
-      // Buscar por términos específicos
+      // Buscar por tÃ©rminos especÃ­ficos
       for (const query of searchQueries) {
         try {
           console.log(`[MemberPress Search] Buscando "${query.term}": ${baseUrl}${query.endpoint}`);
@@ -8657,7 +8657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (response.ok) {
             const data = await response.json();
-            console.log(`[MemberPress Search] "${query.term}" encontró ${Array.isArray(data) ? data.length : 1} resultados`);
+            console.log(`[MemberPress Search] "${query.term}" encontrÃ³ ${Array.isArray(data) ? data.length : 1} resultados`);
             
             searchResults[query.term] = {
               endpoint: query.endpoint,
@@ -8666,14 +8666,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               count: Array.isArray(data) ? data.length : 1
             };
 
-            // Analizar resultados para membresías específicas
+            // Analizar resultados para membresÃ­as especÃ­ficas
             const results = Array.isArray(data) ? data : [data];
             for (const item of results) {
               const title = item.title?.rendered || item.title || item.name || '';
               const content = item.content?.rendered || item.content || '';
               const excerpt = item.excerpt?.rendered || item.excerpt || '';
               
-              // Buscar en título y contenido
+              // Buscar en tÃ­tulo y contenido
               const searchText = `${title} ${content} ${excerpt}`.toLowerCase();
               
               if (searchText.includes('profesional') || 
@@ -8705,7 +8705,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
           }
         } catch (error: any) {
-          console.log(`[MemberPress Search] Excepción en "${query.term}":`, error.message);
+          console.log(`[MemberPress Search] ExcepciÃ³n en "${query.term}":`, error.message);
           searchResults[query.term] = {
             endpoint: query.endpoint,
             error: error.message
@@ -8713,7 +8713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Buscar en endpoints de tipos de post específicos
+      // Buscar en endpoints de tipos de post especÃ­ficos
       for (const endpoint of postTypeEndpoints) {
         try {
           console.log(`[MemberPress Search] Consultando tipo de post: ${baseUrl}${endpoint}`);
@@ -8727,7 +8727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (response.ok) {
             const data = await response.json();
-            console.log(`[MemberPress Search] Tipo de post encontró ${Array.isArray(data) ? data.length : 1} resultados`);
+            console.log(`[MemberPress Search] Tipo de post encontrÃ³ ${Array.isArray(data) ? data.length : 1} resultados`);
             
             const key = endpoint.split('/').pop() || 'unknown';
             searchResults[key] = {
@@ -8737,7 +8737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               count: Array.isArray(data) ? data.length : 1
             };
 
-            // Analizar estos resultados también
+            // Analizar estos resultados tambiÃ©n
             const results = Array.isArray(data) ? data : [data];
             for (const item of results) {
               const title = item.title?.rendered || item.title || item.name || '';
@@ -8804,7 +8804,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
@@ -8812,7 +8812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`[PeepSo Profile] Obteniendo perfil de PeepSo para usuario ${userId}`);
 
-      // Obtener información básica del usuario
+      // Obtener informaciÃ³n bÃ¡sica del usuario
       const userResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users/${userId}?context=edit`, {
         headers: {
           'Authorization': `Basic ${authString}`,
@@ -8825,9 +8825,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const userData = await userResponse.json();
-      console.log(`[PeepSo Profile] Usuario básico obtenido: ${userData.username}`);
+      console.log(`[PeepSo Profile] Usuario bÃ¡sico obtenido: ${userData.username}`);
 
-      // Intentar obtener datos de PeepSo a través de diferentes endpoints posibles
+      // Intentar obtener datos de PeepSo a travÃ©s de diferentes endpoints posibles
       const peepsoEndpoints = [
         // Endpoint directo de PeepSo (si existe)
         `${baseUrl}/wp-json/peepso/v1/users/${userId}`,
@@ -8868,7 +8868,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key.includes('peepso') || key.includes('ps_') || key.startsWith('_peepso')
       );
 
-      // Campos comunes de perfil social que PeepSo podría usar
+      // Campos comunes de perfil social que PeepSo podrÃ­a usar
       const socialFields = Object.keys(userMeta).filter(key => 
         key.includes('facebook') || key.includes('twitter') || key.includes('instagram') || 
         key.includes('linkedin') || key.includes('social') || key.includes('profile')
@@ -8880,7 +8880,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         display_name: userData.name,
         email: userData.email,
         avatar_url: userData.avatar_urls ? userData.avatar_urls['96'] || userData.avatar_urls['48'] : null,
-        profile_url: `${baseUrl}/profile/${userData.username}`, // URL típica de perfil en PeepSo
+        profile_url: `${baseUrl}/profile/${userData.username}`, // URL tÃ­pica de perfil en PeepSo
         peepso_api_data: peepsoData,
         successful_endpoint: successfulEndpoint,
         // Metadatos de PeepSo encontrados
@@ -8893,11 +8893,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           acc[field] = userMeta[field];
           return acc;
         }, {} as any),
-        // Información adicional que podría ser útil
+        // InformaciÃ³n adicional que podrÃ­a ser Ãºtil
         bio: userMeta['description'] || userMeta['bio'] || userMeta['user_description'] || null,
         website: userData.link || userMeta['website'] || null,
         location: userMeta['location'] || userMeta['user_location'] || null,
-        // URLs de redes sociales extraídos de metadatos
+        // URLs de redes sociales extraÃ­dos de metadatos
         social_links: {
           facebook: userMeta['facebook'] || userMeta['_facebook'] || userMeta['peepso_facebook'] || null,
           twitter: userMeta['twitter'] || userMeta['_twitter'] || userMeta['peepso_twitter'] || null,
@@ -8953,7 +8953,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({
           success: true,
           profile: null,
-          message: "El representante no está asociado con WordPress/MemberPress"
+          message: "El representante no estÃ¡ asociado con WordPress/MemberPress"
         });
       }
 
@@ -8969,19 +8969,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const wordpressUserId = wordpressIdMatch[1];
-      console.log(`[Company PeepSo Profile] ID de WordPress extraído: ${wordpressUserId}`);
+      console.log(`[Company PeepSo Profile] ID de WordPress extraÃ­do: ${wordpressUserId}`);
 
       // Intentar obtener el perfil de PeepSo usando nuestro endpoint interno
       const settings = await storage.getIntegrationSettings();
       
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
-        return res.status(400).json({ error: "Configuración de WordPress incompleta" });
+        return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
 
       const authString = Buffer.from(`${settings.apiKey}:${settings.apiSecret}`).toString('base64');
       const baseUrl = settings.wordpressUrl.replace(/\/$/, '');
 
-      // Obtener información básica del usuario de WordPress
+      // Obtener informaciÃ³n bÃ¡sica del usuario de WordPress
       const userResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users/${wordpressUserId}?context=edit`, {
         headers: {
           'Authorization': `Basic ${authString}`,
@@ -9046,7 +9046,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       const representativeProfile = {
-        // Información básica del representante del sistema local
+        // InformaciÃ³n bÃ¡sica del representante del sistema local
         company_id: companyId,
         company_name: company.nombreEmpresa,
         representative: {
@@ -9055,7 +9055,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           local_display_name: company.user.displayName,
           local_role: company.user.role,
         },
-        // Información de WordPress/PeepSo
+        // InformaciÃ³n de WordPress/PeepSo
         wordpress_profile: {
           user_id: userData.id,
           username: userData.username,
@@ -9067,9 +9067,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           bio: userMeta['description'] || userMeta['bio'] || userMeta['user_description'] || null,
           location: userMeta['location'] || userMeta['user_location'] || null,
         },
-        // Datos específicos de PeepSo (si están disponibles)
+        // Datos especÃ­ficos de PeepSo (si estÃ¡n disponibles)
         peepso_data: peepsoData,
-        // Enlaces de redes sociales extraídos de metadatos
+        // Enlaces de redes sociales extraÃ­dos de metadatos
         social_links: {
           facebook: userMeta['facebook'] || userMeta['_facebook'] || userMeta['peepso_facebook'] || null,
           twitter: userMeta['twitter'] || userMeta['_twitter'] || userMeta['peepso_twitter'] || null,
@@ -9088,7 +9088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }, {} as any),
       };
 
-      // Filtrar enlaces sociales vacíos
+      // Filtrar enlaces sociales vacÃ­os
       const filteredSocialLinks = Object.fromEntries(
         Object.entries(representativeProfile.social_links).filter(([key, value]) => value)
       );
@@ -9132,7 +9132,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({
           success: true,
           profiles: {},
-          message: "Configuración de WordPress incompleta"
+          message: "ConfiguraciÃ³n de WordPress incompleta"
         });
       }
 
@@ -9165,7 +9165,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const matchingUser = users.find((user: any) => user.email === email);
 
           if (!matchingUser) {
-            console.log(`[Email PeepSo Profiles] No se encontró usuario de WordPress con email: ${email}`);
+            console.log(`[Email PeepSo Profiles] No se encontrÃ³ usuario de WordPress con email: ${email}`);
             continue;
           }
 
@@ -9207,13 +9207,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para geocodificación usando OpenStreetMap Nominatim API (gratuito, sin API key)
+  // Endpoint para geocodificaciÃ³n usando OpenStreetMap Nominatim API (gratuito, sin API key)
   app.post("/api/geocode", async (req, res) => {
     try {
       const { address } = req.body;
       
       if (!address || typeof address !== 'string' || address.trim().length < 5) {
-        return res.status(400).json({ error: 'Dirección inválida' });
+        return res.status(400).json({ error: 'DirecciÃ³n invÃ¡lida' });
       }
 
       // Usar OpenStreetMap Nominatim API (alternativa gratuita)
@@ -9246,7 +9246,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           address_components: [] as any[]
         };
 
-        // Agregar componentes de dirección si están disponibles
+        // Agregar componentes de direcciÃ³n si estÃ¡n disponibles
         if (result.address) {
           const addr = result.address;
           if (addr.country) {
@@ -9286,7 +9286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
     } catch (error: any) {
-      console.error('Error en geocodificación:', error);
+      console.error('Error en geocodificaciÃ³n:', error);
       res.status(500).json({ 
         status: 'ERROR',
         error_message: error.message || 'Error interno del servidor' 
@@ -9294,18 +9294,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Endpoint para PROGRAMAR un cambio de plan de membresía.
-  // El plan actual (nombre, beneficios, límites y fechas) permanece intacto
-  // hasta la próxima facturación. Solo se guarda UN cambio pendiente: cada nueva
-  // solicitud sobrescribe la anterior (el último elegido gana). El cambio se
-  // aplica realmente en la renovación tras confirmarse el pago (ver webhook).
+  // Endpoint para PROGRAMAR un cambio de plan de membresÃ­a.
+  // El plan actual (nombre, beneficios, lÃ­mites y fechas) permanece intacto
+  // hasta la prÃ³xima facturaciÃ³n. Solo se guarda UN cambio pendiente: cada nueva
+  // solicitud sobrescribe la anterior (el Ãºltimo elegido gana). El cambio se
+  // aplica realmente en la renovaciÃ³n tras confirmarse el pago (ver webhook).
   app.post("/api/companies/:id/change-plan", async (req: any, res) => {
     try {
       const companyId = parseInt(req.params.id);
       const { targetPlanId, periodicidad } = req.body;
 
       if (!companyId || !targetPlanId || !periodicidad) {
-        return res.status(400).json({ error: "Faltan parámetros requeridos" });
+        return res.status(400).json({ error: "Faltan parÃ¡metros requeridos" });
       }
 
       if (!["mensual", "anual"].includes(periodicidad)) {
@@ -9318,8 +9318,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
-      // Autorización: solo admin o el dueño/representante REAL de la empresa,
-      // confirmado contra la base de datos (no se confía en claims del cliente).
+      // AutorizaciÃ³n: solo admin o el dueÃ±o/representante REAL de la empresa,
+      // confirmado contra la base de datos (no se confÃ­a en claims del cliente).
       if (!(await verifyCompanyAccess(req, res, company))) {
         return;
       }
@@ -9360,7 +9360,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // Obtener el precio según la periodicidad
+      // Obtener el precio segÃºn la periodicidad
       const opcionesPrecios = Array.isArray(targetPlan.opcionesPrecios)
         ? targetPlan.opcionesPrecios
         : [];
@@ -9371,16 +9371,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       if (!precioOption) {
         return res.status(400).json({
-          error: `No se encontró precio para periodicidad ${periodicidad}`,
+          error: `No se encontrÃ³ precio para periodicidad ${periodicidad}`,
         });
       }
 
-      // La fecha efectiva del cambio es el fin del período actual (vencimiento).
+      // La fecha efectiva del cambio es el fin del perÃ­odo actual (vencimiento).
       const effectiveDate = company.fechaFinMembresia || null;
 
-      // Atomicidad con Stripe: si hay una suscripción activa, programar el cambio
-      // para el próximo período. Si ya existía un schedule pendiente, se ACTUALIZA
-      // en sitio (sin release+create) para no dejar el schedule vigente huérfano si
+      // Atomicidad con Stripe: si hay una suscripciÃ³n activa, programar el cambio
+      // para el prÃ³ximo perÃ­odo. Si ya existÃ­a un schedule pendiente, se ACTUALIZA
+      // en sitio (sin release+create) para no dejar el schedule vigente huÃ©rfano si
       // algo falla. Si Stripe falla, NO persistimos el cambio local (se responde 502).
       let newScheduleId: string | null = company.pendingStripeScheduleId || null;
       if (user.stripeSubscriptionId) {
@@ -9392,18 +9392,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Periodos actuales (compatibles con basil: viven en items[0]).
             const subPeriodStart = getSubscriptionPeriodStart(subscription);
             const subPeriodEnd = getSubscriptionPeriodEnd(subscription);
-            // La fase que continúa el plan ACTUAL hasta el final del período.
+            // La fase que continÃºa el plan ACTUAL hasta el final del perÃ­odo.
             const currentPhaseItems = subscription.items.data.map(item => ({
               price: item.price.id,
               quantity: item.quantity,
             }));
-            // La nueva fase con el plan objetivo, a partir del próximo período.
+            // La nueva fase con el plan objetivo, a partir del prÃ³ximo perÃ­odo.
             const newPhase = {
               start_date: subPeriodEnd as number,
               items: [
                 {
                   price_data: {
-                    // Usar la moneda de la suscripción existente para evitar
+                    // Usar la moneda de la suscripciÃ³n existente para evitar
                     // errores de "monedas mezcladas" en un mismo schedule.
                     currency: subscription.currency || (await getConfiguredCurrency()),
                     product_data: {
@@ -9420,8 +9420,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             };
 
             if (company.pendingStripeScheduleId) {
-              // Reemplazo ATÓMICO: actualizar el schedule existente en lugar de
-              // release + create. Así, si algo falla, el schedule vigente sigue
+              // Reemplazo ATÃ“MICO: actualizar el schedule existente en lugar de
+              // release + create. AsÃ­, si algo falla, el schedule vigente sigue
               // intacto (no queda un pendiente local sin schedule en Stripe).
               const existing = await stripe.subscriptionSchedules.retrieve(
                 company.pendingStripeScheduleId
@@ -9442,9 +9442,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 }
               );
               newScheduleId = updatedSchedule.id;
-              console.log("Subscription Schedule actualizado (reemplazo atómico):", newScheduleId);
+              console.log("Subscription Schedule actualizado (reemplazo atÃ³mico):", newScheduleId);
             } else {
-              // No hay schedule previo: crear uno nuevo desde la suscripción.
+              // No hay schedule previo: crear uno nuevo desde la suscripciÃ³n.
               const subscriptionSchedule = await stripe.subscriptionSchedules.create({
                 from_subscription: user.stripeSubscriptionId,
                 phases: [
@@ -9460,17 +9460,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               console.log("Subscription Schedule creado:", newScheduleId);
             }
           } else {
-            // La suscripción existe pero NO está activa (trialing, past_due,
+            // La suscripciÃ³n existe pero NO estÃ¡ activa (trialing, past_due,
             // unpaid, canceled, etc.). No se puede programar el cambio en Stripe,
-            // así que NO persistimos un pendiente que jamás se aplicaría (el webhook
+            // asÃ­ que NO persistimos un pendiente que jamÃ¡s se aplicarÃ­a (el webhook
             // exige schedule y la tarea diaria omite empresas con Stripe). Se rechaza
-            // explícitamente para evitar cambios "atorados" indefinidamente.
+            // explÃ­citamente para evitar cambios "atorados" indefinidamente.
             console.warn(
-              `Cambio de plan rechazado para empresa ${companyId}: suscripción Stripe en estado "${subscription.status}" (no activa).`
+              `Cambio de plan rechazado para empresa ${companyId}: suscripciÃ³n Stripe en estado "${subscription.status}" (no activa).`
             );
             return res.status(409).json({
               error:
-                "Tu suscripción no está activa en este momento (puede haber un pago pendiente o en revisión). Regulariza tu suscripción antes de programar un cambio de plan.",
+                "Tu suscripciÃ³n no estÃ¡ activa en este momento (puede haber un pago pendiente o en revisiÃ³n). Regulariza tu suscripciÃ³n antes de programar un cambio de plan.",
             });
           }
         } catch (stripeError: any) {
@@ -9481,7 +9481,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Persistir el ÚNICO cambio pendiente (sobrescribe el anterior). El plan
+      // Persistir el ÃšNICO cambio pendiente (sobrescribe el anterior). El plan
       // actual NO se toca; solo se guardan los campos del cambio programado.
       const updatedCompany = await storage.updateCompany(companyId, {
         pendingMembershipTypeId: targetPlanId,
@@ -9489,7 +9489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         pendingMembershipPrice: String(precioOption.costo),
         pendingChangeEffectiveDate: effectiveDate,
         pendingStripeScheduleId: newScheduleId,
-        // Estado explícito: cambio en espera de la próxima facturación; pago aún
+        // Estado explÃ­cito: cambio en espera de la prÃ³xima facturaciÃ³n; pago aÃºn
         // no confirmado. El plan ACTIVO no se toca hasta el webhook de pago exitoso.
         pendingChangeStatus: "pendiente",
         pendingPaymentStatus: "pendiente",
@@ -9513,9 +9513,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cancelar el cambio de plan PROGRAMADO: borra los campos del próximo plan y
-  // libera el schedule de Stripe para que la suscripción siga renovando el plan
-  // actual. Misma autorización y atomicidad que programar.
+  // Cancelar el cambio de plan PROGRAMADO: borra los campos del prÃ³ximo plan y
+  // libera el schedule de Stripe para que la suscripciÃ³n siga renovando el plan
+  // actual. Misma autorizaciÃ³n y atomicidad que programar.
   app.post("/api/companies/:id/cancel-scheduled-change", async (req: any, res) => {
     try {
       const companyId = parseInt(req.params.id);
@@ -9524,14 +9524,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
-      // Autorización: solo admin o el dueño/representante REAL de la empresa,
-      // confirmado contra la base de datos (no se confía en claims del cliente).
+      // AutorizaciÃ³n: solo admin o el dueÃ±o/representante REAL de la empresa,
+      // confirmado contra la base de datos (no se confÃ­a en claims del cliente).
       if (!(await verifyCompanyAccess(req, res, company))) {
         return;
       }
 
       if (!company.pendingMembershipTypeId) {
-        return res.status(400).json({ error: "No hay ningún cambio de plan programado." });
+        return res.status(400).json({ error: "No hay ningÃºn cambio de plan programado." });
       }
 
       // Liberar el schedule de Stripe (si existe). Si Stripe falla, no persistir.
@@ -9559,7 +9559,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: "Cambio de plan cancelado. Seguirás con tu plan actual.",
+        message: "Cambio de plan cancelado. SeguirÃ¡s con tu plan actual.",
         company: updatedCompany,
       });
     } catch (error: any) {
@@ -9568,10 +9568,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Cancelar la renovación de la membresía de una empresa.
+  // Cancelar la renovaciÃ³n de la membresÃ­a de una empresa.
   // El plan permanece ACTIVO hasta la fecha de vencimiento; solo se detiene la
-  // renovación automática. Se marca la empresa como cancelada para reflejarlo
-  // en el dashboard y, si existe suscripción en Stripe, se programa el fin.
+  // renovaciÃ³n automÃ¡tica. Se marca la empresa como cancelada para reflejarlo
+  // en el dashboard y, si existe suscripciÃ³n en Stripe, se programa el fin.
   app.post("/api/companies/:id/cancel-membership", async (req: any, res) => {
     try {
       const companyId = parseInt(req.params.id);
@@ -9580,15 +9580,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
-      // Autorización: solo admin o el dueño/representante REAL de la empresa,
-      // confirmado contra la base de datos (no se confía en claims del cliente).
+      // AutorizaciÃ³n: solo admin o el dueÃ±o/representante REAL de la empresa,
+      // confirmado contra la base de datos (no se confÃ­a en claims del cliente).
       if (!(await verifyCompanyAccess(req, res, company))) {
         return;
       }
 
-      // Sincronizar con Stripe si hay suscripción activa del propietario.
+      // Sincronizar con Stripe si hay suscripciÃ³n activa del propietario.
       // Si Stripe falla, NO persistir el cambio local para evitar
-      // inconsistencias entre el estado de la suscripción y la BD.
+      // inconsistencias entre el estado de la suscripciÃ³n y la BD.
       if (company.userId) {
         const user = await storage.getUser(company.userId);
         if (user?.stripeSubscriptionId) {
@@ -9598,9 +9598,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               cancel_at_period_end: true,
             });
           } catch (stripeError: any) {
-            console.error("Error cancelando suscripción en Stripe:", stripeError);
+            console.error("Error cancelando suscripciÃ³n en Stripe:", stripeError);
             return res.status(502).json({
-              error: "No se pudo cancelar la renovación con el procesador de pagos. Intenta de nuevo.",
+              error: "No se pudo cancelar la renovaciÃ³n con el procesador de pagos. Intenta de nuevo.",
             });
           }
           await storage.updateUser(user.id, { autoRenewal: false });
@@ -9613,16 +9613,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: "Renovación cancelada. Tu plan seguirá activo hasta la fecha de vencimiento.",
+        message: "RenovaciÃ³n cancelada. Tu plan seguirÃ¡ activo hasta la fecha de vencimiento.",
         company: updatedCompany,
       });
     } catch (error: any) {
-      console.error("Error cancelando membresía:", error);
+      console.error("Error cancelando membresÃ­a:", error);
       res.status(500).json({ error: error.message || "Error interno del servidor" });
     }
   });
 
-  // Reanudar la renovación de la membresía de una empresa previamente cancelada.
+  // Reanudar la renovaciÃ³n de la membresÃ­a de una empresa previamente cancelada.
   app.post("/api/companies/:id/resume-membership", async (req: any, res) => {
     try {
       const companyId = parseInt(req.params.id);
@@ -9631,13 +9631,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
 
-      // Autorización: solo admin o el dueño/representante REAL de la empresa,
-      // confirmado contra la base de datos (no se confía en claims del cliente).
+      // AutorizaciÃ³n: solo admin o el dueÃ±o/representante REAL de la empresa,
+      // confirmado contra la base de datos (no se confÃ­a en claims del cliente).
       if (!(await verifyCompanyAccess(req, res, company))) {
         return;
       }
 
-      // Sincronizar con Stripe si hay suscripción activa del propietario.
+      // Sincronizar con Stripe si hay suscripciÃ³n activa del propietario.
       // Si Stripe falla, NO persistir el cambio local.
       if (company.userId) {
         const user = await storage.getUser(company.userId);
@@ -9648,9 +9648,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               cancel_at_period_end: false,
             });
           } catch (stripeError: any) {
-            console.error("Error reanudando suscripción en Stripe:", stripeError);
+            console.error("Error reanudando suscripciÃ³n en Stripe:", stripeError);
             return res.status(502).json({
-              error: "No se pudo reanudar la renovación con el procesador de pagos. Intenta de nuevo.",
+              error: "No se pudo reanudar la renovaciÃ³n con el procesador de pagos. Intenta de nuevo.",
             });
           }
           await storage.updateUser(user.id, { autoRenewal: true });
@@ -9663,20 +9663,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.json({
         success: true,
-        message: "Renovación reanudada. Tu plan continuará renovándose normalmente.",
+        message: "RenovaciÃ³n reanudada. Tu plan continuarÃ¡ renovÃ¡ndose normalmente.",
         company: updatedCompany,
       });
     } catch (error: any) {
-      console.error("Error reanudando membresía:", error);
+      console.error("Error reanudando membresÃ­a:", error);
       res.status(500).json({ error: error.message || "Error interno del servidor" });
     }
   });
 
-  // Verificación estricta de acceso a una empresa: solo admin o el
-  // dueño/representante REAL de la empresa. IMPORTANTE: NO se confía en el rol
+  // VerificaciÃ³n estricta de acceso a una empresa: solo admin o el
+  // dueÃ±o/representante REAL de la empresa. IMPORTANTE: NO se confÃ­a en el rol
   // ni en companyId enviados por el cliente (header x-user-info); todo se
   // confirma contra la base de datos con el id de usuario reclamado.
-  // Escribe la respuesta de error y devuelve false si no está autorizado.
+  // Escribe la respuesta de error y devuelve false si no estÃ¡ autorizado.
   async function verifyCompanyAccess(req: any, res: any, company: any): Promise<boolean> {
     const verifiedRequester = await getVerifiedRequestUser(req);
     if (!verifiedRequester?.id) {
@@ -9701,9 +9701,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return true;
   }
 
-  // --- Método de pago de la suscripción (ver tarjeta y cambiarla) ---
+  // --- MÃ©todo de pago de la suscripciÃ³n (ver tarjeta y cambiarla) ---
 
-  // Autorización compartida: solo admin o el dueño/representante de la empresa.
+  // AutorizaciÃ³n compartida: solo admin o el dueÃ±o/representante de la empresa.
   async function authorizeCompanyOwner(req: any, res: any): Promise<{ company: any; owner: any } | null> {
     const companyId = parseInt(req.params.id);
     const company = await storage.getCompany(companyId);
@@ -9722,15 +9722,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return { company, owner };
   }
 
-  // Ver la tarjeta con la que se paga el plan (marca, últimos 4 dígitos, vencimiento).
+  // Ver la tarjeta con la que se paga el plan (marca, Ãºltimos 4 dÃ­gitos, vencimiento).
   app.get("/api/companies/:id/payment-method", async (req: any, res) => {
     try {
       const auth = await authorizeCompanyOwner(req, res);
       if (!auth) return;
       const { owner, company } = auth;
 
-      // Contexto de membresía para que la UI muestre estado, vencimiento y
-      // renovación sin llamadas extra.
+      // Contexto de membresÃ­a para que la UI muestre estado, vencimiento y
+      // renovaciÃ³n sin llamadas extra.
       const membership = {
         fechaFinMembresia: company.fechaFinMembresia || null,
         autoRenewal: !!owner.autoRenewal && !company.membershipCancelled,
@@ -9741,7 +9741,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const stripe = await getStripe();
 
-      // 1) Preferir el método de pago por defecto de la SUSCRIPCIÓN.
+      // 1) Preferir el mÃ©todo de pago por defecto de la SUSCRIPCIÃ“N.
       let pmId: string | null = null;
       if (owner.stripeSubscriptionId) {
         try {
@@ -9750,7 +9750,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? subscription.default_payment_method
             : subscription.default_payment_method?.id || null;
         } catch (e) {
-          console.warn("No se pudo recuperar la suscripción para el método de pago:", e);
+          console.warn("No se pudo recuperar la suscripciÃ³n para el mÃ©todo de pago:", e);
         }
       }
 
@@ -9765,7 +9765,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : customer.invoice_settings?.default_payment_method?.id || null;
       }
 
-      // 3) Último recurso: la primera tarjeta guardada del cliente.
+      // 3) Ãšltimo recurso: la primera tarjeta guardada del cliente.
       let paymentMethod: any = null;
       if (pmId) {
         paymentMethod = await stripe.paymentMethods.retrieve(pmId);
@@ -9792,7 +9792,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         membership,
       });
     } catch (error: any) {
-      console.error("Error obteniendo método de pago:", error);
+      console.error("Error obteniendo mÃ©todo de pago:", error);
       res.status(500).json({ error: "No se pudo obtener la tarjeta registrada" });
     }
   });
@@ -9818,8 +9818,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Confirmar el cambio de tarjeta: fija la nueva tarjeta como método por defecto
-  // del cliente y de la suscripción (los próximos cobros usan esta tarjeta).
+  // Confirmar el cambio de tarjeta: fija la nueva tarjeta como mÃ©todo por defecto
+  // del cliente y de la suscripciÃ³n (los prÃ³ximos cobros usan esta tarjeta).
   app.post("/api/companies/:id/payment-method", async (req: any, res) => {
     try {
       const auth = await authorizeCompanyOwner(req, res);
@@ -9833,7 +9833,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const stripe = await getStripe();
 
-      // Verificar que el método de pago pertenece a ESTE cliente (el SetupIntent
+      // Verificar que el mÃ©todo de pago pertenece a ESTE cliente (el SetupIntent
       // ya lo adjunta; esto evita fijar tarjetas de otros clientes).
       const pm: any = await stripe.paymentMethods.retrieve(paymentMethodId);
       const pmCustomer = typeof pm.customer === "string" ? pm.customer : pm.customer?.id;
@@ -9851,21 +9851,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             default_payment_method: paymentMethodId,
           });
         } catch (e) {
-          console.warn("No se pudo fijar la tarjeta en la suscripción (se usará la del cliente):", e);
+          console.warn("No se pudo fijar la tarjeta en la suscripciÃ³n (se usarÃ¡ la del cliente):", e);
         }
       }
 
       res.json({ success: true, message: "Tarjeta actualizada correctamente" });
     } catch (error: any) {
-      console.error("Error actualizando método de pago:", error);
+      console.error("Error actualizando mÃ©todo de pago:", error);
       res.status(500).json({ error: "No se pudo actualizar la tarjeta" });
     }
   });
 
   // Eliminar/desvincular la tarjeta registrada. NO cancela el periodo ya pagado:
   // la empresa sigue activa hasta fechaFinMembresia. Solo se desactiva la
-  // renovación automática (sin tarjeta no hay forma de cobrar). Es idempotente:
-  // si ya no hay tarjeta, responde éxito igualmente.
+  // renovaciÃ³n automÃ¡tica (sin tarjeta no hay forma de cobrar). Es idempotente:
+  // si ya no hay tarjeta, responde Ã©xito igualmente.
   app.delete("/api/companies/:id/payment-method", async (req: any, res) => {
     try {
       const auth = await authorizeCompanyOwner(req, res);
@@ -9887,7 +9887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await stripe.paymentMethods.detach(pm.id);
             detached++;
           } catch (detachErr: any) {
-            // Si ya estaba desvinculada en Stripe, lo tratamos como éxito.
+            // Si ya estaba desvinculada en Stripe, lo tratamos como Ã©xito.
             if (detachErr?.code !== "payment_method_unattached") {
               throw detachErr;
             }
@@ -9900,31 +9900,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // 2) Limpiar el método por defecto del cliente.
+      // 2) Limpiar el mÃ©todo por defecto del cliente.
       try {
         await stripe.customers.update(owner.stripeCustomerId, {
           invoice_settings: { default_payment_method: "" as any },
         });
       } catch (e) {
-        console.warn("No se pudo limpiar el método por defecto del cliente:", e);
+        console.warn("No se pudo limpiar el mÃ©todo por defecto del cliente:", e);
       }
 
-      // 3) Sin tarjeta no hay renovación posible: programar el fin de la
-      //    suscripción al término del periodo YA pagado (la membresía vigente
-      //    NO se toca; Stripe emitirá subscription.deleted al vencer).
+      // 3) Sin tarjeta no hay renovaciÃ³n posible: programar el fin de la
+      //    suscripciÃ³n al tÃ©rmino del periodo YA pagado (la membresÃ­a vigente
+      //    NO se toca; Stripe emitirÃ¡ subscription.deleted al vencer).
       if (owner.stripeSubscriptionId) {
         try {
           await stripe.subscriptions.update(owner.stripeSubscriptionId, {
             cancel_at_period_end: true,
           });
         } catch (e: any) {
-          // Suscripción ya cancelada/inexistente: comportamiento idempotente.
-          console.warn("No se pudo programar el fin de la suscripción:", e?.message);
+          // SuscripciÃ³n ya cancelada/inexistente: comportamiento idempotente.
+          console.warn("No se pudo programar el fin de la suscripciÃ³n:", e?.message);
         }
       }
 
-      // 4) Estado local: renovación automática deshabilitada. La empresa y su
-      //    fecha de fin de membresía NO cambian aquí.
+      // 4) Estado local: renovaciÃ³n automÃ¡tica deshabilitada. La empresa y su
+      //    fecha de fin de membresÃ­a NO cambian aquÃ­.
       await storage.updateUser(owner.id, { autoRenewal: false });
       await storage.updateCompany(company.id, { membershipCancelled: true });
 
@@ -9934,15 +9934,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch {}
       console.log(
         `[PaymentMethod] Tarjeta eliminada por user ${actorId} ` +
-        `para empresa ${company.id} (${detached} método(s) desvinculado(s) en Stripe).`
+        `para empresa ${company.id} (${detached} mÃ©todo(s) desvinculado(s) en Stripe).`
       );
 
       res.json({
         success: true,
         detached,
         message: detached > 0
-          ? "Tarjeta eliminada. Tu membresía sigue vigente hasta su fecha de vencimiento."
-          : "No había tarjeta registrada.",
+          ? "Tarjeta eliminada. Tu membresÃ­a sigue vigente hasta su fecha de vencimiento."
+          : "No habÃ­a tarjeta registrada.",
         membership: {
           fechaFinMembresia: company.fechaFinMembresia || null,
           autoRenewal: false,
@@ -9951,13 +9951,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
       });
     } catch (error: any) {
-      console.error("Error eliminando método de pago:", error);
+      console.error("Error eliminando mÃ©todo de pago:", error);
       res.status(500).json({ error: "No se pudo eliminar la tarjeta" });
     }
   });
 
-  // Aplica los cambios de plan PROGRAMADOS de empresas SIN suscripción de Stripe
-  // cuyo período ya venció. Las empresas con suscripción de Stripe se aplican vía
+  // Aplica los cambios de plan PROGRAMADOS de empresas SIN suscripciÃ³n de Stripe
+  // cuyo perÃ­odo ya venciÃ³. Las empresas con suscripciÃ³n de Stripe se aplican vÃ­a
   // webhook (invoice.payment_succeeded) tras confirmarse el pago.
   async function applyExpiredPendingChanges() {
     const today = new Date().toISOString().split("T")[0];
@@ -9970,13 +9970,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     for (const company of allCompanies) {
       if (!company.pendingMembershipTypeId) continue;
 
-      // Solo aplicar cuando el período actual ya venció. Criterio unificado con
-      // el resto del sistema: la membresía es vigente mientras fin >= hoy, así
-      // que el cambio pendiente se aplica hasta el día SIGUIENTE al vencimiento.
+      // Solo aplicar cuando el perÃ­odo actual ya venciÃ³. Criterio unificado con
+      // el resto del sistema: la membresÃ­a es vigente mientras fin >= hoy, asÃ­
+      // que el cambio pendiente se aplica hasta el dÃ­a SIGUIENTE al vencimiento.
       const fin = company.pendingChangeEffectiveDate || company.fechaFinMembresia;
       if (!fin || fin >= today) continue;
 
-      // Si el dueño tiene suscripción de Stripe, el cambio lo aplica el webhook.
+      // Si el dueÃ±o tiene suscripciÃ³n de Stripe, el cambio lo aplica el webhook.
       if (company.userId) {
         const owner = await storage.getUser(company.userId);
         if (owner?.stripeSubscriptionId) continue;
@@ -9991,8 +9991,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   }
 
-  // Job de vencimiento: inactiva empresas cuya membresía YA venció y no tiene
-  // una renovación pagada. No toca: empresas vigentes, ya inactivas, sin fecha
+  // Job de vencimiento: inactiva empresas cuya membresÃ­a YA venciÃ³ y no tiene
+  // una renovaciÃ³n pagada. No toca: empresas vigentes, ya inactivas, sin fecha
   // de fin (planes manuales/vitalicios) ni planes gratuitos (sin costo).
   async function deactivateExpiredCompanies() {
     const today = new Date().toISOString().split("T")[0];
@@ -10016,27 +10016,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     for (const company of allCompanies) {
       if (company.estado !== "activo") continue; // ya inactiva o pendiente
       if (!company.fechaFinMembresia) continue; // sin fecha fin: manual/vitalicia
-      if (company.fechaFinMembresia >= today) continue; // aún vigente (incluye hoy)
+      if (company.fechaFinMembresia >= today) continue; // aÃºn vigente (incluye hoy)
       if (await isFreePlan(company.membershipTypeId)) continue; // plan gratuito/exento
 
-      // Releer el estado MÁS reciente justo antes de inactivar: un webhook de
-      // pago pudo haber extendido la membresía mientras corría este job.
+      // Releer el estado MÃS reciente justo antes de inactivar: un webhook de
+      // pago pudo haber extendido la membresÃ­a mientras corrÃ­a este job.
       const fresh = await storage.getCompany(company.id);
       if (!fresh || fresh.estado !== "activo") continue;
       if (!fresh.fechaFinMembresia || fresh.fechaFinMembresia >= today) continue;
 
       await storage.updateCompany(fresh.id, {
         estado: "inactivo",
-        inactiveReason: "Membresía vencida sin pago o sin método de pago registrado",
+        inactiveReason: "MembresÃ­a vencida sin pago o sin mÃ©todo de pago registrado",
         inactivatedAt: new Date(),
       });
       deactivated++;
       console.log(
         `[ExpirationJob] Empresa ${fresh.id} (${fresh.nombreEmpresa}) inactivada: ` +
-        `membresía venció el ${fresh.fechaFinMembresia} sin renovación pagada.`
+        `membresÃ­a venciÃ³ el ${fresh.fechaFinMembresia} sin renovaciÃ³n pagada.`
       );
 
-      // Aviso por correo al dueño (una vez, al momento de inactivar).
+      // Aviso por correo al dueÃ±o (una vez, al momento de inactivar).
       try {
         if (fresh.userId) {
           const owner = await storage.getUser(fresh.userId);
@@ -10048,12 +10048,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               owner.email,
               owner.displayName || owner.email,
               fresh.nombreEmpresa,
-              mt?.nombrePlan || "Membresía"
+              mt?.nombrePlan || "MembresÃ­a"
             );
           }
         }
       } catch (emailErr) {
-        console.error(`[ExpirationJob] Error enviando aviso de inactivación (empresa ${fresh.id}):`, emailErr);
+        console.error(`[ExpirationJob] Error enviando aviso de inactivaciÃ³n (empresa ${fresh.id}):`, emailErr);
       }
     }
 
@@ -10114,3 +10114,4 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   return httpServer;
 }
+

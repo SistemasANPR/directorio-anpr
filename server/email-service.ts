@@ -1,6 +1,6 @@
-import nodemailer from 'nodemailer';
-import { storage } from './storage';
-import { db } from './db';
+﻿import nodemailer from 'nodemailer';
+import { storage } from './storage.js';
+import { db } from './db.js';
 import { companies, membershipTypes } from '@shared/schema';
 
 interface EmailData {
@@ -19,7 +19,7 @@ async function getTransporter() {
   const emailConfig = await storage.getEmailConfiguration();
   
   if (!emailConfig) {
-    throw new Error('No hay configuración de correo SMTP');
+    throw new Error('No hay configuraciÃ³n de correo SMTP');
   }
   
   const transporterConfig: any = {
@@ -175,15 +175,15 @@ export async function sendActivationEmail(
         <h2 style="color: #333;">Bienvenido al Directorio de Equipamiento Urbano</h2>
         <p>Hola <strong>${userName}</strong>,</p>
         <p>Se ha creado una cuenta para ti como representante de empresa en nuestro directorio.</p>
-        <p>Para activar tu cuenta y establecer tu contraseña definitiva, sigue estos pasos:</p>
+        <p>Para activar tu cuenta y establecer tu contraseÃ±a definitiva, sigue estos pasos:</p>
         <ol>
-          <li>Visita la página de activación: <a href="${activationUrl}">${activationUrl}</a></li>
-          <li>Ingresa tu correo electrónico: <strong>${userEmail}</strong></li>
-          <li>Ingresa tu contraseña temporal: <strong>${tempPassword}</strong></li>
-          <li>Crea tu nueva contraseña definitiva</li>
+          <li>Visita la pÃ¡gina de activaciÃ³n: <a href="${activationUrl}">${activationUrl}</a></li>
+          <li>Ingresa tu correo electrÃ³nico: <strong>${userEmail}</strong></li>
+          <li>Ingresa tu contraseÃ±a temporal: <strong>${tempPassword}</strong></li>
+          <li>Crea tu nueva contraseÃ±a definitiva</li>
         </ol>
         <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-          <p style="margin: 0;"><strong>Importante:</strong> Esta contraseña temporal solo puede usarse una vez. Después de usarla, deberás crear tu contraseña definitiva.</p>
+          <p style="margin: 0;"><strong>Importante:</strong> Esta contraseÃ±a temporal solo puede usarse una vez. DespuÃ©s de usarla, deberÃ¡s crear tu contraseÃ±a definitiva.</p>
         </div>
         <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
         <p>Saludos,<br>El equipo del Directorio de Equipamiento Urbano</p>
@@ -198,10 +198,10 @@ export async function sendActivationEmail(
     });
     
     console.log(`Activation email sent to ${userEmail}`);
-    return { success: true, message: `Correo de activación enviado a ${userEmail}` };
+    return { success: true, message: `Correo de activaciÃ³n enviado a ${userEmail}` };
   } catch (error: any) {
     console.error(`Error sending activation email:`, error);
-    return { success: false, message: error.message || 'Error al enviar correo de activación' };
+    return { success: false, message: error.message || 'Error al enviar correo de activaciÃ³n' };
   }
 }
 
@@ -213,7 +213,7 @@ function escapeHtml(text: string): string {
     .replace(/"/g, '&quot;');
 }
 
-// Límite simple anti-abuso: máximo 10 correos de "nueva reseña" por hora.
+// LÃ­mite simple anti-abuso: mÃ¡ximo 10 correos de "nueva reseÃ±a" por hora.
 let reviewNotificationTimestamps: number[] = [];
 
 export async function sendNewReviewNotificationToAdmins(review: {
@@ -227,7 +227,7 @@ export async function sendNewReviewNotificationToAdmins(review: {
     reviewNotificationTimestamps = reviewNotificationTimestamps.filter((t) => now - t < 60 * 60 * 1000);
     if (reviewNotificationTimestamps.length >= 10) {
       console.warn('New review notification skipped: hourly limit reached');
-      return { success: false, message: 'Límite de notificaciones por hora alcanzado' };
+      return { success: false, message: 'LÃ­mite de notificaciones por hora alcanzado' };
     }
     reviewNotificationTimestamps.push(now);
 
@@ -241,26 +241,26 @@ export async function sendNewReviewNotificationToAdmins(review: {
     }
 
     const { transporter, fromEmail, fromName } = await getTransporter();
-    const stars = '★'.repeat(review.calificacion) + '☆'.repeat(Math.max(0, 5 - review.calificacion));
+    const stars = 'â˜…'.repeat(review.calificacion) + 'â˜†'.repeat(Math.max(0, 5 - review.calificacion));
     const baseUrl = process.env.REPLIT_APP_URL || 'https://directorio.anpr.org.mx';
 
     await transporter.sendMail({
       from: `"${fromName}" <${fromEmail}>`,
       to: adminEmails.join(', '),
-      subject: 'Nueva reseña pendiente de moderación',
+      subject: 'Nueva reseÃ±a pendiente de moderaciÃ³n',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #333;">Nueva reseña de la plataforma</h2>
-          <p>Se recibió una nueva reseña y está pendiente de moderación:</p>
+          <h2 style="color: #333;">Nueva reseÃ±a de la plataforma</h2>
+          <p>Se recibiÃ³ una nueva reseÃ±a y estÃ¡ pendiente de moderaciÃ³n:</p>
           <div style="background: #f5f5f5; border-radius: 8px; padding: 16px; margin: 16px 0;">
             <p style="margin: 4px 0;"><strong>Usuario:</strong> ${escapeHtml(review.nombre)} (${escapeHtml(review.email)})</p>
-            <p style="margin: 4px 0;"><strong>Calificación:</strong> ${stars} (${review.calificacion}/5)</p>
+            <p style="margin: 4px 0;"><strong>CalificaciÃ³n:</strong> ${stars} (${review.calificacion}/5)</p>
             <p style="margin: 4px 0;"><strong>Comentario:</strong></p>
             <p style="margin: 4px 0; white-space: pre-wrap;">${escapeHtml(review.comentario)}</p>
           </div>
           <p>
             <a href="${baseUrl}/admin/reviews" style="background: #16a34a; color: #fff; padding: 10px 18px; border-radius: 6px; text-decoration: none;">
-              Ir a Gestión de Reseñas
+              Ir a GestiÃ³n de ReseÃ±as
             </a>
           </p>
         </div>
@@ -268,10 +268,10 @@ export async function sendNewReviewNotificationToAdmins(review: {
     });
 
     console.log(`New review notification sent to admins: ${adminEmails.join(', ')}`);
-    return { success: true, message: `Notificación enviada a ${adminEmails.length} administrador(es)` };
+    return { success: true, message: `NotificaciÃ³n enviada a ${adminEmails.length} administrador(es)` };
   } catch (error: any) {
     console.error('Error sending new review notification:', error);
-    return { success: false, message: error.message || 'Error al enviar notificación de reseña' };
+    return { success: false, message: error.message || 'Error al enviar notificaciÃ³n de reseÃ±a' };
   }
 }
 
@@ -331,27 +331,27 @@ export async function checkAndSendExpirationNotifications(): Promise<{
             company.email1,
             representanteName,
             company.nombreEmpresa,
-            membershipType?.nombrePlan || 'Membresía',
+            membershipType?.nombrePlan || 'MembresÃ­a',
             expirationDate,
             diffDays
           );
           
           if (result.success) {
             sent++;
-            details.push(`✅ Enviado a ${company.nombreEmpresa} (${company.email1})`);
+            details.push(`âœ… Enviado a ${company.nombreEmpresa} (${company.email1})`);
           } else {
             errors++;
-            details.push(`❌ Error en ${company.nombreEmpresa}: ${result.message}`);
+            details.push(`âŒ Error en ${company.nombreEmpresa}: ${result.message}`);
           }
         } catch (error: any) {
           errors++;
-          details.push(`❌ Error en ${company.nombreEmpresa}: ${error.message}`);
+          details.push(`âŒ Error en ${company.nombreEmpresa}: ${error.message}`);
         }
       }
     }
     
     if (sent === 0 && errors === 0) {
-      details.push(`No hay empresas con vencimiento en ${daysBeforeExpiration} días`);
+      details.push(`No hay empresas con vencimiento en ${daysBeforeExpiration} dÃ­as`);
     }
     
   } catch (error: any) {
@@ -361,3 +361,4 @@ export async function checkAndSendExpirationNotifications(): Promise<{
   
   return { sent, errors, details };
 }
+

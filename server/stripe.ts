@@ -1,5 +1,5 @@
-import Stripe from "stripe";
-import { storage } from "./storage";
+﻿import Stripe from "stripe";
+import { storage } from "./storage.js";
 
 interface StripeContext {
   stripe: Stripe;
@@ -24,7 +24,7 @@ export async function getStripeContext(): Promise<StripeContext> {
     const config = await storage.getStripeConfiguration();
     if (config && config.isActive && config.secretKey) {
       // Modo panel: usar SOLO las llaves del panel para no mezclar
-      // llave pública y secreta de cuentas de Stripe distintas.
+      // llave pÃºblica y secreta de cuentas de Stripe distintas.
       cachedContext = {
         stripe: new Stripe(config.secretKey, { apiVersion: "2023-10-16" as any }),
         source: "panel",
@@ -40,7 +40,7 @@ export async function getStripeContext(): Promise<StripeContext> {
 
   if (!process.env.STRIPE_SECRET_KEY) {
     throw new Error(
-      "Stripe no está configurado. Guarda las llaves en el panel de administrador (Configuración Stripe) o en los Secretos del proyecto."
+      "Stripe no estÃ¡ configurado. Guarda las llaves en el panel de administrador (ConfiguraciÃ³n Stripe) o en los Secretos del proyecto."
     );
   }
 
@@ -59,12 +59,12 @@ export async function getStripe(): Promise<Stripe> {
 }
 
 // --- Compatibilidad con versiones de la API de Stripe (2023-10-16 vs 2025+basil) ---
-// A partir de la versión "basil", varios campos cambiaron de lugar:
+// A partir de la versiÃ³n "basil", varios campos cambiaron de lugar:
 //  - invoice.subscription        -> invoice.parent.subscription_details.subscription
-//  - invoice.payment_intent      -> (eliminado; se usa invoice.id como clave única)
+//  - invoice.payment_intent      -> (eliminado; se usa invoice.id como clave Ãºnica)
 //  - subscription.current_period_end/_start -> subscription.items.data[0].current_period_*
-// Estos helpers leen AMBAS ubicaciones para funcionar sin importar la versión con
-// la que Stripe serialice los eventos (los webhooks usan la versión de la cuenta).
+// Estos helpers leen AMBAS ubicaciones para funcionar sin importar la versiÃ³n con
+// la que Stripe serialice los eventos (los webhooks usan la versiÃ³n de la cuenta).
 
 export function getInvoiceSubscriptionId(invoice: any): string | null {
   const legacy = typeof invoice?.subscription === 'string'
@@ -74,7 +74,7 @@ export function getInvoiceSubscriptionId(invoice: any): string | null {
   const parentSub = invoice?.parent?.subscription_details?.subscription;
   if (typeof parentSub === 'string') return parentSub;
   if (parentSub?.id) return parentSub.id;
-  // Fallback: buscar en las líneas de la factura.
+  // Fallback: buscar en las lÃ­neas de la factura.
   const lineSub = invoice?.lines?.data?.[0]?.parent?.subscription_item_details?.subscription
     || invoice?.lines?.data?.[0]?.subscription;
   return typeof lineSub === 'string' ? lineSub : (lineSub?.id || null);
@@ -98,7 +98,7 @@ export function getSubscriptionPeriodStart(subscription: any): number | null {
 
 // Obtiene (o crea) un Price RECURRENTE de Stripe para un plan+periodicidad.
 // Se reutiliza por lookup_key para no acumular precios duplicados y para que la
-// misma combinación (plan, periodo, monto, moneda, intervalo) apunte siempre al
+// misma combinaciÃ³n (plan, periodo, monto, moneda, intervalo) apunte siempre al
 // mismo Price. Crea el Producto inline (product_data) en la primera vez.
 export async function getOrCreateRecurringPrice(
   stripe: Stripe,
@@ -129,3 +129,4 @@ export async function getOrCreateRecurringPrice(
     lookup_key: lookupKey,
   });
 }
+
