@@ -1,4 +1,5 @@
 ﻿import express, { type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "../server/routes.js";
 import { createServer } from "http";
 import Stripe from "stripe";
 import { Pool } from 'pg';
@@ -188,6 +189,8 @@ app.use('/api', (req: any, res, next) => {
   }
   next();
 });
+
+await registerRoutes(app);
 
 // ============ API ROUTES ============
 
@@ -1075,6 +1078,8 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 
 // Export for Vercel
 export default app;
+
+
 
 
 
