@@ -171,7 +171,7 @@ export default function AddProjectModal({
       areaSuperficie: project?.areaSuperficie || "",
       serviciosProductos: project?.serviciosProductos || [],
       videoUrl: project?.videoUrl || "",
-      estado: project?.estado || "borrador",
+      estado: project?.estado || "publicado",
       galeriaImagenes: [],
     },
   });
