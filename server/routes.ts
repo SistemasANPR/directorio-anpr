@@ -402,7 +402,7 @@ const uploadDocument = multer({
       'image/png',
       'image/gif'
     ];
-    
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -431,7 +431,7 @@ const uploadCompanyFiles = multer({
         'image/png',
         'image/gif'
       ];
-      
+
       if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
@@ -580,7 +580,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Servir archivos estÃ¡ticos desde la carpeta uploads
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
-  
+
   // Servir archivos estÃ¡ticos desde la carpeta attached_assets
   app.use('/attached_assets', express.static(path.join(process.cwd(), 'attached_assets')));
 
@@ -590,7 +590,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
-      
+
       let imageUrl: string;
       if (useCloudinary && req.file.buffer) {
         const result = await uploadFromBuffer(req.file.buffer, 'anpr/images', 'image');
@@ -600,7 +600,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl = `/uploads/images/${req.file.filename}`;
         console.log("Image upload to local storage successful:", imageUrl);
       }
-      
+
       res.json({ 
         success: true, 
         imageUrl,
@@ -618,7 +618,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.files || !Array.isArray(req.files) || req.files.length === 0) {
         return res.status(400).json({ error: "No se recibieron archivos" });
       }
-      
+
       const imageUrls = await Promise.all(req.files.map(async (file) => {
         if (useCloudinary && file.buffer) {
           const result = await uploadFromBuffer(file.buffer, 'anpr/images', 'image');
@@ -627,7 +627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return { imageUrl: `/uploads/images/${file.filename}`, filename: file.filename };
         }
       }));
-      
+
       console.log(`Multiple images upload successful (${useCloudinary ? 'Cloudinary' : 'local'}):`, imageUrls.length, "files");
       res.json({ 
         success: true, 
@@ -649,7 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         (isImageBytes(req.file.buffer) || !isSupportedDocumentBytes(req.file.buffer))) {
         return rejectOversizedImage(res);
       }
-      
+
       let documentUrl: string;
       if (useCloudinary && req.file.buffer) {
         const result = await uploadFromBuffer(req.file.buffer, 'anpr/documents', 'raw');
@@ -664,7 +664,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         documentUrl = `/uploads/documents/${filename}`;
         console.log("Document upload to local storage successful:", documentUrl);
       }
-      
+
       res.json({ 
         success: true, 
         documentUrl,
@@ -682,7 +682,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "No se recibiÃ³ ningÃºn archivo" });
       }
-      
+
       let imageUrl: string;
       if (useCloudinary && req.file.buffer) {
         const result = await uploadFromBuffer(req.file.buffer, 'anpr/profiles', 'image');
@@ -692,7 +692,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         imageUrl = `/uploads/images/${req.file.filename}`;
         console.log("Profile image upload to local storage successful:", imageUrl);
       }
-      
+
       res.json({ 
         success: true, 
         url: imageUrl,
@@ -708,7 +708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/delete-image/:filename", async (req, res) => {
     try {
       const { filename } = req.params;
-      
+
       // EliminaciÃ³n de archivo local
       const filePath = path.join(process.cwd(), 'uploads', 'images', filename);
       if (fs.existsSync(filePath)) {
@@ -791,22 +791,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const id = parseInt(req.params.id);
-      
+
       // Extract companyId if present in request body
       const { companyId, ...userData } = req.body;
-      
+
       // Validate the user data (excluding companyId since it's not in the user schema)
       const validatedUserData = insertUserSchema.partial().parse(userData);
-      
+
       // Get current user to determine effective role
       const currentUser = await storage.getUser(id);
       if (!currentUser) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       // Use role from request data or fall back to current user role
       const effectiveRole = validatedUserData.role || currentUser.role;
-      
+
       let parsedCompanyId: number | undefined;
       if (companyId !== undefined && companyId) {
         parsedCompanyId = Number(companyId);
@@ -1054,7 +1054,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!currentUser) {
         return res.status(401).json({ error: "Not authenticated" });
       }
-      
+
       const user = await storage.getUser(currentUser.id);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
@@ -1073,7 +1073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!currentUser) {
         return res.status(401).json({ error: "Not authenticated" });
       }
-      
+
       // Validate the update data (only allow certain fields to be updated)
       const updateSchema = z.object({
         displayName: z.string().min(1).max(100).optional(),
@@ -1083,14 +1083,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ).optional().or(z.literal("")),
         email: z.string().email().optional(),
       }).partial();
-      
+
       const validatedData = updateSchema.parse(req.body);
-      
+
       const user = await storage.updateUser(currentUser.id, validatedData);
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
-      
+
       res.json(user);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -1105,7 +1105,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/companies", async (req, res) => {
     try {
       const { search, categoryId, membershipTypeId, estado, page = "1", limit = "10", premiumOnly } = req.query;
-      
+
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
       const offset = (pageNum - 1) * limitNum;
@@ -1114,7 +1114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // If premiumOnly is true, we need to filter for premium and enterprise memberships
       let effectiveMembershipTypeId = membershipTypeId ? parseInt(membershipTypeId as string) : undefined;
-      
+
       if (premiumOnly === 'true') {
         // Get all membership types to find premium and enterprise IDs
         const membershipTypes = await storage.getAllMembershipTypes();
@@ -1123,7 +1123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           mt.nombrePlan?.toLowerCase().includes('empresarial') ||
           mt.nombrePlan?.toLowerCase().includes('enterprise')
         );
-        
+
         if (premiumTypes.length > 0) {
           // For now, we'll need to handle multiple membership types in the storage layer
           // or make multiple queries. Let's modify the approach.
@@ -1137,7 +1137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               offset: 0
             }))
           );
-          
+
           // Combine and deduplicate results
           const allCompanies = allResults.reduce((acc, result) => {
             result.companies.forEach(company => {
@@ -1147,11 +1147,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             return acc;
           }, []);
-          
+
           // Apply pagination to combined results
           const total = allCompanies.length;
           const paginatedCompanies = allCompanies.slice(offset, offset + limitNum);
-          
+
           return res.json({
             companies: paginatedCompanies,
             total: total,
@@ -1188,7 +1188,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/companies", async (req, res) => {
     try {
       const { search, categoryId, membershipTypeId, estado, page = "1", limit = "10" } = req.query;
-      
+
       const pageNum = parseInt(page as string);
       const limitNum = parseInt(limit as string);
       const offset = (pageNum - 1) * limitNum;
@@ -1307,14 +1307,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const transactions = await transactionsResponse.json();
-      
+
       if (!Array.isArray(transactions)) {
         console.log(`[User Transactions] Invalid response format for user ${wordpressUserId}`);
         return [];
       }
 
       console.log(`[User Transactions] Raw transactions count for user ${wordpressUserId}: ${transactions.length}`);
-      
+
       // Log all transaction statuses found for debugging
       const statuses = [...new Set(transactions.map((t: any) => t.status))];
       console.log(`[User Transactions] Statuses found: ${statuses.join(', ')}`);
@@ -1324,7 +1324,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validStatuses = includeAll 
         ? ['complete', 'confirmed', 'pending', 'active', 'refunded', 'failed']
         : ['complete', 'confirmed', 'active'];
-      
+
       const validTransactions = transactions
         .filter((t: any) => validStatuses.includes(t.status))
         .sort((a: any, b: any) => {
@@ -1337,13 +1337,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
       console.log(`[User Transactions] Found ${validTransactions.length} valid transactions for user ${wordpressUserId}`);
-      
+
       // Log details of first transaction for debugging
       if (validTransactions.length > 0) {
         const first = validTransactions[0];
         console.log(`[User Transactions] Most recent transaction: ID=${first.id}, Status=${first.status}, Gateway=${first.gateway}, Expires=${first.expires_at}`);
       }
-      
+
       return validTransactions;
 
     } catch (error: any) {
@@ -1392,7 +1392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const transactions = await transactionsResponse.json();
-      
+
       if (!Array.isArray(transactions) || transactions.length === 0) {
         console.log(`[Transaction Expiration] No transactions found for user ${wordpressUserId}`);
         return null;
@@ -1447,10 +1447,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       //   });
       // }
       const files = req.files as { [fieldname: string]: Express.Multer.File[] };
-      
+
       // Procesar los datos del formulario
       let companyData: any = {};
-      
+
       // Procesar campos normales del formulario
       for (const [key, value] of Object.entries(req.body)) {
         if (key !== 'logoFile' && key !== 'fotoPortadaFile' && key !== 'catalogoFile' && key !== 'galeriaFiles') {
@@ -1479,50 +1479,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       // Procesar archivos de logo
       if (files?.logoFile?.[0]) {
         if (useCloudinary) {
-          const fileBuffer = fs.readFileSync(files.logoFile[0].path);
+          const fileBuffer = files.logoFile[0].buffer;
           const result = await uploadFromBuffer(fileBuffer, 'anpr/logos', 'image');
           companyData.logotipoUrl = result.url;
-          fs.unlinkSync(files.logoFile[0].path); // Eliminar archivo local despuÃ©s de subir
         } else {
           companyData.logotipoUrl = `/uploads/images/${files.logoFile[0].filename}`;
         }
       }
-      
+
       // Procesar archivos de foto de portada
       if (files?.fotoPortadaFile?.[0]) {
         if (useCloudinary) {
-          const fileBuffer = fs.readFileSync(files.fotoPortadaFile[0].path);
+          const fileBuffer = files.fotoPortadaFile[0].buffer;
           const result = await uploadFromBuffer(fileBuffer, 'anpr/portadas', 'image');
           companyData.fotoPortadaUrl = result.url;
-          fs.unlinkSync(files.fotoPortadaFile[0].path);
         } else {
           companyData.fotoPortadaUrl = `/uploads/images/${files.fotoPortadaFile[0].filename}`;
         }
       }
-      
+
       // Procesar archivos de catÃ¡logo
       if (files?.catalogoFile?.[0]) {
         if (useCloudinary) {
-          const fileBuffer = fs.readFileSync(files.catalogoFile[0].path);
+          const fileBuffer = files.catalogoFile[0].buffer;
           const result = await uploadFromBuffer(fileBuffer, 'anpr/catalogos', 'raw');
           companyData.catalogoDigitalUrl = result.url;
-          fs.unlinkSync(files.catalogoFile[0].path);
         } else {
           companyData.catalogoDigitalUrl = `/uploads/documents/${files.catalogoFile[0].filename}`;
         }
       }
-      
+
       // Procesar archivos de galerÃ­a
       if (files?.galeriaFiles?.length > 0) {
         if (useCloudinary) {
           const uploadPromises = files.galeriaFiles.map(async (file) => {
-            const fileBuffer = fs.readFileSync(file.path);
+            const fileBuffer = file.buffer;
             const result = await uploadFromBuffer(fileBuffer, 'anpr/galeria', 'image');
-            fs.unlinkSync(file.path);
             return result.url;
           });
           companyData.galeriaProductosUrls = await Promise.all(uploadPromises);
@@ -1540,9 +1536,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (companyDataToSave.telefono2 !== undefined && companyDataToSave.telefono2 !== null) {
         companyDataToSave.telefono2 = String(companyDataToSave.telefono2);
       }
-      
+
       const parsedCompanyData = insertCompanySchema.parse(companyDataToSave);
-      
+
       let userId = null;
       let transactionExpirationDate = null;
       let newUserInfo: { email: string; tempPassword: string; displayName: string } | null = null;
@@ -1558,12 +1554,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Verificar si el usuario ya existe en el sistema por email
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
-          
+
           if (!existingUser) {
             // Generar contraseÃ±a temporal criptogrÃ¡ficamente segura
             const crypto = nodeCrypto;
             const tempPassword = crypto.randomBytes(12).toString('base64').slice(0, 16);
-            
+
             // Crear nuevo usuario representante con datos de WordPress
             // NOTA DE SEGURIDAD: tempPassword se almacena en texto plano por limitaciones del sistema actual
             // Esta es una limitaciÃ³n conocida - idealmente deberÃ­a hashearse antes de almacenar
@@ -1580,9 +1576,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               tempPassword: tempPassword,
               requirePasswordChange: true
             };
-            
+
             existingUser = await storage.createUser(newUserData);
-            
+
             // Guardar informaciÃ³n del nuevo usuario para incluirla en la respuesta
             // Esta es la ÃšNICA vez que la contraseÃ±a se envÃ­a - el admin debe comunicarla al usuario
             newUserInfo = {
@@ -1590,7 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               tempPassword: tempPassword,
               displayName: wordpressUser.name || wordpressUser.username
             };
-            
+
             // Enviar email de activaciÃ³n al usuario
             try {
               const baseUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -1607,10 +1603,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch (emailError) {
               console.error(`[WordPress User Creation] Error sending activation email:`, emailError);
             }
-            
+
             console.log(`[WordPress User Creation] New representative account created for ${wordpressUser.email}`);
             console.log(`[WordPress User Creation] User must activate account on first login`);
-            
+
             // Descargar y guardar imagen de perfil de WordPress/PeepSo si estÃ¡ disponible
             if (wordpressUser.avatar_urls) {
               try {
@@ -1627,17 +1623,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       throw new Error("Invalid WordPress avatar");
                     }
                     const avatarFileName = `avatar_${existingUser.id}_${Date.now()}.jpg`;
-                    
+
                     const uploadsDir = path.join(process.cwd(), 'uploads', 'images');
                     if (!fs.existsSync(uploadsDir)) {
                       fs.mkdirSync(uploadsDir, { recursive: true });
                     }
-                    
+
                     const avatarPath = path.join(uploadsDir, avatarFileName);
                     fs.writeFileSync(avatarPath, avatarBytes);
-                    
+
                     const avatarImageUrl = `/uploads/images/${avatarFileName}`;
-                    
+
                     // Actualizar usuario con la URL de la imagen
                     await storage.updateUser(existingUser.id, { photoURL: avatarImageUrl });
                     console.log(`[WordPress User Creation] Profile picture saved: ${avatarImageUrl}`);
@@ -1652,7 +1648,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (existingUser && !isRepresentativeRole(existingUser.role)) {
             throw new RepresentativeCompanyRoleError();
           }
-          
+
           userId = existingUser?.id || null;
           if (userId != null) {
             existingRepresentativeCompanyCount = (
@@ -1672,7 +1668,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       }
-      
+
       // Crear la empresa con el userId del representante si se pudo crear/encontrar
       let companyWithUser = {
         ...parsedCompanyData,
@@ -1685,29 +1681,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const expirationDate = new Date(transactionExpirationDate);
           const startDate = new Date(expirationDate);
           startDate.setFullYear(startDate.getFullYear() - 1);
-          
+
           companyWithUser.fechaInicioMembresia = startDate.toISOString().split('T')[0];
           companyWithUser.fechaFinMembresia = expirationDate.toISOString().split('T')[0];
         } catch (dateError) {
           console.error('[Company Creation] Error processing transaction expiration date:', dateError);
         }
       }
-      
+
       // LÃ³gica automÃ¡tica para empresas con ubicaciÃ³n: asegurar que aparezcan en el mapa
       if (companyWithUser.ubicacionGeografica && (!companyWithUser.fechaFinMembresia || companyWithUser.fechaFinMembresia === '')) {
         const today = new Date();
         const oneYearFromNow = new Date(today);
         oneYearFromNow.setFullYear(today.getFullYear() + 1);
-        
+
         companyWithUser.fechaInicioMembresia = today.toISOString().split('T')[0];
         companyWithUser.fechaFinMembresia = oneYearFromNow.toISOString().split('T')[0];
         companyWithUser.estado = 'activo';
-        
+
         console.log(`[Auto-Activation] Company with location will be automatically activated:`);
         console.log(`[Auto-Activation] Start: ${companyWithUser.fechaInicioMembresia}`);
         console.log(`[Auto-Activation] End: ${companyWithUser.fechaFinMembresia}`);
       }
-      
+
       if (requestHasOversizedDataUrlImage(companyWithUser)) return rejectOversizedImage(res);
       const company = await storage.createCompany(companyWithUser);
 
@@ -1723,13 +1719,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw assignmentError;
         }
       }
-      
+
       // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
           console.log(`[Auto-Certificate] Found ${autoCertificates.length} certificates for membership type ${company.membershipTypeId}`);
-          
+
           for (const cert of autoCertificates) {
             await storage.assignCertificateToCompany(company.id, cert.id, {
               fechaObtencion: new Date().toISOString().split('T')[0],
@@ -1742,7 +1738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[Auto-Certificate] Error assigning certificates:', certError);
         }
       }
-      
+
       // Si se creÃ³ un nuevo usuario, incluir su informaciÃ³n en la respuesta
       if (newUserInfo) {
         res.status(201).json({
@@ -1795,10 +1791,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // }
       const { wordpressUser, ...companyData } = req.body;
       const parsedCompanyData = insertCompanySchema.parse(companyData);
-      
+
       let userId = null;
       let normalizedRepresentativeUserId: number | null = null;
-      
+
       let transactionExpirationDate = null;
 
       // Si se seleccionÃ³ un usuario de WordPress, crear/obtener usuario representante
@@ -1811,12 +1807,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Verificar si el usuario ya existe en el sistema por email
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
-          
+
           if (!existingUser) {
             // Generar contraseÃ±a temporal Ãºnica
             const crypto = nodeCrypto;
             const tempPassword = crypto.randomBytes(8).toString('base64').slice(0, 12);
-            
+
             // Crear nuevo usuario representante con datos de WordPress
             const newUserData = {
               firebaseUid: `wp_${wordpressUser.id}_${Date.now()}`, // UID Ãºnico temporal para WordPress
@@ -1830,9 +1826,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               tempPassword: tempPassword,
               requirePasswordChange: true
             };
-            
+
             existingUser = await storage.createUser(newUserData);
-            
+
             // Enviar email de activaciÃ³n al usuario
             try {
               const baseUrl = process.env.REPLIT_DEV_DOMAIN 
@@ -1849,10 +1845,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             } catch (emailError) {
               console.error(`[WordPress User Creation] Error sending activation email:`, emailError);
             }
-            
+
             console.log(`[WordPress User Creation] New representative account created for ${wordpressUser.email}`);
             console.log(`[WordPress User Creation] User must activate account on first login`);
-            
+
             // Descargar y guardar imagen de perfil de WordPress/PeepSo si estÃ¡ disponible
             if (wordpressUser.avatar_urls) {
               try {
@@ -1869,18 +1865,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       throw new Error("Invalid WordPress avatar");
                     }
                     const avatarFileName = `avatar_${existingUser.id}_${Date.now()}.jpg`;
-                    
+
                     // Guardar imagen usando fs (fs y path ya estÃ¡n importados a nivel de mÃ³dulo)
                     const uploadsDir = path.join(process.cwd(), 'uploads', 'images');
                     if (!fs.existsSync(uploadsDir)) {
                       fs.mkdirSync(uploadsDir, { recursive: true });
                     }
-                    
+
                     const avatarPath = path.join(uploadsDir, avatarFileName);
                     fs.writeFileSync(avatarPath, avatarBytes);
-                    
+
                     const avatarImageUrl = `/uploads/images/${avatarFileName}`;
-                    
+
                     // Actualizar usuario con la URL de la imagen
                     await storage.updateUser(existingUser.id, { photoURL: avatarImageUrl });
                     console.log(`[WordPress User Creation] Profile picture saved: ${avatarImageUrl}`);
@@ -1890,13 +1886,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 console.error(`[WordPress User Creation] Error downloading profile picture:`, avatarError);
               }
             }
-            
+
             // TODO: Implementar creaciÃ³n automÃ¡tica en Firebase con contraseÃ±a por defecto
             // await createFirebaseUserWithPassword(wordpressUser.email, '12345678');
           } else if (existingUser && !isRepresentativeRole(existingUser.role)) {
             throw new RepresentativeCompanyRoleError();
           }
-          
+
           userId = existingUser?.id || null;
           normalizedRepresentativeUserId = userId;
           if (normalizedRepresentativeUserId != null) {
@@ -1916,13 +1912,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw userError;
         }
       }
-      
+
       // Si NO se seleccionÃ³ un usuario de WordPress pero la empresa tiene email1, crear usuario automÃ¡ticamente
       if (!userId && parsedCompanyData.email1) {
         try {
           // Verificar si ya existe un usuario con ese email
           let existingUser = await storage.getUserByEmail(parsedCompanyData.email1);
-          
+
           if (!existingUser) {
             // Crear nuevo usuario representante automÃ¡ticamente
             const newUserData = {
@@ -1937,16 +1933,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
               tempPassword: "ANPR2024!",
               requirePasswordChange: true
             };
-            
+
             existingUser = await storage.createUser(newUserData);
-            
+
             console.log(`[Auto User Creation] New representative account created for ${parsedCompanyData.email1}`);
             console.log(`[Auto User Creation] Temporary password: ANPR2024!`);
             console.log(`[Auto User Creation] User must activate account on first login`);
           } else if (!isRepresentativeRole(existingUser.role)) {
             throw new RepresentativeCompanyRoleError();
           }
-          
+
           userId = existingUser?.id || null;
           normalizedRepresentativeUserId = userId;
           if (normalizedRepresentativeUserId != null) {
@@ -1966,7 +1962,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw autoUserError;
         }
       }
-      
+
       // Crear la empresa con el userId del representante si se pudo crear/encontrar
       let companyWithUser = {
         ...parsedCompanyData,
@@ -1978,40 +1974,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Convertir la fecha de WordPress a formato que acepta nuestra base de datos
           const expirationDate = new Date(transactionExpirationDate);
-          
+
           // Calcular fecha de inicio (un aÃ±o antes de la caducidad)
           const startDate = new Date(expirationDate);
           startDate.setFullYear(startDate.getFullYear() - 1);
-          
+
           companyWithUser.fechaInicioMembresia = startDate.toISOString().split('T')[0];
           companyWithUser.fechaFinMembresia = expirationDate.toISOString().split('T')[0];
-          
+
           console.log(`[Company Creation] Updated membership dates from transaction:`);
           console.log(`[Company Creation] Start: ${companyWithUser.fechaInicioMembresia}`);
           console.log(`[Company Creation] End: ${companyWithUser.fechaFinMembresia}`);
           console.log(`[Company Creation] Source: WordPress transaction expiration`);
-          
+
         } catch (dateError) {
           console.error('[Company Creation] Error processing transaction expiration date:', dateError);
           // Continuar con las fechas originales si hay error
         }
       }
-      
+
       // LÃ³gica automÃ¡tica para empresas con ubicaciÃ³n: asegurar que aparezcan en el mapa
       if (companyWithUser.ubicacionGeografica && (!companyWithUser.fechaFinMembresia || companyWithUser.fechaFinMembresia === '')) {
         const today = new Date();
         const oneYearFromNow = new Date(today);
         oneYearFromNow.setFullYear(today.getFullYear() + 1);
-        
+
         companyWithUser.fechaInicioMembresia = today.toISOString().split('T')[0];
         companyWithUser.fechaFinMembresia = oneYearFromNow.toISOString().split('T')[0];
         companyWithUser.estado = 'activo';
-        
+
         console.log(`[Auto-Activation] Company with location will be automatically activated:`);
         console.log(`[Auto-Activation] Start: ${companyWithUser.fechaInicioMembresia}`);
         console.log(`[Auto-Activation] End: ${companyWithUser.fechaFinMembresia}`);
       }
-      
+
       const company = await storage.createCompany(companyWithUser);
 
       if (normalizedRepresentativeUserId != null) {
@@ -2022,13 +2018,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           throw assignmentError;
         }
       }
-      
+
       // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
           console.log(`[Auto-Certificate] Found ${autoCertificates.length} certificates for membership type ${company.membershipTypeId}`);
-          
+
           for (const cert of autoCertificates) {
             await storage.assignCertificateToCompany(company.id, cert.id, {
               fechaObtencion: new Date().toISOString().split('T')[0],
@@ -2041,7 +2037,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[Auto-Certificate] Error assigning certificates:', certError);
         }
       }
-      
+
       res.status(201).json(company);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -2079,7 +2075,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   }, validateAndPersistCompanyFiles, async (req, res) => {
     const id = parseInt(req.params.id);
-    
+
     // Validar ID
     if (isNaN(id) || id <= 0) {
       return res.status(400).json({ error: "Invalid company ID" });
@@ -2106,7 +2102,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (['logoFile', 'fotoPortadaFile', 'catalogoFile', 'galeriaFiles'].includes(key)) {
           continue;
         }
-        
+
         // Mantener campos de telÃ©fono como strings
         if (key === 'telefono1' || key === 'telefono2') {
           updateData[key] = value;
@@ -2235,15 +2231,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ========================================
       // PASO 2: Procesar archivos (con manejo de errores individual)
       // ========================================
-      
+
       // Logo
       if (files?.logoFile?.[0]) {
         try {
           if (useCloudinary) {
-            const fileBuffer = fs.readFileSync(files.logoFile[0].path);
+            const fileBuffer = files.logoFile[0].buffer;
             const result = await uploadFromBuffer(fileBuffer, 'anpr/logos', 'image');
             updateData.logotipoUrl = result.url;
-            fs.unlinkSync(files.logoFile[0].path);
+
           } else {
             updateData.logotipoUrl = `/uploads/images/${files.logoFile[0].filename}`;
           }
@@ -2251,7 +2247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[PATCH] Error uploading logo:', err);
           fileUploadErrors.push('logo');
           // Limpiar archivo temporal si existe
-          try { fs.unlinkSync(files.logoFile[0].path); } catch {}
+          try {  } catch {}
         }
       }
 
@@ -2259,17 +2255,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (files?.fotoPortadaFile?.[0]) {
         try {
           if (useCloudinary) {
-            const fileBuffer = fs.readFileSync(files.fotoPortadaFile[0].path);
+            const fileBuffer = files.fotoPortadaFile[0].buffer;
             const result = await uploadFromBuffer(fileBuffer, 'anpr/portadas', 'image');
             updateData.fotoPortadaUrl = result.url;
-            fs.unlinkSync(files.fotoPortadaFile[0].path);
+
           } else {
             updateData.fotoPortadaUrl = `/uploads/images/${files.fotoPortadaFile[0].filename}`;
           }
         } catch (err) {
           console.error('[PATCH] Error uploading cover photo:', err);
           fileUploadErrors.push('fotoPortada');
-          try { fs.unlinkSync(files.fotoPortadaFile[0].path); } catch {}
+          try {  } catch {}
         }
       }
 
@@ -2277,17 +2273,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (files?.catalogoFile?.[0]) {
         try {
           if (useCloudinary) {
-            const fileBuffer = fs.readFileSync(files.catalogoFile[0].path);
+            const fileBuffer = files.catalogoFile[0].buffer;
             const result = await uploadFromBuffer(fileBuffer, 'anpr/catalogos', 'raw');
             updateData.catalogoDigitalUrl = result.url;
-            fs.unlinkSync(files.catalogoFile[0].path);
+
           } else {
             updateData.catalogoDigitalUrl = `/uploads/documents/${files.catalogoFile[0].filename}`;
           }
         } catch (err) {
           console.error('[PATCH] Error uploading catalog:', err);
           fileUploadErrors.push('catalogo');
-          try { fs.unlinkSync(files.catalogoFile[0].path); } catch {}
+          try {  } catch {}
         }
       } else if (updateData.catalogoDigitalUrl === "") {
         // Borrar catÃ¡logo explÃ­citamente
@@ -2301,19 +2297,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (useCloudinary) {
             for (const file of files.galeriaFiles) {
               try {
-                const fileBuffer = fs.readFileSync(file.path);
+                const fileBuffer = file.buffer;
                 const result = await uploadFromBuffer(fileBuffer, 'anpr/galeria', 'image');
                 newImages.push(result.url);
-                fs.unlinkSync(file.path);
+
               } catch (err) {
                 console.error('[PATCH] Error uploading gallery image:', err);
-                try { fs.unlinkSync(file.path); } catch {}
+                try {  } catch {}
               }
             }
           } else {
             newImages = files.galeriaFiles.map(file => `/uploads/images/${file.filename}`);
           }
-          
+
           if (newImages.length > 0) {
             if (updateData.galeriaProductosUrls && Array.isArray(updateData.galeriaProductosUrls)) {
               updateData.galeriaProductosUrls = [...updateData.galeriaProductosUrls, ...newImages];
@@ -2330,7 +2326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // ========================================
       // PASO 3: Limpiar payload - Proteger datos existentes
       // ========================================
-      
+
       // Convertir cadenas vacÃ­as a null para campos especÃ­ficos
       if (updateData.membershipPeriodicidad === "") {
         updateData.membershipPeriodicidad = null;
@@ -2348,7 +2344,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           typeof ubicacion.lng === 'number' &&
           !isNaN(ubicacion.lat) && 
           !isNaN(ubicacion.lng);
-        
+
         if (!hasValidCoordinates) {
           delete updateData.ubicacionGeografica;
           console.log('[PATCH /api/companies/:id] Preserved existing ubicacionGeografica - no valid coordinates');
@@ -2392,14 +2388,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // PASO 4: Verificar si hay cambios reales
       // ========================================
       const fieldCount = Object.keys(updateData).length;
-      
+
       if (fieldCount === 0) {
         // No hay campos para actualizar - devolver empresa actual sin hacer UPDATE
         const existingCompany = await storage.getCompany(id);
         if (!existingCompany) {
           return res.status(404).json({ error: "Company not found" });
         }
-        
+
         console.log('[PATCH /api/companies/:id] No changes to apply, returning current data');
         return res.status(200).json({ 
           ...existingCompany, 
@@ -2415,11 +2411,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // PASO 5: Validar y actualizar
       // ========================================
       console.log(`[PATCH /api/companies/:id] Updating ${fieldCount} fields for company ${id}`);
-      
+
       const parsedData = insertCompanySchema.partial().parse(updateData);
       if (requestHasOversizedDataUrlImage(parsedData)) return rejectOversizedImage(res);
       const company = await storage.updateCompany(id, parsedData);
-      
+
       if (!company) {
         return res.status(404).json({ error: "Company not found" });
       }
@@ -2431,7 +2427,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
           const currentCertIds = (company.certificateIds as number[]) || [];
-          
+
           for (const cert of autoCertificates) {
             if (!currentCertIds.includes(cert.id)) {
               await storage.assignCertificateToCompany(company.id, cert.id, {
@@ -2459,17 +2455,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(response);
-      
+
     } catch (error) {
       console.error("[PATCH /api/companies/:id] Error:", error);
-      
+
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 
           error: "Validation error", 
           details: error.errors.map(e => ({ path: e.path.join('.'), message: e.message }))
         });
       }
-      
+
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       res.status(500).json({ 
         error: "Failed to update company",
@@ -2496,7 +2492,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       delete companyData.userId;
       delete companyData.representantesVentas;
       const parsedCompanyData = insertCompanySchema.partial().parse(companyData);
-      
+
       let updatedData = { ...parsedCompanyData };
       let transactionExpirationDate = null;
       let representativeAssignment: Awaited<ReturnType<typeof storage.addRepresentativeCompany>> | null = null;
@@ -2518,7 +2514,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           // Verificar si el usuario ya existe en el sistema por email
           let existingUser = await storage.getUserByEmail(wordpressUser.email);
-          
+
           if (!existingUser) {
             // Crear nuevo usuario representante con datos de WordPress
             const newUserData = {
@@ -2531,7 +2527,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               stripeSubscriptionId: null,
               autoRenewal: false
             };
-            
+
             existingUser = await storage.createUser(newUserData);
             console.log(`[Update Company] Created new representative user from WordPress: ${existingUser.email}`);
           } else if (existingUser && !isRepresentativeRole(existingUser.role)) {
@@ -2540,7 +2536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               code: "USER_NOT_REPRESENTATIVE",
             });
           }
-          
+
           // Asignar el usuario a la empresa
           if (existingUser) {
             representativeAssignment = await storage.addRepresentativeCompany(id, existingUser.id);
@@ -2564,19 +2560,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           // Convertir la fecha de WordPress a formato que acepta nuestra base de datos
           const expirationDate = new Date(transactionExpirationDate);
-          
+
           // Calcular fecha de inicio (un aÃ±o antes de la caducidad)
           const startDate = new Date(expirationDate);
           startDate.setFullYear(startDate.getFullYear() - 1);
-          
+
           updatedData.fechaInicioMembresia = startDate.toISOString().split('T')[0];
           updatedData.fechaFinMembresia = expirationDate.toISOString().split('T')[0];
-          
+
           console.log(`[Update Company] Updated membership dates from transaction:`);
           console.log(`[Update Company] Start: ${updatedData.fechaInicioMembresia}`);
           console.log(`[Update Company] End: ${updatedData.fechaFinMembresia}`);
           console.log(`[Update Company] Source: WordPress transaction expiration`);
-          
+
         } catch (dateError) {
           console.error('[Update Company] Error processing transaction expiration date:', dateError);
           // Continuar con las fechas originales si hay error
@@ -2587,16 +2583,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!company) {
         return res.status(404).json({ error: "Company not found" });
       }
-      
+
       // Asignar certificados automÃ¡ticamente si la empresa tiene un membershipTypeId
       if (company.membershipTypeId) {
         try {
           const autoCertificates = await storage.getAutoCertificatesForMembership(company.membershipTypeId);
           console.log(`[Auto-Certificate] Found ${autoCertificates.length} certificates for membership type ${company.membershipTypeId}`);
-          
+
           // Obtener certificados actuales
           const currentCertIds = (company.certificateIds as number[]) || [];
-          
+
           for (const cert of autoCertificates) {
             // Solo asignar si no estÃ¡ ya asignado
             if (!currentCertIds.includes(cert.id)) {
@@ -2612,7 +2608,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error('[Auto-Certificate] Error assigning certificates:', certError);
         }
       }
-      
+
       const response: any = { ...company };
       if (representativeAssignment) {
         response.assignedCompanies = representativeAssignment.companies;
@@ -2743,7 +2739,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const companyId = parseInt(req.params.id);
       const company = await storage.getCompany(companyId);
-      
+
       if (!company) {
         return res.status(404).send(`
           <html>
@@ -2756,7 +2752,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </html>
         `);
       }
-      
+
       // Redirect to dashboard with receipt download parameter
       res.redirect(`/dashboard?download_receipt=true&company=${companyId}`);
     } catch (error) {
@@ -2920,10 +2916,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/membership-types", async (req: any, res) => {
     try {
       const membershipTypes = await storage.getAllMembershipTypes();
-      
+
       // Check if user is admin - if not, filter out private memberships
       const isAdmin = isAdminUser(req.user);
-      
+
       if (!isAdmin) {
         // Filter out private memberships for non-admin users
         const publicMemberships = membershipTypes.filter((membership: any) => 
@@ -2999,12 +2995,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const id = parseInt(req.params.id);
       const membershipTypeData = insertMembershipTypeSchema.partial().parse(req.body);
-      
+
       // If marking this plan as most popular, unmark all others
       if (membershipTypeData.masPopular === true) {
         await storage.clearMostPopularStatus();
       }
-      
+
       const membershipType = await storage.updateMembershipType(id, membershipTypeData);
       if (!membershipType) {
         return res.status(404).json({ error: "Membership type not found" });
@@ -3199,15 +3195,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Datos recibidos para certificado:", req.body);
       console.log("Archivo recibido:", req.file);
-      
+
       let certificateData: any = {};
       if (requestHasOversizedDataUrlImage(req.body)) return rejectOversizedImage(res);
-      
+
       // Si hay archivo de imagen, procesarlo
       if (req.file) {
         certificateData.imagenUrl = `/uploads/images/${req.file.filename}`;
       }
-      
+
       // Procesar los demÃ¡s campos del formulario
       Object.entries(req.body).forEach(([key, value]) => {
         if (key !== 'imageFile' && key !== 'companyId') {
@@ -3228,7 +3224,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         }
       });
-      
+
       const {
         requester,
         isAdmin,
@@ -3375,20 +3371,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       let updateData: any = {};
       if (requestHasOversizedDataUrlImage(req.body)) return rejectOversizedImage(res);
-      
+
       console.log('=== PUT Certificate Debug ===');
       console.log('Request body:', req.body);
       console.log('Has file:', !!req.file);
       console.log('Content-Type:', req.get('content-type'));
-      
+
       // Si hay archivo de imagen, procesarlo
       if (req.file) {
         updateData.imagenUrl = `/uploads/images/${req.file.filename}`;
       }
-      
+
       // Detectar si la request es FormData o JSON
       const isFormData = req.get('content-type')?.includes('multipart/form-data');
-      
+
       if (isFormData) {
         // Procesar campos de FormData (cuando hay archivo)
         Object.entries(req.body).forEach(([key, value]) => {
@@ -3424,19 +3420,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
         });
       }
-      
+
       console.log('Processed updateData:', updateData);
-      
+
       // Validar los datos
       const certificateData = insertCertificateSchema.partial().parse(updateData);
       console.log('Validated certificateData:', certificateData);
-      
+
       // Actualizar certificado
       const certificate = await storage.updateCertificate(id, certificateData);
       if (!certificate) {
         return res.status(404).json({ error: "Certificate not found" });
       }
-      
+
       console.log('Updated certificate:', certificate);
       res.json(certificate);
     } catch (error) {
@@ -3562,7 +3558,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const verifiedPlatformOwner = !!verifiedUser
         && tipo === "plataforma"
         && requestedUserId === Number(verifiedUser.id);
-      
+
       const options = {
         estado: estado as string,
         companyId: companyId ? parseInt(companyId as string) : undefined,
@@ -3575,7 +3571,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: limitNum,
         offset,
       };
-      
+
       const result = await storage.getAllOpinions(options);
       res.json(result);
     } catch (error) {
@@ -3774,7 +3770,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const { estado, comentarioModerador } = req.body;
       const approvedBy = Number(req.verifiedOpinionAdmin.id);
-      
+
       let opinion;
       if (estado === "aprobada") {
         opinion = await storage.approveOpinion(id, approvedBy);
@@ -3783,11 +3779,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else {
         return res.status(400).json({ error: "Invalid estado. Must be 'aprobada' or 'rechazada'" });
       }
-      
+
       if (!opinion) {
         return res.status(404).json({ error: "Opinion not found" });
       }
-      
+
       res.json(opinion);
     } catch (error) {
       res.status(500).json({ error: "Failed to moderate opinion" });
@@ -3808,13 +3804,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/check-email", async (req, res) => {
     try {
       const { email } = req.body;
-      
+
       if (!email) {
         return res.status(400).json({ error: "Email is required" });
       }
 
       const existingUser = await storage.getUserByEmail(email);
-      
+
       return res.json({ exists: !!existingUser });
     } catch (error) {
       console.error("Error checking email:", error);
@@ -3826,7 +3822,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-payment-intent", async (req, res) => {
     try {
       const { membershipTypeId, companyId, selectedPeriod } = req.body;
-      
+
       if (!membershipTypeId) {
         return res.status(400).json({ error: "Missing membershipTypeId" });
       }
@@ -3849,7 +3845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Extract the cost from pricing options
       let amount = 0;
       let selectedPricingOption: any = null;
-      
+
       if (membershipType.opcionesPrecios && Array.isArray(membershipType.opcionesPrecios) && membershipType.opcionesPrecios.length > 0) {
         // Prefer the pricing option matching the requested period; fall back to annual or the first option
         if (selectedPeriod) {
@@ -3862,7 +3858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             option.periodicidad && option.periodicidad.toLowerCase() === 'anual'
           ) || membershipType.opcionesPrecios[0];
         }
-        
+
         amount = parseFloat(selectedPricingOption?.costo?.toString() || "0") || 0;
       }
 
@@ -3879,7 +3875,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (selectedPricingOption?.periodicidad) {
         metadata.selectedPeriod = selectedPricingOption.periodicidad.toString();
       }
-      
+
       if (companyId && company) {
         metadata.companyId = companyId.toString();
         metadata.userId = (company.userId || 0).toString();
@@ -4109,13 +4105,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           break;
         case 'payment_intent.payment_failed':
           const failedPayment = event.data.object as Stripe.PaymentIntent;
-          
+
           // Update payment status to failed
           const existingPayment = await storage.getMembershipPaymentByStripeId(failedPayment.id);
           if (existingPayment) {
             await storage.updateMembershipPaymentStatus(existingPayment.id, 'failed');
           }
-          
+
           console.log('PaymentIntent failed.');
           break;
         case 'invoice.payment_succeeded': {
@@ -4439,7 +4435,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/create-stripe-customer", async (req, res) => {
     try {
       const { userId, email, name } = req.body;
-      
+
       if (!userId || !email) {
         return res.status(400).json({ error: "Missing userId or email" });
       }
@@ -4813,7 +4809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/projects", async (req, res) => {
     try {
       const { companyId, categoryId, estado, estadoModeracion, limit, offset } = req.query;
-      
+
       const options = {
         companyId: companyId ? parseInt(companyId as string) : undefined,
         categoryId: categoryId ? parseInt(categoryId as string) : undefined,
@@ -4834,14 +4830,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const project = await storage.getProject(id);
-      
+
       if (!project) {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
 
       // Incrementar vistas
       await storage.incrementProjectViews(id);
-      
+
       res.json(project);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -4888,7 +4884,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const companyId = parseInt(req.params.companyId);
       const company = await storage.getCompany(companyId);
-      
+
       if (!company) {
         return res.status(404).json({ error: "Empresa no encontrada" });
       }
@@ -5016,9 +5012,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertProjectSchema.parse(projectData);
       console.log("Validated data:", validatedData);
-      
+
       const project = await storage.createProject(validatedData);
-      
+
       res.status(201).json(project);
     } catch (error: any) {
       console.error("Project creation error:", error);
@@ -5039,7 +5035,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const existingProject = await storage.getProject(id);
-      
+
       if (!existingProject) {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
@@ -5108,7 +5104,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const validatedData = insertProjectSchema.partial().parse(updateData);
       const project = await storage.updateProject(id, validatedData);
-      
+
       res.json(project);
     } catch (error: any) {
       if (error.name === 'ZodError') {
@@ -5135,11 +5131,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const deleted = await storage.deleteProject(id);
-      
+
       if (!deleted) {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
-      
+
       res.status(204).send();
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -5166,17 +5162,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const id = parseInt(req.params.id);
       const { estadoModeracion } = req.body;
-      
+
       if (!['pendiente', 'aprobado', 'rechazado'].includes(estadoModeracion)) {
         return res.status(400).json({ error: "Estado de moderaciÃ³n invÃ¡lido" });
       }
 
       const project = await storage.moderateProject(id, estadoModeracion);
-      
+
       if (!project) {
         return res.status(404).json({ error: "Proyecto no encontrado" });
       }
-      
+
       res.json(project);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -5212,10 +5208,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/integration-settings", async (req, res) => {
     try {
       const validatedData = insertIntegrationSettingsSchema.partial().parse(req.body);
-      
+
       // Check if settings already exist
       const existingSettings = await storage.getIntegrationSettings();
-      
+
       let settings;
       if (existingSettings) {
         // Update existing settings
@@ -5225,7 +5221,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const completeData = insertIntegrationSettingsSchema.parse(req.body);
         settings = await storage.createIntegrationSettings(completeData);
       }
-      
+
       res.json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -5240,11 +5236,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const id = parseInt(req.params.id);
       const validatedData = insertIntegrationSettingsSchema.partial().parse(req.body);
       const settings = await storage.updateIntegrationSettings(id, validatedData);
-      
+
       if (!settings) {
         return res.status(404).json({ error: "ConfiguraciÃ³n no encontrada" });
       }
-      
+
       res.json(settings);
     } catch (error: any) {
       if (error instanceof z.ZodError) {
@@ -5257,7 +5253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/integration-settings/test-connection", async (req, res) => {
     try {
       const { wordpressUrl, apiKey, apiSecret } = req.body;
-      
+
       if (!wordpressUrl || !apiKey || !apiSecret) {
         return res.status(400).json({ error: "URL de WordPress y credenciales son requeridos" });
       }
@@ -5282,7 +5278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { search } = req.query;
       const result = await storage.getWordPressUsers();
-      
+
       if (search && typeof search === 'string') {
         const filtered = result.users.filter((user: any) => 
           user.username?.toLowerCase().includes(search.toLowerCase()) ||
@@ -5291,7 +5287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         return res.json({ ...result, users: filtered });
       }
-      
+
       res.json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message });
@@ -5324,7 +5320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'Content-Type': 'application/json',
             },
           });
-          
+
           const data = await response.json();
           results[`test_${i + 1}_${response.status}`] = {
             url,
@@ -5354,7 +5350,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.params.userId;
       const includeAll = req.query.includeAll === 'true';
       const transactions = await getUserTransactions(userId, includeAll);
-      
+
       // Mapear gateways a nombres legibles
       const gatewayNames: Record<string, string> = {
         'stripe': 'Stripe (Tarjeta de crÃ©dito/dÃ©bito)',
@@ -5379,16 +5375,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (t.subscription && t.subscription.created_at) {
           startDate = t.subscription.created_at;
         }
-        
+
         // Determinar el mÃ©todo de pago
         const gateway = t.gateway || t.payment_method || 'unknown';
         const paymentMethodName = gatewayNames[gateway.toLowerCase()] || gateway;
-        
+
         // Verificar si la transacciÃ³n estÃ¡ activa (no expirada)
         const now = new Date();
         const expiresAt = t.expires_at ? new Date(t.expires_at) : null;
         const isActive = expiresAt ? expiresAt > now : false;
-        
+
         return {
           id: t.id,
           status: t.status,
@@ -5411,10 +5407,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tax_rate: t.tax_rate || 0,
         };
       });
-      
+
       // Encontrar la transacciÃ³n activa mÃ¡s relevante
       const activeTransaction = processedTransactions.find(t => t.is_active && t.expires_at);
-      
+
       if (transactions.length === 0) {
         return res.json({ 
           message: "No se encontraron transacciones para este usuario",
@@ -5444,7 +5440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -5480,7 +5476,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       const membershipData: any = {};
-      
+
       for (const [index, endpoint] of memberPressEndpoints.entries()) {
         try {
           const response = await fetch(endpoint, {
@@ -5500,7 +5496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               'MemberPress Alt Subscriptions',
               'User Meta (MemberPress data)'
             ];
-            
+
             membershipData[`memberpress_${index + 1}`] = {
               url: endpoint,
               status: response.status,
@@ -5528,10 +5524,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Verificar roles y capabilities del usuario que podrÃ­an indicar membresÃ­a
       const userRoles = userData.roles || [];
       const userCapabilities = userData.capabilities || {};
-      
+
       // Analizar metadatos especÃ­ficos de MemberPress
       const membershipMetaFields = userData.meta || {};
-      
+
       // Campos especÃ­ficos de MemberPress
       const memberPressFields = Object.keys(membershipMetaFields).filter(key => 
         key.includes('mepr') || 
@@ -5539,7 +5535,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key.includes('mp_') ||
         key.startsWith('_mepr')
       );
-      
+
       // Campos generales de membresÃ­a
       const generalMembershipFields = Object.keys(membershipMetaFields).filter(key => 
         key.includes('member') || 
@@ -5549,7 +5545,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         key.includes('expire') ||
         key.includes('status')
       );
-      
+
       // Extraer informaciÃ³n especÃ­fica de MemberPress
       const memberPressAnalysis = {
         active_memberships: membershipMetaFields['_mepr_active_memberships'] || [],
@@ -5616,7 +5612,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { username } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -5627,7 +5623,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Buscar usuario por username (slug) o por email si contiene @
       let searchResponse;
       let users;
-      
+
       if (username.includes('@')) {
         // Si contiene @, buscar por email
         searchResponse = await fetch(`${baseUrl}/wp-json/wp/v2/users?search=${encodeURIComponent(username)}&context=edit`, {
@@ -5651,12 +5647,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       users = await searchResponse.json();
-      
+
       // Si es bÃºsqueda por email y no encontramos exacto, filtrar por email exacto
       if (username.includes('@') && Array.isArray(users)) {
         users = users.filter((user: any) => user.email === username);
       }
-      
+
       if (!Array.isArray(users) || users.length === 0) {
         return res.status(404).json({ error: `Usuario '${username}' no encontrado` });
       }
@@ -5701,7 +5697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users-with-memberships", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -5722,7 +5718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const users = await response.json();
-      
+
       // Filtrar usuarios que tengan metadatos de MemberPress
       const usersWithMemberships = users.filter((user: any) => {
         const meta = user.meta || {};
@@ -5759,7 +5755,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/sample-users", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -5780,7 +5776,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const users = await response.json();
-      
+
       // Mapear informaciÃ³n bÃ¡sica de usuarios para ejemplos
       const sampleUsers = users.map((user: any) => ({
         user_id: user.id,
@@ -5805,7 +5801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -6010,7 +6006,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             asignadoPorAdmin: true,
             observaciones: `Certificado asignado automÃ¡ticamente por membresÃ­a ${membershipType.nombrePlan}`
           });
-          
+
           console.log(`ANPR certificate automatically assigned to company ${company.id}`);
         } else {
           console.warn("ANPR certificate not found - skipping automatic assignment");
@@ -6024,13 +6020,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const systemSettings = await storage.getSystemSettings();
         const notificationEmails = systemSettings.notificationEmails as string[] || [];
-        
+
         if (notificationEmails.length > 0) {
           const emailConfig = await storage.getEmailConfiguration();
-          
+
           if (emailConfig) {
             const nodemailer = await import('nodemailer');
-            
+
             const transporterConfig: any = {
               host: emailConfig.smtpHost,
               port: emailConfig.smtpPort,
@@ -6040,7 +6036,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 pass: emailConfig.password,
               },
             };
-            
+
             if (emailConfig.encryption === 'tls') {
               transporterConfig.requireTLS = true;
               transporterConfig.tls = { rejectUnauthorized: false };
@@ -6048,9 +6044,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               transporterConfig.secure = true;
               transporterConfig.tls = { rejectUnauthorized: false };
             }
-            
+
             const transporter = nodemailer.default.createTransport(transporterConfig);
-            
+
             const htmlContent = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <h2 style="color: #0f2161; border-bottom: 2px solid #bcce16; padding-bottom: 10px;">
@@ -6081,7 +6077,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 </p>
               </div>
             `;
-            
+
             // Send to all notification emails
             for (const email of notificationEmails) {
               try {
@@ -6131,11 +6127,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Error completing registration:", error);
-      
+
       // Provide specific user-friendly error messages
       let userMessage = "Hubo un problema al procesar tu registro. Por favor, intenta nuevamente.";
       let statusCode = 500;
-      
+
       if (error.code === '23505') { // Unique constraint violation
         if (error.constraint === 'users_email_unique') {
           userMessage = "Ya existe una cuenta con este correo electrÃ³nico. Si ya tienes una cuenta, inicia sesiÃ³n en lugar de registrarte nuevamente.";
@@ -6154,7 +6150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userMessage = "Error en el procesamiento del pago. Por favor, contacta a soporte si el problema persiste.";
         statusCode = 400;
       }
-      
+
       res.status(statusCode).json({ 
         error: error.message,
         userMessage: userMessage,
@@ -6176,7 +6172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Find user by email
       const user = await storage.getUserByEmail(email);
       console.log("Found user:", user ? { id: user.id, email: user.email, firebaseUid: user.firebaseUid, role: user.role } : null);
-      
+
       if (!user) {
         return res.status(401).json({ error: "Credenciales invÃ¡lidas" });
       }
@@ -6433,7 +6429,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find user by ID
       const user = await storage.getUser(userId);
-      
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -6847,7 +6843,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate a unique Firebase UID for admin-created users
       const { v4: uuidv4 } = await import('uuid');
       const generatedFirebaseUid = `admin-created-${uuidv4()}`;
-      
+
       // Generate temporary password
       const tempPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-4).toUpperCase();
 
@@ -6867,7 +6863,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       createdUserId = user.id;
 
       let company = null;
-      
+
       // Create company if company data is provided
       if (companyData?.nombreEmpresa) {
         // Calculate dates
@@ -6988,7 +6984,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Find user by email
       const user = await storage.getUserByEmail(email);
-      
+
       if (!user) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -7066,7 +7062,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Update user auto-renewal preference
       const updatedUser = await storage.updateUser(userId, { autoRenewal });
-      
+
       if (!updatedUser) {
         return res.status(404).json({ error: "User not found" });
       }
@@ -7111,7 +7107,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ error: "No autenticado" });
         }
       }
-      
+
       // Get normalized assignments first, with legacy links as rollout fallback.
       const basicCompanies = await storage.getCompaniesForRepresentative(
         (await storage.getUser(userId))?.email || "",
@@ -7121,11 +7117,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         basicCompanies.map((company) => storage.getCompany(company.id)),
       )).filter((company): company is NonNullable<typeof company> => !!company);
       console.log("Found companies:", companies.length);
-      
+
       // Get payment history
       const payments = await storage.getUserPayments(userId);
       console.log("Found payments:", payments.length);
-      
+
       // Get current membership info
       let currentMembership = null;
       if (companies.length > 0 && companies[0].membershipTypeId) {
@@ -7216,7 +7212,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         'image/png',
         'image/svg+xml'
       ];
-      
+
       if (allowedTypes.includes(file.mimetype)) {
         cb(null, true);
       } else {
@@ -7236,7 +7232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const type = req.body.type || 'logo';
       const uploadDir = type === 'logo' ? 'uploads/system-logos' : 'uploads/system-favicons';
       const filePath = path.join(process.cwd(), uploadDir, req.file.filename);
-      
+
       if (!fs.existsSync(filePath)) {
         return res.status(500).json({ error: "Error al guardar el archivo" });
       }
@@ -7292,25 +7288,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const systemSettings = await storage.getSystemSettings();
       const notificationEmails = systemSettings.notificationEmails as string[] || [];
-      
+
       if (notificationEmails.length === 0) {
         return res.status(400).json({ 
           success: false, 
           error: "No hay correos de notificaciÃ³n configurados. Agrega al menos un correo y guarda la configuraciÃ³n antes de probar." 
         });
       }
-      
+
       const emailConfig = await storage.getEmailConfiguration();
-      
+
       if (!emailConfig) {
         return res.status(400).json({ 
           success: false, 
           error: "No hay configuraciÃ³n de correo SMTP. Configura el servidor de correo primero en la secciÃ³n de Email." 
         });
       }
-      
+
       const nodemailer = await import('nodemailer');
-      
+
       const transporterConfig: any = {
         host: emailConfig.smtpHost,
         port: emailConfig.smtpPort,
@@ -7320,7 +7316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pass: emailConfig.password,
         },
       };
-      
+
       if (emailConfig.encryption === 'tls') {
         transporterConfig.requireTLS = true;
         transporterConfig.tls = { rejectUnauthorized: false };
@@ -7328,9 +7324,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporterConfig.secure = true;
         transporterConfig.tls = { rejectUnauthorized: false };
       }
-      
+
       const transporter = nodemailer.default.createTransport(transporterConfig);
-      
+
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #0f2161; border-bottom: 2px solid #bcce16; padding-bottom: 10px;">
@@ -7359,9 +7355,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </p>
         </div>
       `;
-      
+
       const results: { email: string; success: boolean; error?: string }[] = [];
-      
+
       // Send to all notification emails
       for (const email of notificationEmails) {
         try {
@@ -7378,15 +7374,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results.push({ email, success: false, error: sendError.message });
         }
       }
-      
+
       const allSuccessful = results.every(r => r.success);
       const successCount = results.filter(r => r.success).length;
-      
+
       if (successCount === 0) {
         // All failed - likely SMTP configuration issue
         const firstError = results[0]?.error || "Error desconocido";
         let userFriendlyError = "Error de conexiÃ³n SMTP. ";
-        
+
         if (firstError.includes('ETIMEDOUT') || firstError.includes('Greeting never received')) {
           userFriendlyError += `No se pudo conectar al servidor de correo (${emailConfig.smtpHost}:${emailConfig.smtpPort}). Verifica que el host, puerto y tipo de encriptaciÃ³n sean correctos en la configuraciÃ³n de Email.`;
         } else if (firstError.includes('AUTH') || firstError.includes('authentication')) {
@@ -7396,7 +7392,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           userFriendlyError += firstError;
         }
-        
+
         return res.json({ 
           success: false,
           message: userFriendlyError,
@@ -7408,7 +7404,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           results 
         });
       }
-      
+
       res.json({ 
         success: allSuccessful,
         message: allSuccessful 
@@ -7463,7 +7459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { type } = req.params;
       const { testEmail } = req.body;
-      
+
       // Get email configuration
       const emailConfig = await storage.getEmailConfiguration();
       if (!emailConfig) {
@@ -7472,13 +7468,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           error: "No hay configuraciÃ³n de correo SMTP. Configura el servidor de correo primero." 
         });
       }
-      
+
       // Determine destination email
       const destinationEmail = testEmail || emailConfig.testEmail || emailConfig.fromEmail;
-      
+
       // Get the template if it exists
       const template = await storage.getEmailTemplateByType(type);
-      
+
       // Template names and sample data
       const templateNames: Record<string, string> = {
         welcome: "Bienvenida",
@@ -7487,7 +7483,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notification: "NotificaciÃ³n de Vencimiento",
         admin_notification: "NotificaciÃ³n de Nuevo Registro"
       };
-      
+
       // Sample data for testing
       const sampleData: Record<string, string> = {
         nombre_usuario: "Usuario de Prueba",
@@ -7505,11 +7501,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         nombre_representante: "Juan PÃ©rez GarcÃ­a",
         email_representante: "juan.perez@empresademo.com"
       };
-      
+
       // Use custom template or generate a default one
       let subject = `ðŸ§ª Prueba de Plantilla: ${templateNames[type] || type}`;
       let htmlContent = "";
-      
+
       if (template) {
         // Replace variables in template
         subject = template.subject;
@@ -7527,14 +7523,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               <h1 style="color: #2563eb; margin: 0; font-size: 24px;">ðŸ§ª Correo de Prueba</h1>
               <p style="color: #6b7280; margin: 10px 0 0 0;">Plantilla: ${templateNames[type] || type}</p>
             </div>
-            
+
             <div style="background-color: #fef3c7; padding: 20px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
               <p style="color: #92400e; margin: 0;">
                 <strong>âš ï¸ Plantilla no configurada</strong><br>
                 Esta plantilla aÃºn no ha sido personalizada. Configure el contenido en la secciÃ³n "Plantillas de Correo".
               </p>
             </div>
-            
+
             <div style="background-color: #f8fafc; padding: 20px; border-radius: 8px; margin: 20px 0;">
               <h3 style="color: #1e40af; margin: 0 0 15px 0;">ðŸ“‹ Datos de Ejemplo</h3>
               <table style="width: 100%; border-collapse: collapse;">
@@ -7545,7 +7541,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 <tr><td style="padding: 6px 0; color: #374151;"><strong>Fecha vencimiento:</strong></td><td style="color: #1f2937;">${sampleData.fecha_vencimiento}</td></tr>
               </table>
             </div>
-            
+
             <div style="border-top: 2px solid #e5e7eb; padding-top: 20px; margin-top: 30px; text-align: center;">
               <p style="color: #6b7280; font-size: 14px; margin: 0;">
                 <strong>Directorio de Proveedores de Equipamiento Urbano</strong><br>
@@ -7555,9 +7551,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           </div>
         `;
       }
-      
+
       const nodemailer = await import('nodemailer');
-      
+
       const transporterConfig: any = {
         host: emailConfig.smtpHost,
         port: emailConfig.smtpPort,
@@ -7567,7 +7563,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           pass: emailConfig.password,
         },
       };
-      
+
       if (emailConfig.encryption === 'tls' || emailConfig.encryption === 'starttls') {
         transporterConfig.requireTLS = true;
         transporterConfig.tls = { rejectUnauthorized: false };
@@ -7575,18 +7571,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         transporterConfig.secure = true;
         transporterConfig.tls = { rejectUnauthorized: false };
       }
-      
+
       const transporter = nodemailer.default.createTransport(transporterConfig);
-      
+
       await transporter.sendMail({
         from: `"${emailConfig.fromName}" <${emailConfig.fromEmail}>`,
         to: destinationEmail,
         subject: `ðŸ§ª [PRUEBA] ${subject}`,
         html: htmlContent,
       });
-      
+
       console.log(`Test email template '${type}' sent to ${destinationEmail}`);
-      
+
       res.json({ 
         success: true, 
         message: `Correo de prueba "${templateNames[type] || type}" enviado a ${destinationEmail}`,
@@ -7607,9 +7603,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("Running scheduled expiration notifications check...");
       const result = await checkAndSendExpirationNotifications();
-      
+
       console.log(`Expiration notifications: ${result.sent} sent, ${result.errors} errors`);
-      
+
       res.json({
         success: true,
         sent: result.sent,
@@ -7631,7 +7627,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const template = await storage.getEmailTemplateByType('notification');
       const timing = template?.notificationTiming as { enabled?: boolean; value?: number; unit?: string } | null;
-      
+
       res.json({
         enabled: timing?.enabled || false,
         daysBeforeExpiration: timing?.value || 7,
@@ -7661,7 +7657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!config) {
         return res.json(null);
       }
-      
+
       // Nunca enviar secretos al frontend (ni la llave secreta ni el webhook secret)
       const { secretKey, webhookSecret, ...safeConfig } = config;
       res.json({ ...safeConfig, hasWebhookSecret: !!webhookSecret });
@@ -7690,7 +7686,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const existingConfig = await storage.getStripeConfiguration();
       let config;
-      
+
       if (existingConfig) {
         config = await storage.updateStripeConfiguration(existingConfig.id, validatedData);
       } else {
@@ -7699,7 +7695,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Los cobros usan esta configuraciÃ³n: refrescar la instancia de Stripe
       invalidateStripeCache();
-      
+
       // Nunca enviar secretos de vuelta al frontend
       const { secretKey, webhookSecret, ...safeConfig } = config!;
       res.json({ ...safeConfig, hasWebhookSecret: !!webhookSecret });
@@ -7720,7 +7716,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const validatedData = configSchema.parse(req.body);
-      
+
       // Test connection with Stripe
       try {
         const testStripe = new Stripe(validatedData.secretKey, {
@@ -7728,7 +7724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
 
         const account = await testStripe.accounts.retrieve();
-        
+
         res.json({
           success: true,
           message: "ConexiÃ³n exitosa con Stripe",
@@ -7799,7 +7795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                              periodicidad === "trimestral" ? "month" :
                              periodicidad === "semestral" ? "month" :
                              "year";
-              
+
               const intervalCount = periodicidad === "trimestral" ? 3 :
                                    periodicidad === "semestral" ? 6 : 1;
 
@@ -7828,7 +7824,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   periodicidad: option.periodicidad,
                 },
               });
-              
+
               // Update the pricing option with new Stripe price ID
               option.stripePriceId = price.id;
               console.log(`Created new price for ${membership.nombrePlan} - ${option.periodicidad} (${interval}${intervalCount > 1 ? ` x${intervalCount}` : ''}): ${price.id}`);
@@ -7910,7 +7906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (requestHasOversizedDataUrlImage(req.body)) return rejectOversizedImage(res);
       // Check if configuration exists
       const existingConfig = await storage.getFrontendConfiguration();
-      
+
       if (existingConfig) {
         // Update existing configuration
         const updatedConfig = await storage.updateFrontendConfiguration(existingConfig.id, req.body);
@@ -7932,7 +7928,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "No image uploaded" });
       }
-      
+
       const imageUrl = `/uploads/images/${req.file.filename}`;
       res.json({ imageUrl });
     } catch (error) {
@@ -7946,7 +7942,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "No image uploaded" });
       }
-      
+
       const imageUrl = `/uploads/images/${req.file.filename}`;
       res.json({ imageUrl });
     } catch (error) {
@@ -7960,7 +7956,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!req.file) {
         return res.status(400).json({ error: "No logo uploaded" });
       }
-      
+
       const logoUrl = `/uploads/images/${req.file.filename}`;
       res.json({ logoUrl });
     } catch (error) {
@@ -7974,7 +7970,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { transactionId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8035,7 +8031,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8092,7 +8088,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8124,15 +8120,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
           if (response.ok) {
             const data = await response.json();
-            
+
             if (endpoint.includes('members')) {
               memberData = data;
             }
-            
+
             if (endpoint.includes('subscriptions')) {
               subscriptions = Array.isArray(data) ? data : [data];
             }
-            
+
             membershipData[endpoint] = { status: response.status, data };
           }
         } catch (error) {
@@ -8149,7 +8145,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Content-Type': 'application/json',
           },
         });
-        
+
         if (productsResponse.ok) {
           membershipProducts = await productsResponse.json();
         }
@@ -8166,7 +8162,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             'Content-Type': 'application/json',
           },
         });
-        
+
         if (userResponse.ok) {
           userWithMeta = await userResponse.json();
         }
@@ -8182,12 +8178,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: userWithMeta.email,
           username: userWithMeta.username
         } : null,
-        
+
         // InformaciÃ³n de membresÃ­a activa
         active_memberships: [],
         expired_memberships: [],
         subscriptions: subscriptions,
-        
+
         // Metadatos relevantes de MemberPress
         memberpress_metadata: userWithMeta?.meta ? Object.keys(userWithMeta.meta)
           .filter(key => key.includes('mepr') || key.includes('memberpress'))
@@ -8195,10 +8191,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             acc[key] = userWithMeta.meta[key];
             return acc;
           }, {}) : {},
-          
+
         // InformaciÃ³n de productos disponibles
         available_membership_products: membershipProducts,
-        
+
         // Respuestas de endpoints consultados
         api_responses: membershipData
       };
@@ -8206,7 +8202,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Procesar fechas de vencimiento si estÃ¡n disponibles en metadatos
       if (userWithMeta?.meta) {
         const meta = userWithMeta.meta;
-        
+
         // Buscar fechas de vencimiento en diferentes campos
         const expirationFields = [
           'mepr_expires_at',
@@ -8215,7 +8211,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'membership_expires',
           'mepr_expiration'
         ];
-        
+
         for (const field of expirationFields) {
           if (meta[field]) {
             processedMembership.expiration_date = meta[field];
@@ -8223,13 +8219,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
             break;
           }
         }
-        
+
         // Buscar IDs de membresÃ­as activas y mapear con productos
         if (meta['_mepr_active_memberships']) {
           const activeMembershipIds = Array.isArray(meta['_mepr_active_memberships']) 
             ? meta['_mepr_active_memberships'] 
             : [meta['_mepr_active_memberships']];
-            
+
           processedMembership.active_memberships = activeMembershipIds.map(id => {
             const product = membershipProducts.find(p => p.id == id);
             return {
@@ -8251,7 +8247,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/memberpress-products", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8277,7 +8273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const endpoint of productEndpoints) {
         try {
           console.log(`[MemberPress Products] Consultando: ${baseUrl}${endpoint}`);
-          
+
           const response = await fetch(`${baseUrl}${endpoint}`, {
             headers: {
               'Authorization': `Basic ${authString}`,
@@ -8288,7 +8284,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             console.log(`[MemberPress Products] Ã‰xito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
-            
+
             allProducts[endpoint] = {
               status: response.status,
               data: data,
@@ -8330,7 +8326,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (transResponse.ok) {
           const transactions = await transResponse.json();
           console.log(`[MemberPress Products] Encontradas ${transactions.length} transacciones`);
-          
+
           // Extraer IDs de productos Ãºnicos de las transacciones
           const productIds = [...new Set(transactions.map((t: any) => t.product_id || t.membership_id).filter(Boolean))];
           transactionProducts = productIds.map((id: any) => ({ 
@@ -8383,7 +8379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8403,12 +8399,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ];
 
       const results = {};
-      
+
       // Consultar cada endpoint especÃ­fico de MemberPress
       for (const endpoint of membershipEndpoints) {
         try {
           console.log(`[MemberPress Direct] Consultando: ${baseUrl}${endpoint}`);
-          
+
           const response = await fetch(`${baseUrl}${endpoint}`, {
             headers: {
               'Authorization': `Basic ${authString}`,
@@ -8419,7 +8415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             console.log(`[MemberPress Direct] Ã‰xito en ${endpoint}:`, Array.isArray(data) ? `${data.length} items` : 'objeto');
-            
+
             results[endpoint] = {
               status: response.status,
               data: data,
@@ -8478,15 +8474,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const consolidatedInfo = {
         user_id: userId,
         user_metadata: userMetadata,
-        
+
         // InformaciÃ³n de membresÃ­a directa de MemberPress
         member_info: results[`/wp-json/mp/v1/members/${userId}`]?.data || null,
         subscriptions: results[`/wp-json/mp/v1/subscriptions?member=${userId}`]?.data || [],
         transactions: results[`/wp-json/mp/v1/transactions?member=${userId}`]?.data || [],
-        
+
         // Respuestas completas de todos los endpoints
         raw_responses: results,
-        
+
         // AnÃ¡lisis de datos encontrados
         analysis: {
           has_member_record: !!results[`/wp-json/mp/v1/members/${userId}`]?.data,
@@ -8574,7 +8570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (userMetadata?.memberpress_meta) {
         const meta = userMetadata.memberpress_meta;
         const expirationFields = ['mepr_expires_at', '_mepr_expires_at', 'memberpress_expires', 'mepr_expiration', '_mepr_expiration'];
-        
+
         for (const field of expirationFields) {
           if (meta[field]) {
             consolidatedInfo.analysis.meta_expiration_date = meta[field];
@@ -8591,7 +8587,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           'membership_expires', 'membership_expiry', 'member_expires', 
           'expires', 'expiry_date', 'expiration_date'
         ];
-        
+
         for (const field of additionalExpirationFields) {
           if (allMeta[field]) {
             consolidatedInfo.analysis[`meta_${field}`] = allMeta[field];
@@ -8613,7 +8609,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/memberpress-search-memberships", async (req, res) => {
     try {
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8647,7 +8643,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const query of searchQueries) {
         try {
           console.log(`[MemberPress Search] Buscando "${query.term}": ${baseUrl}${query.endpoint}`);
-          
+
           const response = await fetch(`${baseUrl}${query.endpoint}`, {
             headers: {
               'Authorization': `Basic ${authString}`,
@@ -8658,7 +8654,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             console.log(`[MemberPress Search] "${query.term}" encontrÃ³ ${Array.isArray(data) ? data.length : 1} resultados`);
-            
+
             searchResults[query.term] = {
               endpoint: query.endpoint,
               status: response.status,
@@ -8672,14 +8668,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const title = item.title?.rendered || item.title || item.name || '';
               const content = item.content?.rendered || item.content || '';
               const excerpt = item.excerpt?.rendered || item.excerpt || '';
-              
+
               // Buscar en tÃ­tulo y contenido
               const searchText = `${title} ${content} ${excerpt}`.toLowerCase();
-              
+
               if (searchText.includes('profesional') || 
                   searchText.includes('empresarial') || 
                   searchText.includes('institucional')) {
-                
+
                 foundMemberships.push({
                   id: item.id,
                   title: title,
@@ -8717,7 +8713,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const endpoint of postTypeEndpoints) {
         try {
           console.log(`[MemberPress Search] Consultando tipo de post: ${baseUrl}${endpoint}`);
-          
+
           const response = await fetch(`${baseUrl}${endpoint}`, {
             headers: {
               'Authorization': `Basic ${authString}`,
@@ -8728,7 +8724,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (response.ok) {
             const data = await response.json();
             console.log(`[MemberPress Search] Tipo de post encontrÃ³ ${Array.isArray(data) ? data.length : 1} resultados`);
-            
+
             const key = endpoint.split('/').pop() || 'unknown';
             searchResults[key] = {
               endpoint: endpoint,
@@ -8742,14 +8738,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             for (const item of results) {
               const title = item.title?.rendered || item.title || item.name || '';
               const content = item.content?.rendered || item.content || '';
-              
+
               const searchText = `${title} ${content}`.toLowerCase();
-              
+
               if ((searchText.includes('profesional') || 
                    searchText.includes('empresarial') || 
                    searchText.includes('institucional')) &&
                   !foundMemberships.find(m => m.id === item.id)) {
-                
+
                 foundMemberships.push({
                   id: item.id,
                   title: title,
@@ -8802,7 +8798,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.params;
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -8927,7 +8923,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/companies/:companyId/representative-peepso-profile", async (req, res) => {
     try {
       const companyId = parseInt(req.params.companyId);
-      
+
       console.log(`[Company PeepSo Profile] Obteniendo perfil del representante para empresa ${companyId}`);
 
       // Obtener la empresa con detalles del representante
@@ -8973,7 +8969,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Intentar obtener el perfil de PeepSo usando nuestro endpoint interno
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.status(400).json({ error: "ConfiguraciÃ³n de WordPress incompleta" });
       }
@@ -9119,7 +9115,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/emails/peepso-profiles", async (req, res) => {
     try {
       const { emails } = req.body;
-      
+
       if (!emails || !Array.isArray(emails)) {
         return res.status(400).json({ error: "Se requiere una lista de emails" });
       }
@@ -9127,7 +9123,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`[Email PeepSo Profiles] Verificando URLs de PeepSo para emails:`, emails);
 
       const settings = await storage.getIntegrationSettings();
-      
+
       if (!settings || !settings.wordpressUrl || !settings.apiKey || !settings.apiSecret) {
         return res.json({
           success: true,
@@ -9174,9 +9170,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Construir la URL del perfil de PeepSo usando el username
           // PeepSo usa el formato: /profile-2/?username
           const peepsoProfileUrl = `${baseUrl}/profile-2/?${matchingUser.slug || matchingUser.username}`;
-          
+
           console.log(`[Email PeepSo Profiles] URL de perfil PeepSo para ${email}: ${peepsoProfileUrl}`);
-          
+
           emailProfiles[email] = {
             wordpress_user_id: matchingUser.id,
             username: matchingUser.username,
@@ -9211,29 +9207,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/geocode", async (req, res) => {
     try {
       const { address } = req.body;
-      
+
       if (!address || typeof address !== 'string' || address.trim().length < 5) {
         return res.status(400).json({ error: 'DirecciÃ³n invÃ¡lida' });
       }
 
       // Usar OpenStreetMap Nominatim API (alternativa gratuita)
       const nominatimUrl = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=1&q=${encodeURIComponent(address.trim())}`;
-      
+
       const response = await fetch(nominatimUrl, {
         headers: {
           'User-Agent': 'ANPR-Directory-App/1.0 (contact@anpr.org.mx)'
         }
       });
-      
+
       if (!response.ok) {
         throw new Error(`Error en Nominatim API: ${response.status}`);
       }
 
       const data = await response.json();
-      
+
       if (data && data.length > 0) {
         const result = data[0];
-        
+
         // Transformar respuesta de Nominatim a formato compatible con Google Maps API
         const transformedResult = {
           formatted_address: result.display_name,
@@ -10063,11 +10059,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   const httpServer = createServer(app);
-  
+
   // Set up daily scheduler for expiration notifications
   // Runs every 24 hours (at server start and then every 24h)
   const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-  
+
   // Initial check after 1 minute (to let server fully start)
   setTimeout(async () => {
     console.log("Running initial expiration notifications check...");
@@ -10088,7 +10084,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error deactivating expired companies:", error);
     }
   }, 60 * 1000);
-  
+
   // Then run every 24 hours
   setInterval(async () => {
     console.log("Running scheduled expiration notifications check...");
@@ -10109,9 +10105,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error deactivating expired companies:", error);
     }
   }, TWENTY_FOUR_HOURS);
-  
+
   console.log("Email notification scheduler configured (daily at server start time)");
-  
+
   return httpServer;
 }
 
